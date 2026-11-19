@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v47 · 19/11/2026
+- Escribiendo, la barra queda pegada al teclado: 12 px más cerca de la barra de flechas que pone el iPhone (esa barra no se puede quitar desde una web).
+
 ## v46 · 19/11/2026
 - Al tocar el micro ya no se mueve la lista: el cartel «Te escucho…» flota encima del contenido, justo sobre la barra, en la Lista y en la Despensa.
 
