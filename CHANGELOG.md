@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v25 · 19/11/2026
+- Categorías en orden alfabético al añadir o editar (Otros al final).
+- Icono de pañal de verdad para los pañales (antes salía un imperdible).
+- Arreglado: en la hoja de confirmación, los botones de tienda salían uno debajo de otro a todo lo ancho.
+
 ## v24 · 19/11/2026
 - El menú ⋮ abre una pantalla completa de Opciones (como los Ajustes del iPhone): Tiendas, Repasar la despensa, Historial, modo Como el iPhone / Claro / Oscuro, cuenta, Compartida con y Cerrar sesión.
 - La barra de «Añadir» y el micro flotan, translúcidas, y la lista pasa por debajo hasta el borde.

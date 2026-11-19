@@ -98,7 +98,7 @@ export const ICON_KW = {
   cola: "1F964", tonica: "1F964", gaseosa: "1F964", zumo: "1F9C3", nectar: "1F9C3", horchata: "1F964",
   agua: "E0CC", hielo: "1F9CA", aceite: "E0CB", vinagre: "E0CB", salsa: "E0CB", ketchup: "E0CB", mayonesa: "E0CB",
   harina: "1F33E", azucar: "1F36C", levadura: "1F33E",
-  panal: "1F9F7", toallita: "1FAE7", chupete: "1F37C",
+  panal: "PANAL", toallita: "1FAE7", chupete: "1F37C",
   gel: "1F6BF", champu: "1F9FC", acondicionador: "1F9F4", jabon: "1F9FC", "pasta de dientes": "1F9B7",
   dentifrico: "1F9B7", "pasta dental": "1F9B7", "cepillo de dientes": "1FAA5", maquinilla: "1FA92", cuchilla: "1FA92",
   crema: "1F9F4", desodorante: "1F9F4", colonia: "1F9F4", protector: "1F9F4",

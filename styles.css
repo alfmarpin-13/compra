@@ -394,7 +394,7 @@ html.ready .folder.swipe-l{animation:swipeL .38s var(--spring)}
 .htab:active{transform:scale(.94)}
 
 /* ---------- Opciones (pantalla completa) ---------- */
-.opts{display:flex;flex-direction:column;padding-top:8px}
+.optpage{display:flex;flex-direction:column;padding-top:8px}
 .opt-group{background:var(--paper);border-radius:16px;overflow:hidden}
 .opt-row{display:flex;align-items:center;gap:14px;width:100%;min-height:54px;padding:8px 16px;font:500 16px/22px var(--fb);color:var(--ink);text-align:left;position:relative}
 .opt-row .icon{color:var(--muted);flex:none}
@@ -411,8 +411,8 @@ html.ready .folder.swipe-l{animation:swipeL .38s var(--spring)}
 .seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--paper)}
 .seg button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:11px;font:600 13px/16px var(--fb);color:var(--muted);transition:background .3s var(--spring),color .3s}
 .seg button.on{background:var(--accent);color:var(--on-accent)}
-.opts .version{margin:22px 0 4px}
-.opts .credits{text-align:center;padding:0 12px}
+.optpage .version{margin:22px 0 4px}
+.optpage .credits{text-align:center;padding:0 12px}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
