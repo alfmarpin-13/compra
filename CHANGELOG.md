@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v34 · 19/11/2026
+- Diagnóstico visible: si Firebase no deja leer los datos, si tarda demasiado o si la app falla al pintar, se ve un aviso con el motivo exacto en vez de una pantalla vacía.
+
 ## v33 · 19/11/2026
 - Actualización segura: al instalar una versión nueva, cada archivo se descarga con su número de versión y se comprueba que todo es de la misma versión. Evita que el iPhone mezcle archivos viejos y nuevos (despensa vacía o iconos raros justo después de publicar).
 
