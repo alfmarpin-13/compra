@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v42 · 19/11/2026
+- Micro: al tocarlo se ensancha de forma fluida hasta ocupar la barra; a la izquierda queda solo un botón para cancelar (sin el «+»). La barra no cambia de tamaño ni de sitio (arreglado un choque de estilos con la burbuja «Te escucho…» que la movía y la hacía saltar).
+- Filtros de tienda instantáneos, sin animación de fundido entre casillas.
+
 ## v41 · 19/11/2026
 - Micrófono más fiable: un solo reconocedor en modo continuo (antes se cortaba tras cada frase y se perdían palabras al rearrancar), sin las repeticiones que mete Safari, y fin automático tras ~2 s de silencio después de hablar o al tocar el micro (esperando las últimas palabras).
 
