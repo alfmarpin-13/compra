@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v39 · 19/11/2026
+- Lista y Despensa van una al lado de la otra, como páginas: al arrastrar se ve llegar la otra pestaña y al soltar se coloca con el muelle (o vuelve). Al tocar las pestañas se desliza igual. Cada una conserva dónde estabas.
+
 ## v38 · 19/11/2026
 - Sesión al instante: Firebase ya no carga a escondidas la página de inicio de sesión con Google (que no usamos) antes de decir quién eres. Era lo que hacía tardar 40-50 s en «comprobando la sesión».
 

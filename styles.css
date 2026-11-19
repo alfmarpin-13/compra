@@ -83,6 +83,11 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 
 /* ---------- Pestañas en la cabecera: Lista (cesta) / Despensa (estantería) ---------- */
 .folder{flex:1;min-height:0;display:flex;flex-direction:column}
+/* Lista y Despensa como dos páginas, una al lado de la otra */
+.pager{flex:1;min-height:0;overflow:hidden;position:relative}
+.track{display:flex;height:100%;transition:transform .5s var(--spring);will-change:transform}
+.track.at-1{transform:translateX(-100%)}
+.pane{flex:0 0 100%;width:100%;min-width:0;height:100%}
 .htabs{position:relative;display:inline-flex;align-items:center;gap:4px;padding:4px;border-radius:999px;background:var(--paper)}
 .htab{position:relative;z-index:1;display:inline-flex;align-items:center;height:42px;padding:0 8px;border-radius:999px;color:var(--muted);font:700 15px/1 var(--fb);white-space:nowrap;transition:color .35s ease,padding .5s var(--spring),transform .3s var(--spring)}
 .hti{display:grid;place-items:center;width:30px;height:30px;flex:none}
@@ -398,11 +403,7 @@ html.ready .scr.nav-pop{z-index:1;animation:popIn .45s var(--spring)}
 @keyframes pushAway{to{transform:translateX(-28%);filter:brightness(.92)}}
 @keyframes popOut{to{transform:translateX(100%)}}
 @keyframes popIn{from{transform:translateX(-28%);filter:brightness(.92)}}
-html.ready .folder.from-r{animation:slideR .42s var(--spring)}
-html.ready .folder.from-l{animation:slideL .42s var(--spring)}
 @keyframes slideR{from{opacity:0;transform:translateX(32px)}}
-html.ready .folder.swipe-r{animation:swipeR .38s var(--spring)}
-html.ready .folder.swipe-l{animation:swipeL .38s var(--spring)}
 @keyframes swipeR{from{transform:translateX(100%)}}
 @keyframes swipeL{from{transform:translateX(-100%)}}
 @keyframes slideL{from{opacity:0;transform:translateX(-32px)}}
