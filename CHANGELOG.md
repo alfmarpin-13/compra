@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v27 · 19/11/2026
+- Avisos sin «Deshacer» centrados y con el mismo margen a los dos lados; todos con la misma altura.
+
 ## v26 · 19/11/2026
 - Al abrir la app, las casillas salen ya con su recuadro blanco (antes aparecían en gris y con un fundido).
 - Tachar en el sitio: la casilla se queda donde está, tachada, con una marca, «Deshacer» dentro y una barrita de tiempo; a los pocos segundos se recoge hacia «Comprado hoy». Sin aviso abajo.
