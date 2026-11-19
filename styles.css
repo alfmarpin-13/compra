@@ -59,6 +59,8 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .app{position:fixed;top:0;left:0;right:0;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
 /* Con el teclado abierto, sin hueco del indicador de inicio bajo la barra de escribir. */
 .app.kb{--sab:6px}
+/* Escribiendo: la barra pegada al teclado (el iPhone ya pone su propia barra de flechas con margen encima) */
+.app.kb-draft .dock{bottom:2px}
 /* Con el teclado abierto para otra cosa (buscar, hojas), la barra de «Añadir» no sube */
 .app.kb:not(.kb-draft) .dock,.app.kb:not(.kb-draft) .band{display:none}
 .scr{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--ground);padding-top:var(--sat);padding-bottom:var(--sab);padding-left:var(--sal);padding-right:var(--sar)}
