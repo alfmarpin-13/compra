@@ -17,10 +17,17 @@ function ic(name, size = 24, cls = "") {
   return `<svg class="icon ${cls}" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 }
 const LOGO = (px, label) => `<svg width="${px}" height="${px}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'} viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#D9F56E"/><path d="M27 50C27 21 73 21 73 50" fill="none" stroke="#1C3A2D" stroke-width="7" stroke-linecap="round"/><path d="M21 57H79L72.5 82.5Q71.4 87 66.8 87H33.2Q28.6 87 27.5 82.5Z" fill="#1C3A2D"/><g stroke="#D9F56E" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M24 66.5H76M26.3 76.5H73.7"/><path d="M33 59.5 34.6 84.5M44.3 59.5 45 84.5M55.7 59.5 55 84.5M67 59.5 65.4 84.5"/></g><rect x="15" y="46" width="70" height="11" rx="5.5" fill="#1C3A2D"/></svg>`;
+// Iconos de producto propios, dibujados con el mismo estilo de línea que OpenMoji.
+const PICS = {
+  ...OPENMOJI,
+  PANAL: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h46v6c0 7-5 12-11 14-3.5 1.2-6 4.6-6 9v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-5c0-4.4-2.5-7.8-6-9-6-2-11-7-11-14z"/><path d="M13 27h46"/><path d="M19 24h7M46 24h7"/><path d="M24 43c3 1.5 5 4 5.5 7M48 43c-3 1.5-5 4-5.5 7" opacity=".7"/></g>',
+};
 export const iconKeyFor = (name) => bestKeyword(name, ICON_LIST);
 function pic(name, category, iconKey) {
-  const k = iconKey && OPENMOJI[iconKey] ? iconKey : iconKeyFor(name);
-  if (k && OPENMOJI[k]) return `<svg viewBox="4 4 64 64" aria-hidden="true">${OPENMOJI[k]}</svg>`;
+  // Manda el diccionario de palabras clave (así los iconos mejorados llegan también a productos ya guardados).
+  const auto = iconKeyFor(name);
+  const k = auto && PICS[auto] ? auto : iconKey && PICS[iconKey] ? iconKey : null;
+  if (k) return `<svg viewBox="4 4 64 64" aria-hidden="true">${PICS[k]}</svg>`;
   return ic((CAT[category] || CAT.otros).g, 30);
 }
 const catStyle = (c) => { const C = CAT[c] || CAT.otros; return `--cl:${C.cl};--cd:${C.cd}`; };
@@ -427,7 +434,7 @@ function vOptions() {
   const modes = [["system", "smartphone", "Como el iPhone"], ["light", "sun", "Claro"], ["dark", "moon", "Oscuro"]];
   return `<div class="scr" data-key="options">
    <div class="hb back"><button class="ib sm" data-act="back" aria-label="Volver">${ic("arrow-left", 20)}</button><div class="hb-t"><h1 class="hb-name">Opciones</h1></div></div>
-   <div class="pad opts">
+   <div class="pad optpage">
      <div class="opt-group">
        ${row("stores", "store", "Tiendas", `<span class="opt-v">${S.stores.length}</span>`)}
        ${row("review1", "rotate-ccw", "Repasar la despensa", dueList().length ? `<span class="opt-v">${dueList().length}</span>` : "")}
@@ -536,6 +543,7 @@ function vSheet() {
   const inner = { review: shReview, command: shCommand, edit: shEdit, stores: shStores, prefs: shPrefs, one: shOne, share: shShare, pedit: shPEdit, sedit: shSEdit }[s.type](s);
   return `<div class="scrim" data-act="closeSheet" data-key="scrim"></div><div class="sheet" role="dialog" aria-modal="true" data-key="sheet-${s.type}"><div class="handle"></div>${inner}</div>`;
 }
+const CATS_AZ = [...CATS].sort((a, b) => (a.k === "otros") - (b.k === "otros") || a.l.localeCompare(b.l, "es"));
 function storeChip(id, selected, act, attrs = "") {
   return `<button class="chip sm ${selected === id ? "on" : ""}" data-act="${act}" data-k="${esc(id || "")}" ${attrs}>${id ? slot(id) : ""}${esc(id ? storeName(id) : GENERIC)}</button>`;
 }
@@ -596,7 +604,7 @@ function shEdit(s) {
      ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "edStore")).join("")}</div>
      <p class="hint-ph" style="margin-top:8px">Se recordará para la próxima vez que lo apuntéis.</p></div>
    <div><p class="labelsm" style="margin-bottom:8px">Mover a…</p><div class="wrap">
-     ${CATS.map((c) => `<button class="chip sm ${d.category === c.k ? "on" : ""}" data-act="edCat" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div></div>
+     ${CATS_AZ.map((c) => `<button class="chip sm ${d.category === c.k ? "on" : ""}" data-act="edCat" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div></div>
    <button class="tbtn danger" style="align-self:flex-start;margin-left:-12px" data-act="edDel">Eliminar</button>
    </div>
    <div class="sfoot"><button class="btn out" data-act="closeSheet">Cancelar</button><button class="btn fill" data-act="edSave">Guardar</button></div>`;
@@ -682,7 +690,7 @@ function shPEdit(s) {
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
      ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "pdStore")).join("")}</div></div>
    <div><p class="labelsm" style="margin-bottom:8px">Categoría</p><div class="wrap">
-     ${CATS.map((c) => `<button class="chip sm ${d.category === c.k ? "on" : ""}" data-act="pdCat" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div></div>
+     ${CATS_AZ.map((c) => `<button class="chip sm ${d.category === c.k ? "on" : ""}" data-act="pdCat" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div></div>
    ${s.id ? `<button class="tbtn danger" style="align-self:flex-start;margin-left:-12px" data-act="pdDel">Borrar de la despensa</button>` : ""}
    </div>
    <div class="sfoot"><button class="btn out" data-act="closeSheet">Cancelar</button><button class="btn fill" data-act="pdSave">Guardar</button></div>`;
