@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v33 · 19/11/2026
+- Actualización segura: al instalar una versión nueva, cada archivo se descarga con su número de versión y se comprueba que todo es de la misma versión. Evita que el iPhone mezcle archivos viejos y nuevos (despensa vacía o iconos raros justo después de publicar).
+
 ## v32 · 19/11/2026
 - Las hojas ya no oscurecen el fondo (así no queda la franja de la hora clara sobre fondo oscuro); se separan con una sombra suave. Tocar fuera sigue cerrándolas.
 - «Repasar la despensa» sin nada que reponer: el botón dice «Cerrar».
