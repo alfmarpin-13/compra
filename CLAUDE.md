@@ -75,7 +75,7 @@ Mismo diseño que el prototipo. Resumen:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
    - **«Comprado hoy · N»:** separador plegable al final. Desplegado, muestra lo tachado hoy, tachado y atenuado, con la nota «Toca uno para devolverlo a la lista. Mañana pasa solo al historial».
-   - **Barra inferior fija:** «+ Añadir», «Toca y habla» y un botón redondo que abre la Despensa.
+   - **Barra inferior fija:** «+ Añadir», el botón redondo de la Despensa y, a la derecha del todo, el botón redondo del micrófono (solo el icono). Al tocarlo se ensancha con «Escuchando… toca para parar».
 3. **Despensa.**
    - **Cabecera:** ←, «Despensa» y +.
    - **Buscador** en forma de pastilla: «Buscar entre N productos».

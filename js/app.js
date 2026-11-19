@@ -311,11 +311,12 @@ function vDock() {
       ${side}</div>`;
   }
   const on = S.capture === "listening";
-  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para terminar" : "Toca y habla"}">${ic("mic", 20, "mic")}<span>${on ? `Escuchando…<small>toca para parar</small>` : "Toca y habla"}</span></button>`;
-  return `<div class="dock" data-key="dock">
-    <button class="dk-add" data-act="type">${ic("plus", 20)}<span>Añadir</span></button>
-    ${voiceBtn}
-    <button class="dk-side" data-act="pantry" aria-label="Despensa">${ic("shelving-unit", 22)}</button></div>`;
+  // Micro a la derecha: botón redondo solo con el icono; al escuchar se ensancha y pide tocar para parar.
+  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>Escuchando…<small>toca para parar</small></span>` : ""}</button>`;
+  return `<div class="dock ${on ? "listening" : ""}" data-key="dock">
+    <button class="dk-add" data-act="type" aria-label="Añadir">${ic("plus", 20)}<span>Añadir</span></button>
+    <button class="dk-side" data-act="pantry" aria-label="Despensa">${ic("shelving-unit", 22)}</button>
+    ${voiceBtn}</div>`;
 }
 function vMenu() {
   return `<div class="mscrim" data-act="closeMenu" data-key="mscrim"></div><div class="menu" role="menu" data-key="menu">

@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v18 · 19/11/2026
+- Micrófono a la derecha: botón redondo solo con el icono; al tocarlo se ensancha con «Escuchando… toca para parar».
+
 ## v17 · 19/11/2026
 - Más margen a la izquierda en el campo de escribir.
 - Sin botón de micrófono mientras se escribe.
