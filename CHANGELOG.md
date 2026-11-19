@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v41 · 19/11/2026
+- Micrófono más fiable: un solo reconocedor en modo continuo (antes se cortaba tras cada frase y se perdían palabras al rearrancar), sin las repeticiones que mete Safari, y fin automático tras ~2 s de silencio después de hablar o al tocar el micro (esperando las últimas palabras).
+
 ## v40 · 19/11/2026
 - Barra de abajo única: al tocar «Añadir», la misma pastilla se convierte en el campo de escribir (sin cambiarse por otra barra) y sube pegada al teclado. El micro se queda a la derecha. Dentro del campo, solo una flecha para añadir; se cierra tocando fuera o bajando el teclado.
 
