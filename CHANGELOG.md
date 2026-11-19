@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v45 · 19/11/2026
+- Barra de abajo: «Añadir» sin el «+», y el texto que escribes empieza justo donde ponía «Añadir». Al tocarla ya no cambia de color: es la misma pastilla, con el cursor y la flecha.
+
 ## v44 · 19/11/2026
 - Gesto de volver del iPhone en Opciones e Historial: deslizando hacia la derecha (desde el borde o desde cualquier sitio) la pantalla sigue al dedo y debajo asoma la anterior; al soltar pasado un tercio, o con un golpe rápido, vuelve; si no, se recoloca con muelle.
 
