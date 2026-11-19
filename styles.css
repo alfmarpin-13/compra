@@ -6,7 +6,8 @@
   --primary:#1C3A2D;--on-primary:#D9F56E;--accent:#D9F56E;--on-accent:#1C3A2D;
   --tint:#E2EADD;--on-tint:#1C3A2D;--line:#E1E5DC;--outline:#A9B3AA;--pressed:#EBEEE5;
   --danger:#A72F48;--danger-c:#FFDDE5;
-  --sat:env(safe-area-inset-top,0px);--sab:max(env(safe-area-inset-bottom,0px),8px);
+  --edge:0px;
+  --sat:calc(env(safe-area-inset-top,0px) + var(--edge));--sab:max(env(safe-area-inset-bottom,0px),8px);
   --sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);
   color-scheme:light;
 }
@@ -27,6 +28,15 @@ input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .icon{display:block;flex-shrink:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Franja superior en la app instalada en iOS ----------
+   iOS 26+ difumina la parte de arriba de las apps de la pantalla de inicio y no se puede desactivar.
+   En la app instalada se deja libre esa franja (pintada de color liso) y el contenido empieza debajo. */
+@supports (-webkit-touch-callout:none){
+  @media (display-mode:standalone){ :root{--edge:2.5rem} }
+  :root.standalone{--edge:2.5rem}
+}
+.topband{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--ground);z-index:50;pointer-events:none}
 
 /* ---------- Contenedor ---------- */
 .app{position:relative;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
