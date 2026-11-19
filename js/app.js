@@ -909,99 +909,115 @@ function openTyping() {
 }
 
 /* ---------- Toca y habla ---------- */
-// Tocar para hablar: el micro se arranca en el «click» (el iPhone solo lo permite con un toque completo).
-// El iPhone corta la escucha en cada silencio corto: si aún no se ha dicho nada, o justo se acaba de decir
-// algo (pausa entre artículos), se vuelve a escuchar y se junta todo. Se termina tras un silencio largo
-// o al tocar el micro. Tocar fuera mientras escucha cancela sin apuntar nada.
-const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-let rec = null, recText = "", recOn = false, recStart = 0, recMax = null, recSessionText = "", recEmptyRuns = 0;
+// Tocar para hablar (el iPhone solo deja arrancar el micro con un toque completo).
+// Un solo reconocedor en modo continuo: sin «continuous», Safari corta tras la primera frase y al rearrancar
+// se pierden palabras. En modo continuo Safari repite frases («leche», «leche y pan»): se colapsan.
+// Se termina tras ~2 s de silencio después de hablar, o al tocar el micro. Tocar fuera cancela.
+const SILENCE_MS = 2200, NOTHING_MS = 9000;
+let rec = null, recOn = false, recStart = 0, recMax = null, recIdle = null, recCommitted = "", recRun = "", recEnding = false, recRuns = 0;
+/** Texto de una tanda: une los resultados quitando las repeticiones que mete Safari. */
+function collapseResults(results) {
+  const kept = [];
+  for (let k = 0; k < results.length; k++) {
+    const p = String(results[k][0]?.transcript || "").trim();
+    if (!p) continue;
+    const prev = kept[kept.length - 1];
+    const s = norm(p), w = prev ? norm(prev) : "";
+    if (prev && w && s.startsWith(w)) kept[kept.length - 1] = p;      // repite la anterior y añade más
+    else if (!(prev && s && w.startsWith(s))) kept.push(p);           // si es un trozo de la anterior, fuera
+  }
+  return kept.join(" ").replace(/\s+/g, " ").trim();
+}
+/** Junta lo de una tanda nueva con lo ya dicho, sin duplicar. */
+function mergeSpeech(done, run) {
+  if (!run) return done;
+  if (!done) return run;
+  const d = norm(done), r = norm(run);
+  if (r.startsWith(d)) return run;
+  if (d.endsWith(r) || d.includes(r)) return done;
+  return done + ", " + run;
+}
+const spoken = () => mergeSpeech(recCommitted, recRun);
 function toggleVoice() {
   if (S.capture === "listening") return stopListening();
   if (!SR) return toast("Este navegador no reconoce la voz.");
   if (S.capture === "typing") { const inp = root.querySelector("#draft"); S.capture = "idle"; S.draft = ""; root.style.height = ""; root.classList.remove("kb", "kb-draft"); vvLast = ""; if (inp) inp.blur(); }
-  recText = ""; recEmptyRuns = 0; recStart = Date.now();
+  recCommitted = ""; recRun = ""; recEnding = false; recRuns = 0; recStart = Date.now();
   S.voiceReady = false; S.partial = "";
-  S.capture = "listening"; S.band = null; S.sheet = null; S.menu = false;
-  if (!startSession()) { S.capture = "idle"; return toast("No se ha podido abrir el micrófono."); }
-  clearTimeout(recMax);
-  recMax = setTimeout(stopListening, 45000);
-  recOn = true;
-  render();
-  const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
-}
-/** Una sesión del motor de voz. Devuelve false si no se ha podido arrancar. */
-function startSession() {
-  let r;
   try {
-    r = new SR();
-    r.lang = "es-ES"; r.interimResults = true; r.continuous = !IOS; r.maxAlternatives = 1;
-  } catch (e) { return false; }
-  const base = recText;
-  recSessionText = "";
-  let finals = "";
-  r.onaudiostart = r.onstart = () => { if (rec === r && !S.voiceReady) { S.voiceReady = true; renderPartial(); updateVoiceBtn(); } };
+    rec = new SR();
+    rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+  } catch (e) { rec = null; return toast("No se ha podido abrir el micrófono."); }
+  const r = rec;
+  r.onstart = r.onaudiostart = () => { if (rec === r && !S.voiceReady) { S.voiceReady = true; renderPartial(); updateVoiceBtn(); } };
   r.onresult = (ev) => {
     if (rec !== r) return;
-    let interim = "";
-    for (let k = ev.resultIndex; k < ev.results.length; k++) {
-      const x = ev.results[k];
-      if (x.isFinal) finals += x[0].transcript + " "; else interim += x[0].transcript;
-    }
-    recSessionText = (finals + interim).replace(/\s+/g, " ").trim();
-    recText = [base, recSessionText].filter(Boolean).join(", ");
-    S.partial = recText;
+    recRun = collapseResults(ev.results);
+    S.partial = spoken();
     renderPartial();
+    // Silencio después de hablar → se termina solo.
+    clearTimeout(recIdle);
+    recIdle = setTimeout(() => { if (recOn && spoken()) stopListening(); }, SILENCE_MS);
   };
   r.onerror = (ev) => {
     if (rec !== r) return;
     if (ev.error === "no-speech" || ev.error === "aborted") return; // lo gestiona onend
-    rec = null; recOn = false; clearTimeout(recMax); S.capture = "idle"; S.partial = ""; S.voiceReady = false;
+    endVoice();
     render();
     if (ev.error === "not-allowed") toast("El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono.");
     else toast(`La voz ha fallado (${ev.error}). Prueba otra vez.`);
   };
   r.onend = () => {
     if (rec !== r) return;
-    rec = null;
-    if (!recOn) return finishListening(recText); // se tocó para parar
-    // ¿Seguir escuchando? Sí si se acaba de decir algo (pausa entre artículos) o si todavía no se ha dicho nada.
-    if (recSessionText) recEmptyRuns = 0; else recEmptyRuns++;
-    const keep = recSessionText ? true : (!recText && Date.now() - recStart < 8000) || (recText && recEmptyRuns < 1);
-    if (keep && startSession()) return;
-    recOn = false;
-    finishListening(recText);
+    recCommitted = spoken(); recRun = "";
+    // Safari ha cortado por su cuenta mientras se escuchaba: se vuelve a abrir el mismo reconocedor.
+    if (recOn && !recEnding && recRuns < 8 && Date.now() - recStart < 45000) {
+      recRuns++;
+      try { r.start(); return; } catch (e) { /* no deja: se procesa lo que haya */ }
+    }
+    finishListening(recCommitted);
   };
-  try { r.start(); } catch (e) { return false; }
-  rec = r;
-  return true;
+  S.capture = "listening"; S.band = null; S.sheet = null; S.menu = false;
+  try { r.start(); } catch (e) { rec = null; S.capture = "idle"; return toast("No se ha podido abrir el micrófono."); }
+  recOn = true;
+  clearTimeout(recMax); clearTimeout(recIdle);
+  recMax = setTimeout(stopListening, 45000);
+  // Si en un rato no se ha dicho nada, se para.
+  recIdle = setTimeout(() => { if (recOn && !spoken()) stopListening(); }, NOTHING_MS);
+  render();
+  const l = root.querySelector(".pane:not([aria-hidden='true']) .list, .pane:not([aria-hidden='true']) .pad"); if (l) l.scrollTop = l.scrollHeight;
+}
+function endVoice() {
+  recOn = false; recEnding = true; clearTimeout(recMax); clearTimeout(recIdle);
+  const r = rec; rec = null;
+  if (r) { r.onresult = r.onend = r.onerror = null; try { r.abort(); } catch (e) {} }
+  S.capture = "idle"; S.partial = ""; S.voiceReady = false;
 }
 function updateVoiceBtn() {
   const b = root.querySelector(".dk-voice span");
   if (b && S.capture === "listening") b.innerHTML = (S.voiceReady ? "Escuchando…" : "Un momento…") + "<small>toca para parar</small>";
 }
-/** Toca el micro: para y procesa lo dicho. */
+/** Toca el micro (o silencio tras hablar): para y procesa lo dicho. Espera las últimas palabras de Safari. */
 function stopListening() {
-  if (S.capture !== "listening") return;
-  recOn = false;
-  clearTimeout(recMax);
+  if (S.capture !== "listening" || recEnding) return;
+  recOn = false; recEnding = true;
+  clearTimeout(recMax); clearTimeout(recIdle);
   const r = rec;
-  if (!r) return finishListening(recText);
-  try { r.stop(); } catch (e) { rec = null; return finishListening(recText); }
+  if (!r) return finishListening(spoken());
+  try { r.stop(); } catch (e) { rec = null; return finishListening(spoken()); }
   // Si el motor no avisa de que ha terminado, se procesa igualmente.
-  setTimeout(() => { if (rec === r) { rec = null; try { r.abort(); } catch (e) {} finishListening(recText); } }, 2000);
+  setTimeout(() => { if (rec === r) { const t = spoken(); rec = null; try { r.abort(); } catch (e) {} finishListening(t); } }, 1500);
 }
 /** Toca fuera: cancela sin apuntar nada. */
 function cancelListening() {
   if (S.capture !== "listening") return;
-  recOn = false; clearTimeout(recMax);
-  const r = rec; rec = null;
-  if (r) { try { r.abort(); } catch (e) {} }
-  S.capture = "idle"; S.partial = ""; S.voiceReady = false;
+  endVoice();
   render();
 }
 function finishListening(text) {
   if (S.capture !== "listening") return;
-  clearTimeout(recMax);
+  clearTimeout(recMax); clearTimeout(recIdle);
+  rec = null; recOn = false;
   S.capture = "idle"; S.partial = ""; S.voiceReady = false;
   text = (text || "").trim();
   if (!text) { render(); toast("No te he oído. Toca el micro y habla."); return; }

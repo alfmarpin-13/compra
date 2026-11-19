@@ -130,7 +130,7 @@ Mismo diseño que el prototipo. Resumen:
 - Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte, **sin avisos emergentes**.
 
 ### 5.4 Toca y habla
-- **Tocar** el botón del micrófono («Toca y habla») activa el reconocimiento de voz (`SpeechRecognition` / `webkitSpeechRecognition`, idioma `es-ES`, con resultados provisionales). Termina solo al callarse, o al volver a tocar, y entonces se procesa. No se usa «mantener pulsado»: el iPhone solo deja arrancar el micro con un toque completo.
+- **Tocar** el botón del micrófono («Toca y habla») activa el reconocimiento de voz (`SpeechRecognition` / `webkitSpeechRecognition`, idioma `es-ES`, con resultados provisionales). Un solo reconocedor en modo continuo (sin él, Safari corta tras la primera frase y se pierden palabras); se colapsan las frases que Safari repite. Termina tras ~2 s de silencio después de hablar, o al volver a tocar, y entonces se procesa. No se usa «mantener pulsado»: el iPhone solo deja arrancar el micro con un toque completo.
 - La transcripción va apareciendo al final de la lista mientras hablas.
 - El texto dictado pasa por el mismo intérprete de 5.3 y siempre termina en la hoja de confirmación.
 - **Orden de tachado por voz:** «He comprado todo lo de Mercadona menos los huevos», y variantes como «ya tengo», «hemos cogido» o «excepto», abre la hoja **«Marcar como comprado»**. Lista los artículos que verías en esa tienda con casillas; las excepciones salen desmarcadas con «lo dejo pendiente». Al confirmar: «Se han tachado N artículos» con Deshacer, que los devuelve todos.
