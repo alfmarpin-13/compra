@@ -275,9 +275,12 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 5. Authentication → Dominios autorizados → añadir `alfmarpin-13.github.io`.
 6. GitHub → repo `compra` → Settings → Pages → desplegar desde `main`, carpeta raíz.
 
-## 12. Versiones
+## 12. Versiones y forma de trabajar
 
-- **Cada cambio que se suba lleva versión nueva:** sube el número en `js/version.js` (`APP_VERSION` y `APP_DATE`) y el mismo número en `VERSION` de `sw.js` (`compra-vN`).
+- **Nada directo a `main`.** Cada cambio va en su propia rama y llega a `main` con un PR. Alfonso no quiere revisarlos: el PR se fusiona en cuanto está listo y probado.
+- **Título del PR con la versión:** «vN: resumen corto». La descripción dice qué cambia y cómo se ha probado.
+- **Cada cambio en la web lleva versión nueva:** sube el número en `js/version.js` (`APP_VERSION` y `APP_DATE`) y el mismo número en `VERSION` de `sw.js` (`compra-vN`), y añade la entrada en `CHANGELOG.md`.
+- Los cambios que no tocan la web (documentación) no suben versión.
 - La versión se ve en Preferencias, debajo de «Cerrar sesión», en gris claro, para que Alfonso sepa si el iPhone tiene la última.
 
 ## 13. Criterios de aceptación
