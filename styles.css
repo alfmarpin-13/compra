@@ -244,8 +244,8 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .dk-row{display:flex;gap:10px;align-items:center;height:52px}
 /* La pastilla de la izquierda es la misma en reposo y escribiendo: solo cambia su contenido */
 .dk-field{flex:none;width:calc(100% - 62px);height:52px;min-width:0;overflow:hidden;border-radius:14px;background:var(--pressed);display:flex;align-items:center;transition:width .5s var(--spring),border-radius .5s var(--spring),background .25s}
-.dock.typing .dk-field{background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--primary)}
-.dk-add{flex:1;align-self:stretch;min-height:52px;white-space:nowrap;border-radius:14px;display:flex;align-items:center;gap:6px;padding:8px 12px;font:600 14px/20px var(--fb);text-align:left;color:var(--muted)}
+/* Al escribir la pastilla no cambia de color (decisión de Alfonso): solo aparece el cursor */
+.dk-add{flex:1;align-self:stretch;min-height:52px;white-space:nowrap;border-radius:14px;display:flex;align-items:center;padding:0 14px;font:500 16px/24px var(--fb);text-align:left;color:var(--muted)}
 .dk-line{flex:1;display:flex;align-items:center;gap:6px;padding:0 6px 0 14px;min-width:0}
 .dk-line input{flex:1;min-width:0;border:0;outline:none;background:none;font:500 16px/24px var(--fb);color:var(--ink);padding:0}
 .dk-line input::placeholder{color:var(--muted);opacity:1}

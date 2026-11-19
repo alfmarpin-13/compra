@@ -457,7 +457,7 @@ function vDock() {
     ? `<button class="dk-cancel" data-act="cancelVoice" aria-label="Cancelar">${ic("x", 22)}</button>`
     : typing
     ? `<form class="dk-line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="${ph}" aria-label="${ph}" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done"><button class="dk-send" type="submit" id="draftSubmit" aria-label="Añadir" ${S.draft.trim() ? "" : "disabled"}>${ic("arrow-up", 20)}</button></form>`
-    : `<button class="dk-add" data-act="type" aria-label="${pantry ? "Añadir productos a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>`;
+    : `<button class="dk-add" data-act="type" aria-label="${pantry ? "Añadir productos a la despensa" : "Añadir"}"><span>Añadir</span></button>`;
   // El texto del micro está siempre (oculto en reposo) para que al ensancharse no salte nada.
   const lbl = S.capture === "thinking" ? "Entendiendo lo que has dicho" : on ? "Escuchando. Toca para terminar" : "Toca y habla";
   const voiceBtn = `<button class="dk-voice ${on ? "on" : ""} ${S.capture === "thinking" ? "think" : ""}" data-act="voice" aria-label="${lbl}">${ic("mic", 22, "mic")}<span class="dk-vt">${on ? voiceBtnText() : "Escuchando…<small>toca para terminar</small>"}</span></button>`;
