@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v30 · 19/11/2026
+- Lista y Despensa: categorías por orden alfabético (Otros al final) y, dentro de cada una, artículos por orden alfabético.
+
 ## v29 · 19/11/2026
 - Despensa: «+ Añadir» abre el mismo campo de escribir que la lista; se pueden escribir o dictar varios productos y sale la hoja «Esto es lo que he entendido» con categoría y tienda sugeridas. Se guardan solo en la despensa (sin apuntarlos en la lista) y avisa de lo que ya estaba.
 
