@@ -2,6 +2,19 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v22 · 19/11/2026
+- Pestañas con icono: la cesta es la Lista y la estantería, la Despensa. La activa se abre y enseña su nombre, y una pastilla lima se desliza de una a otra.
+- Deslizar el dedo a la izquierda o a la derecha cambia entre Lista y Despensa.
+- Al crear un producto o una tienda, el cursor va directo al nombre.
+- Sin zoom al tocar dos veces ni con dos dedos.
+- La app ya no se desplaza entera como una página (por ejemplo, al arrastrar una hoja con el teclado abierto); solo se mueven las listas y las hojas.
+- Al cambiar entre casillas y lista, los recuadros aparecen al instante.
+- Avisos en una pastilla compacta de una línea, con «Deshacer» al lado.
+- Animaciones tipo iOS: hojas que suben y bajan con muelle, menú que se despliega desde su botón, Historial que entra y sale por la derecha, cambio de pestaña deslizado, casillas que se recolocan al tachar o añadir, y botones que se hunden al tocarlos.
+- Casillas: la tienda va como logo pequeño en la esquina superior derecha, sin texto debajo; la inicial de quien lo apuntó pasa a la izquierda.
+- Farmacia con el icono de la cruz.
+- Con el campo de escribir abierto, la lista se puede desplazar sin tirones; tocar fuera lo cierra.
+
 ## v21 · 19/11/2026
 - Historial: botón con papelera para borrar lo seleccionado (artículos o un día entero), con Deshacer.
 - Los nombres se guardan sin espacios sobrantes (al principio, al final o dobles), y los que ya estaban guardados así se corrigen solos.
