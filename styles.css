@@ -421,6 +421,9 @@ html.ready .scr.nav-push{z-index:2;animation:pushIn .5s var(--spring);box-shadow
 html.ready .scr.nav-pop{z-index:1;animation:popIn .45s var(--spring)}
 .scr.leaving.push-away{z-index:1;animation:pushAway .5s var(--spring) forwards}
 .scr.leaving.pop-out{z-index:3;animation:popOut .45s var(--spring) forwards;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
+/* Gesto de volver: la pantalla sigue al dedo por encima de una copia de la anterior */
+.scr.dragging{z-index:2;box-shadow:-10px 0 30px rgba(0,0,0,.12);animation:none!important}
+.scr.under{z-index:1;pointer-events:none;transform:translateX(-28%);filter:brightness(.92)}
 .scr.leaving[data-leave="login"]{animation:fadeout .3s ease-in forwards}
 @keyframes pushIn{from{transform:translateX(100%)}}
 @keyframes pushAway{to{transform:translateX(-28%);filter:brightness(.92)}}

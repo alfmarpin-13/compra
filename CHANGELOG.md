@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v44 · 19/11/2026
+- Gesto de volver del iPhone en Opciones e Historial: deslizando hacia la derecha (desde el borde o desde cualquier sitio) la pantalla sigue al dedo y debajo asoma la anterior; al soltar pasado un tercio, o con un golpe rápido, vuelve; si no, se recoloca con muelle.
+
 ## v43 · 19/11/2026
 - Micro nuevo, como una nota de voz: graba lo que dices y luego lo transcribe en el propio iPhone con Whisper (ya no se usa el reconocimiento de voz de Safari, que tras cancelar o tras la primera vez se quedaba sordo y se comía palabras). Cada toque abre y cierra el micro de cero, así que funciona todas las veces.
 - Termina solo tras ~2 s de silencio, o al volver a tocar. La X o tocar fuera cancelan, también mientras «Entendiendo…». Si no has dicho nada (o solo hay ruido), avisa en vez de inventarse algo.
