@@ -222,7 +222,7 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
         tint #233029 · line #26312A · outline #4C5A51 · pressed #1E2922
 ```
 
-- **Tipografía:** títulos en **Bricolage Grotesque** 800 con espaciado de letras de −1,2 px; texto en **Figtree** 400–700. Ambas por Google Fonts (licencia OFL).
+- **Tipografía:** títulos en **Bricolage Grotesque** 800 con espaciado de letras de −1,2 px; texto en **Figtree** 400–700. Ambas incluidas en la app, en `fonts/` (licencia OFL), sin depender de Google Fonts.
 - **Acento lima:** botón «Toca y habla» (fondo verde bosque y texto lima en claro), chip de tienda seleccionada, botón de despensa, insignias «Toca» e inicial de quién apuntó algo.
 - **Logo:** `logo.svg` (cesta de mimbre verde bosque sobre lima). Se usa en:
   - la cabecera, a 32 px con esquinas de 9 px;
@@ -241,7 +241,7 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
 - `manifest.webmanifest`: `name` «Compra», `short_name` «Compra», `display: standalone`, `start_url` y `scope` `./`, `background_color` = ground y `theme_color` = ground. Si el manifiesto no permite variar por tema, usa los colores del modo claro.
 - `<meta name="theme-color">` actualizado según el tema, con `apple-mobile-web-app-capable` y la barra de estado acorde.
 - `viewport-fit=cover` y márgenes con `env(safe-area-inset-*)` para la isla dinámica y el indicador de inicio.
-- **Service worker:** precache de la carcasa (HTML, CSS, JS, fuentes e iconos) con versión en el nombre de la caché. Los datos los gestiona la caché de Firestore. Al haber versión nueva, se aplica en la siguiente apertura, sin avisos.
+- **Service worker:** precache de la carcasa (HTML, CSS, JS, tipografías de `fonts/` e iconos) con versión en el nombre de la caché. Los datos los gestiona la caché de Firestore. Al haber versión nueva, se aplica en la siguiente apertura, sin avisos.
 
 ## 9. Seguridad: reglas de Firestore
 
