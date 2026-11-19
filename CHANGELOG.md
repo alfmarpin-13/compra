@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v37 · 19/11/2026
+- Conexión con Firebase pensada para datos móviles (long polling desde el principio): evita esperas de 30-60 s cuando la conexión en streaming se queda colgada.
+- Caché de Firestore de una sola pestaña: no espera a coordinarse con otras pestañas.
+- Opciones muestra cuánto tardó el último arranque (Firebase, sesión, datos y servidor).
+
 ## v36 · 19/11/2026
 - Arranque instantáneo: la app enseña al abrir lo último que mostró (guardado en el iPhone) y lo cambia por los datos al día en cuanto Firebase está listo. Lo que se toque en ese momento se guarda al conectar.
 - El programa de Firebase empieza a descargarse a la vez que la app.
