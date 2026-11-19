@@ -32,6 +32,9 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 button:disabled{cursor:default}
 input{font:inherit;color:inherit}
+/* Campos de tipo búsqueda (para que iOS no ofrezca autorrellenar contactos) con aspecto de campo normal */
+input[type="search"]{-webkit-appearance:none;appearance:none}
+input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none;display:none}
 :focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .icon{display:block;flex-shrink:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -201,7 +204,13 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 @media (hover:hover){.tile:hover .edb,.row:hover .edb,.prow:hover .edb{display:grid}}
 
 /* ---------- Barra inferior ---------- */
-.dock{margin:10px 16px 10px;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:22px;display:flex;gap:10px;align-items:center;position:relative;z-index:6}
+.dock{position:absolute;left:16px;right:16px;bottom:calc(var(--sab) + 8px);padding:10px;background:color-mix(in srgb,var(--paper) 72%,transparent);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:24px;box-shadow:0 8px 30px rgba(0,0,0,.08);display:flex;gap:10px;align-items:center;z-index:6!important}
+:root[data-theme="dark"] .dock{background:color-mix(in srgb,var(--paper) 70%,transparent);box-shadow:0 8px 30px rgba(0,0,0,.35)}
+/* La lista y la despensa llegan hasta abajo, por detrás de la barra */
+.scr{padding-bottom:0}
+.folder .list,.folder .pad{padding-bottom:calc(var(--sab) + 104px)}
+.scr[data-key="history"] .pad,.scr[data-key="options"] .pad{padding-bottom:calc(var(--sab) + 24px)}
+.scr[data-key="history"] .bottombtn{padding-bottom:calc(var(--sab) + 6px)}
 .dk-add{min-height:52px;border-radius:14px;display:flex;align-items:center;gap:6px;padding:8px 12px;font:600 14px/20px var(--fb);text-align:left;transition:flex .25s ease}
 .dk-add{flex:1;background:var(--pressed);color:var(--muted)}
 .dk-voice{flex:0 0 52px;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0;background:var(--primary);color:var(--on-primary);font:700 14px/18px var(--fb);text-align:left;overflow:hidden;white-space:nowrap;transition:flex .25s ease,border-radius .25s ease,padding .25s ease}
@@ -358,11 +367,11 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .credits a{color:inherit}
 
 /* ---------- Transiciones entre pantallas y pestañas (tipo iOS) ---------- */
-.scr[data-key="history"]{z-index:2}
-html.ready .scr[data-key="history"]{animation:pushIn .5s var(--spring);box-shadow:-10px 0 30px rgba(0,0,0,.12)}
-.scr.leaving[data-leave="main"]{z-index:1;animation:pushAway .5s var(--spring) forwards}
-.scr.leaving[data-leave="history"]{z-index:3;animation:popOut .45s var(--spring) forwards;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
-html.ready .scr.pop{animation:popIn .45s var(--spring)}
+/* Navegación entre pantallas (Lista → Opciones → Historial) */
+html.ready .scr.nav-push{z-index:2;animation:pushIn .5s var(--spring);box-shadow:-10px 0 30px rgba(0,0,0,.12)}
+html.ready .scr.nav-pop{z-index:1;animation:popIn .45s var(--spring)}
+.scr.leaving.push-away{z-index:1;animation:pushAway .5s var(--spring) forwards}
+.scr.leaving.pop-out{z-index:3;animation:popOut .45s var(--spring) forwards;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
 .scr.leaving[data-leave="login"]{animation:fadeout .3s ease-in forwards}
 @keyframes pushIn{from{transform:translateX(100%)}}
 @keyframes pushAway{to{transform:translateX(-28%);filter:brightness(.92)}}
@@ -383,6 +392,27 @@ html.ready .folder.swipe-l{animation:swipeL .38s var(--spring)}
 .btn,.chip,.ib,.dk-add,.tbtn,.band .undo{transition:transform .25s var(--spring),background .25s,color .25s,opacity .25s}
 .btn:active,.chip:active,.ib:active,.dk-add:active,.dk-voice:active,.tbtn:active,.band .undo:active{transform:scale(.95)}
 .htab:active{transform:scale(.94)}
+
+/* ---------- Opciones (pantalla completa) ---------- */
+.opts{display:flex;flex-direction:column;padding-top:8px}
+.opt-group{background:var(--paper);border-radius:16px;overflow:hidden}
+.opt-row{display:flex;align-items:center;gap:14px;width:100%;min-height:54px;padding:8px 16px;font:500 16px/22px var(--fb);color:var(--ink);text-align:left;position:relative}
+.opt-row .icon{color:var(--muted);flex:none}
+.opt-row + .opt-row::before{content:"";position:absolute;top:0;left:50px;right:0;height:1px;background:var(--line)}
+.opt-row .opt-l{flex:1;min-width:0}
+.opt-row .opt-l b{display:block;font:600 16px/22px var(--fb)}
+.opt-row .opt-l small{display:block;font:400 13px/18px var(--fb);color:var(--muted)}
+.opt-row .opt-v{font:500 15px/20px var(--fb);color:var(--muted)}
+.opt-row .opt-go{color:var(--outline)}
+.opt-row.static{cursor:default}
+.opt-row.danger,.opt-row.danger .icon{color:var(--danger)}
+.opt-row:not(.static):active{background:var(--pressed)}
+.opt-h{font:600 13px/18px var(--fb);color:var(--muted);margin:22px 16px 8px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--paper)}
+.seg button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:11px;font:600 13px/16px var(--fb);color:var(--muted);transition:background .3s var(--spring),color .3s}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+.opts .version{margin:22px 0 4px}
+.opts .credits{text-align:center;padding:0 12px}
 
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
