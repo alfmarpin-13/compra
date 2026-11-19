@@ -1131,7 +1131,22 @@ async function boot() {
   });
 }
 
+// Actualizaciones: al volver a la app se busca versión nueva; si ya se instaló, se recarga
+// sin avisar al volver a abrirla (o al momento si aún no se ha tocado nada).
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-  navigator.serviceWorker.register("./sw.js").catch(() => {});
+  const hadController = !!navigator.serviceWorker.controller;
+  let touched = false, updated = false;
+  ["pointerdown", "keydown"].forEach((t) => window.addEventListener(t, () => (touched = true), { once: true, capture: true }));
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) return;
+    updated = true;
+    if (!touched) location.reload();
+  });
+  navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((reg) => {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      if (updated) location.reload(); else reg.update().catch(() => {});
+    });
+  }).catch(() => {});
 }
 boot();

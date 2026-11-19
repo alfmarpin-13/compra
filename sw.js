@@ -1,6 +1,6 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v5";
+const VERSION = "compra-v6";
 const FIREBASE = "10.14.1";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
@@ -18,8 +18,9 @@ const REMOTE = [
 self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
-    await c.addAll(SHELL);
-    await Promise.all(REMOTE.map((u) => fetch(u, { mode: "cors" }).then((r) => r.ok && c.put(u, r)).catch(() => {})));
+    // cache: "reload" para no guardar copias viejas de la caché HTTP de GitHub Pages.
+    await c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" })));
+    await Promise.all(REMOTE.map((u) => fetch(u, { mode: "cors", cache: "reload" }).then((r) => r.ok && c.put(u, r)).catch(() => {})));
     await self.skipWaiting();
   })());
 });
