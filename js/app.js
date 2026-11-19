@@ -152,14 +152,17 @@ function renderPartial() {
   if (p) { p.innerHTML = esc(S.partial) + '<span class="caret"></span>'; const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight; }
 }
 
+// Color de la barra de estado del iPhone (theme-color). Con una hoja abierta se oscurece igual que el velo:
+// claro = 32 % de tinta sobre el fondo; oscuro = 55 % de negro sobre el fondo.
+const BAR = { light: "#F3F4EE", dark: "#0E1511", lightDim: "#ABB0AA", darkDim: "#060908" };
 function applyTheme() {
   const dark = S.theme === "dark" || (S.theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   const t = dark ? "dark" : "light";
-  if (document.documentElement.dataset.theme !== t) {
-    document.documentElement.dataset.theme = t;
-    const m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.content = dark ? "#0E1511" : "#F3F4EE";
-  }
+  if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
+  const dim = S.phase === "app" && !!S.sheet;
+  const color = BAR[t + (dim ? "Dim" : "")];
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m && m.content !== color) m.content = color;
 }
 
 /* ===================================================================
