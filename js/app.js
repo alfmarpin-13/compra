@@ -474,6 +474,7 @@ function vOptions() {
        <button class="opt-row" data-act="repair">${ic("rotate-ccw", 20)}<span class="opt-l">Reparar la app<small>Si algo no carga bien. Hay que volver a entrar.</small></span></button>
      </div>
      <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
+     ${(() => { const b = Object.keys(bootT).length ? bootT : lastBoot; if (!b) return ""; const f = (k) => (b[k] != null ? (b[k] / 1000).toFixed(1).replace(".", ",") + " s" : "—"); return `<p class="credits">Arranque: Firebase ${f("firebase")} · sesión ${f("sesion")} · datos ${f("datos")} · servidor ${f("servidor")}</p>`; })()}
      <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0)</p>
    </div>
    ${S.band ? vBand() : ""}
@@ -1488,7 +1489,7 @@ function startData() {
       if (!initialPending && serverSynced) markFresh(added.filter((a) => !a.local).map((a) => a.id));
       if (fromCache === false) serverSynced = true;
       initialPending = false;
-      S.pending = fixSpaces("items", list); S.ready.pending = true; saveSnap(); render();
+      S.pending = fixSpaces("items", list); S.ready.pending = true; mark("datos"); if (fromCache === false) mark("servidor"); saveSnap(); render();
     },
     today(list) { S.today = list; saveSnap(); render(); },
     error(e) { console.warn("Firestore", e); S.dataError = (e && (e.code || e.message)) || "desconocido"; render(); },
@@ -1550,6 +1551,11 @@ function loadSnap() {
 }
 const clearSnap = () => { try { localStorage.removeItem(SNAP_KEY); } catch (e) {} };
 let bootStep = "abriendo la app";
+// Tiempos del arranque (se ven en Opciones) para saber dónde se va el tiempo si vuelve a tardar.
+const T0 = performance.now();
+const bootT = {};
+const mark = (k) => { if (!(k in bootT)) bootT[k] = Math.round(performance.now() - T0); if (k === "datos") { try { localStorage.setItem("compra.boot", JSON.stringify(bootT)); } catch (e) {} } };
+const lastBoot = (() => { try { return JSON.parse(localStorage.getItem("compra.boot") || "null"); } catch (e) { return null; } })();
 async function boot() {
   applyTheme();
   if (isConfigured()) loadSnap();
@@ -1560,8 +1566,10 @@ async function boot() {
   bootStep = "cargando Firebase";
   try { await DB.connect(firebaseConfig); }
   catch (e) { console.error(e); showFatal("No se ha podido cargar Firebase: " + (e && e.message)); S.phase = "setup"; return render(); }
+  mark("firebase");
   bootStep = "comprobando la sesión";
   DB.onUser((user) => {
+    mark("sesion");
     S.bootStuck = false;
     if (user) {
       const me = DB.whoFromEmail(user.email);

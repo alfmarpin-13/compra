@@ -13,7 +13,7 @@ App web instalable (PWA) para la lista de la compra de casa, compartida en tiemp
 - **Hosting:** GitHub Pages en `https://alfmarpin-13.github.io/compra/`. Todas las rutas son relativas, porque la app vive en un subdirectorio.
 - **Backend:** Firebase, en el plan gratuito Spark.
   - **Firebase Auth**, solo con email y contraseña.
-  - **Cloud Firestore**, con caché persistente local (`persistentLocalCache` con `persistentMultipleTabManager`) para que funcione sin conexión y sincronice al volver.
+  - **Cloud Firestore**, con caché persistente local (`persistentLocalCache`) para que funcione sin conexión y sincronice al volver. Se usa `persistentSingleTabManager({ forceOwnership: true })` y `experimentalForceLongPolling: true` porque en el iPhone con datos móviles el multipestaña y el streaming provocaban arranques de 40-50 s.
   - SDK modular v10 o superior, cargado desde `https://www.gstatic.com/firebasejs/...`.
 - **Repositorio público.** No se sube ningún dato al repo. La configuración web de Firebase (apiKey, projectId…) no es secreta y puede ir en el código. La seguridad la dan las reglas de Firestore (sección 9).
 - **Idioma:** toda la interfaz en español de España.

@@ -16,7 +16,13 @@ export async function connect(config) {
   const app = appMod.initializeApp(config);
   auth = A.getAuth(app);
   try {
-    db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) });
+    // En el iPhone con datos móviles, la conexión «en streaming» de Firestore puede quedarse colgada y tardar
+    // 30-60 s en pasar a long polling: se usa long polling desde el principio. Y caché de una sola pestaña
+    // (forceOwnership) para no esperar a coordinarse con pestañas que en la app instalada no existen.
+    db = F.initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+      localCache: F.persistentLocalCache({ tabManager: F.persistentSingleTabManager({ forceOwnership: true }) }),
+    });
   } catch (e) {
     console.warn("Sin caché persistente", e);
     db = F.getFirestore(app);
