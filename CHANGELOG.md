@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v15 · 19/11/2026
+- Versión visible también en el menú ⋮, debajo de «Cerrar sesión».
+- El campo de escribir tiene una X para cerrarlo, y al cerrarlo ya no aparece la barra de abajo flotando sobre el teclado.
+
 ## v14 · 19/11/2026
 - La barra de estado del iPhone (hora y batería) también se oscurece al abrir una hoja.
 
