@@ -52,7 +52,9 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .app{position:fixed;top:0;left:0;right:0;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
 /* Con el teclado abierto, sin hueco del indicador de inicio bajo la barra de escribir. */
 .app.kb{--sab:6px}
-.scr{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:var(--sat);padding-bottom:var(--sab);padding-left:var(--sal);padding-right:var(--sar)}
+/* Con el teclado abierto para otra cosa (buscar, hojas), la barra de «Añadir» no sube */
+.app.kb:not(.kb-draft) .dock,.app.kb:not(.kb-draft) .band{display:none}
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--ground);padding-top:var(--sat);padding-bottom:var(--sab);padding-left:var(--sal);padding-right:var(--sar)}
 .scr > *{position:relative;z-index:1}
 .splash{position:absolute;inset:0;display:grid;place-items:center}
 .splash svg{border-radius:22px}
@@ -305,14 +307,14 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .sheet .field label{background:var(--paper)}
 
 /* ---------- Despensa e Historial ---------- */
-.pad{padding:2px 20px 24px;flex:1;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain}
+.pad{padding:6px 20px 24px;flex:1;overflow-y:auto;scrollbar-width:none;overscroll-behavior:contain}
 .pad::-webkit-scrollbar{display:none}
-.srow2{padding:6px 20px 4px}
-.srch{display:flex;align-items:center;gap:10px;height:46px;padding:0 16px;border-radius:999px;background:var(--paper);color:var(--muted);cursor:text}
+.srow2{padding:6px 20px 10px}
+.srch{display:flex;align-items:center;gap:10px;height:34px;padding:0 16px;border-radius:999px;background:var(--paper);color:var(--muted);cursor:text}
 .srch input{flex:1;min-width:0;border:0;outline:none;background:none;font:500 16px/24px var(--fb);color:var(--ink)}
 .srch input::placeholder{color:var(--muted);opacity:1}
 .srch:focus-within{box-shadow:inset 0 0 0 1.5px var(--primary)}
-.cath.sec2{padding:20px 4px 10px}
+.cath.sec2{padding:14px 8px 8px 4px}
 .cath.sec2 .tbtn{margin-right:-8px;min-height:36px}
 .noq{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:28px 4px}
 .noq p{margin:0;font:500 15px/22px var(--fb);color:var(--muted)}
@@ -357,18 +359,22 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 
 /* ---------- Transiciones entre pantallas y pestañas (tipo iOS) ---------- */
 .scr[data-key="history"]{z-index:2}
-html.ready .scr[data-key="history"]{animation:pushIn .5s var(--spring)}
+html.ready .scr[data-key="history"]{animation:pushIn .5s var(--spring);box-shadow:-10px 0 30px rgba(0,0,0,.12)}
 .scr.leaving[data-leave="main"]{z-index:1;animation:pushAway .5s var(--spring) forwards}
-.scr.leaving[data-leave="history"]{z-index:3;animation:popOut .45s var(--spring) forwards}
+.scr.leaving[data-leave="history"]{z-index:3;animation:popOut .45s var(--spring) forwards;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
 html.ready .scr.pop{animation:popIn .45s var(--spring)}
 .scr.leaving[data-leave="login"]{animation:fadeout .3s ease-in forwards}
 @keyframes pushIn{from{transform:translateX(100%)}}
-@keyframes pushAway{to{transform:translateX(-28%);opacity:.6}}
+@keyframes pushAway{to{transform:translateX(-28%);filter:brightness(.92)}}
 @keyframes popOut{to{transform:translateX(100%)}}
-@keyframes popIn{from{transform:translateX(-28%);opacity:.6}}
+@keyframes popIn{from{transform:translateX(-28%);filter:brightness(.92)}}
 html.ready .folder.from-r{animation:slideR .42s var(--spring)}
 html.ready .folder.from-l{animation:slideL .42s var(--spring)}
 @keyframes slideR{from{opacity:0;transform:translateX(32px)}}
+html.ready .folder.swipe-r{animation:swipeR .38s var(--spring)}
+html.ready .folder.swipe-l{animation:swipeL .38s var(--spring)}
+@keyframes swipeR{from{transform:translateX(100%)}}
+@keyframes swipeL{from{transform:translateX(-100%)}}
 @keyframes slideL{from{opacity:0;transform:translateX(-32px)}}
 .listening{animation:listenIn .4s var(--spring)}
 .listening.leaving{animation:fadeout .2s ease-in forwards}

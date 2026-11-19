@@ -184,7 +184,7 @@ function render() {
   applyTheme();
   let h = "";
   // Al arrancar se pinta ya la cabecera en su sitio, para que el logo no salte al cargar.
-  if (S.phase === "boot") h = `<div class="scr" data-key="main">${vHeader()}</div>`;
+  if (S.phase === "boot") h = `<div class="scr" data-key="boot">${vHeader()}<div class="folder"></div>${vDock()}</div>`;
   else if (S.phase === "setup") h = vSetup();
   else if (S.phase === "login") h = vLogin();
   else if (S.view === "pantry") h = vPantry();
@@ -291,7 +291,6 @@ function vHeader() {
     </span></div>
     <div class="hb-r">
       <button class="ib sm" data-act="layout" aria-label="${S.layout === "grid" ? "Ver como lista" : "Ver como casillas"}">${ic(S.layout === "grid" ? "list" : "layout-grid", 20)}</button>
-      <button class="ib sm" data-act="history" aria-label="Historial">${ic("history", 20)}</button>
       <button class="ib sm" data-act="menu" aria-label="Más opciones" aria-expanded="${S.menu}">${ic("ellipsis-vertical", 20)}</button>
     </div></div>`;
 }
@@ -368,7 +367,7 @@ function vList() {
   }
   return `<div class="scr ${render.view && render.view.startsWith("app:history") ? "pop" : ""}" data-key="main">
     ${vHeader()}
-    <div class="folder from-l" data-key="folder-list">
+    <div class="folder from-l ${S.swipeIn === "l" ? "swipe-l" : ""}" data-key="folder-list">
       ${vChips()}
       <div class="list">${body}</div>
     </div>
@@ -402,7 +401,7 @@ function vDock() {
   if (S.capture === "typing") {
     const side = ""; // escribiendo no hay micro: solo el campo, «Añadir» y la X
     return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
-      <form class="line" id="draftForm"><input id="draft" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
+      <form class="line" id="draftForm"><input id="draft" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
       <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button>
       <button class="dclose" type="button" data-act="closeDraft" aria-label="Cerrar">${ic("x", 20)}</button></form></div>
       ${side}</div>`;
@@ -451,7 +450,7 @@ function vPantry() {
   const due = q ? [] : dueList();
   return `<div class="scr ${render.view && render.view.startsWith("app:history") ? "pop" : ""}" data-key="main">
    ${vHeader()}
-   <div class="folder from-r" data-key="folder-pantry">
+   <div class="folder from-r ${S.swipeIn === "r" ? "swipe-r" : ""}" data-key="folder-pantry">
    <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
@@ -558,7 +557,7 @@ function shEdit(s) {
   const d = s.draft;
   return `<div class="sbody">
    <h2 class="stitle">Editar artículo</h2>
-   <div class="field"><label for="en">Nombre</label><input id="en" value="${esc(d.name)}" autocomplete="off"></div>
+   <div class="field"><label for="en">Artículo</label><input id="en" name="articulo-compra" value="${esc(d.name)}" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
      ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "edStore")).join("")}</div>
      <p class="hint-ph" style="margin-top:8px">Se recordará para la próxima vez que lo apuntéis.</p></div>
@@ -592,7 +591,7 @@ function shSEdit(s) {
   const kind = (k, t, subt) => `<div class="prow tap" data-act="sdKind" data-k="${k}" style="align-items:center" role="radio" aria-checked="${d.kind === k}" tabindex="0"><span class="mini-ck ${d.kind === k ? "on" : ""}" style="border-radius:50%">${d.kind === k ? ic("check", 12) : ""}</span><div class="pmain"><div class="pname">${t}</div><div class="pmeta">${subt}</div></div></div>`;
   return `<div class="sbody">
    <h2 class="stitle">${s.k ? "Editar tienda" : "Nueva tienda"}</h2>
-   <div class="field"><label for="sn">Nombre</label><input id="sn" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off"></div>
+   <div class="field"><label for="sn">Tienda</label><input id="sn" name="tienda-compra" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
@@ -644,7 +643,7 @@ function shPEdit(s) {
   return `<div class="sbody">
    <h2 class="stitle">${s.id ? "Editar producto" : "Nuevo producto"}</h2>
    <p class="help" style="margin-top:-8px">Así aparecerá cada vez que lo apuntéis${onList ? ". También se cambia en la lista, donde ya está" : ""}.</p>
-   <div class="field"><label for="pn">Nombre</label><input id="pn" value="${esc(d.name)}" placeholder="p. ej. Queso de cabra" autocomplete="off"></div>
+   <div class="field"><label for="pn">Producto</label><input id="pn" name="producto-compra" value="${esc(d.name)}" placeholder="p. ej. Queso de cabra" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger);margin-top:-8px">${esc(s.err)}</p>` : ""}
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
      ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "pdStore")).join("")}</div></div>
@@ -1251,24 +1250,52 @@ document.addEventListener("touchmove", (e) => {
   if ((dy > 0 && atTop) || (dy < 0 && atBottom)) e.preventDefault();
 }, { passive: false });
 
-// Deslizar a izquierda/derecha cambia entre Lista y Despensa.
+// Arrastrar a izquierda/derecha: el contenido sigue al dedo y, al soltar, termina de cambiar de pestaña
+// (o vuelve a su sitio si no se ha arrastrado lo suficiente).
 let sw = null;
 root.addEventListener("touchstart", (e) => {
   sw = null;
   if (S.phase !== "app" || S.view === "history" || S.sheet || S.menu || S.capture !== "idle" || e.touches.length !== 1) return;
   if (e.target.closest(".chips, .sug, .dock, .band, input, .hb")) return;
   const t = e.touches[0];
-  sw = { x: t.clientX, y: t.clientY, t: Date.now() };
+  sw = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, el: root.querySelector(".folder") };
 }, { passive: true });
-root.addEventListener("touchend", (e) => {
+root.addEventListener("touchmove", (e) => {
+  if (!sw || sw.lock || !sw.el) return;
+  const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+  if (!sw.drag) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw.lock = true; return; }
+    if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
+    sw.drag = true; clearTimeout(lp);
+  }
+  const allowed = (dx < 0 && S.view !== "pantry") || (dx > 0 && S.view === "pantry");
+  sw.dx = allowed ? dx : dx * 0.2; // resistencia si no hay pestaña hacia ese lado
+  sw.el.style.transition = "none";
+  sw.el.style.transform = `translateX(${sw.dx}px)`;
+}, { passive: true });
+root.addEventListener("touchend", () => {
   if (!sw) return;
-  const t = e.changedTouches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y, dt = Date.now() - sw.t;
-  sw = null;
-  if (dt > 700 || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
-  clearTimeout(lp);
-  if (dx < 0 && S.view !== "pantry") { S.band = null; S.view = "pantry"; render(); }
-  else if (dx > 0 && S.view === "pantry") { S.band = null; S.view = "list"; render(); }
-}, { passive: true });
+  const s0 = sw; sw = null;
+  if (!s0.drag || !s0.el) return;
+  lpFired = true; // que el toque no tache nada
+  setTimeout(() => (lpFired = false), 50);
+  const dx = s0.dx, v = Math.abs(dx) / Math.max(1, Date.now() - s0.t);
+  const toPantry = dx < 0 && S.view !== "pantry", toList = dx > 0 && S.view === "pantry";
+  const commit = (toPantry || toList) && (Math.abs(dx) > 90 || (Math.abs(dx) > 40 && v > 0.45));
+  const el = s0.el, w = el.getBoundingClientRect().width;
+  if (!commit || REDUCE.matches) {
+    el.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], { duration: 380, easing: SPRING }).onfinish = () => { el.style.transform = ""; el.style.transition = ""; };
+    el.style.transform = "";
+    if (commit) { S.view = toPantry ? "pantry" : "list"; S.band = null; render(); }
+    return;
+  }
+  const out = el.animate([{ transform: `translateX(${dx}px)` }, { transform: `translateX(${toPantry ? -w : w}px)` }], { duration: 200, easing: "cubic-bezier(.3,.6,.4,1)", fill: "forwards" });
+  out.onfinish = () => {
+    S.view = toPantry ? "pantry" : "list"; S.band = null; S.swipeIn = toPantry ? "r" : "l";
+    render();
+    S.swipeIn = null;
+  };
+});
 // Es una app: sin zoom con dos dedos ni con doble toque.
 ["gesturestart", "gesturechange"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 
@@ -1338,16 +1365,19 @@ function fitViewport() {
   if (!vv || vvRaf) return;
   vvRaf = requestAnimationFrame(() => {
     vvRaf = 0;
-    // Teclado abierto y escribiendo. Mientras el teclado se cierra no se reajusta, para que la barra no dé saltos.
     const kb = window.innerHeight - vv.height > 80 && document.activeElement && document.activeElement.tagName === "INPUT";
-    const key = kb ? Math.round(vv.offsetTop) + "/" + Math.round(vv.height) : "";
+    // iOS desplaza la vista para enseñar el campo: se deshace, porque la app ya se ajusta sola.
+    if (kb && (window.scrollY || vv.offsetTop)) window.scrollTo(0, 0);
+    const key = kb ? Math.round(vv.height) + (document.activeElement.id || "") : "";
     if (key === vvLast) return;
     vvLast = key;
-    root.style.top = kb ? Math.round(vv.offsetTop) + "px" : "";
+    root.style.top = "";
     root.style.height = kb ? Math.round(vv.height) + "px" : "";
     root.classList.toggle("kb", kb);
+    root.classList.toggle("kb-draft", kb && document.activeElement.id === "draft");
   });
 }
+document.addEventListener("focusin", (e) => { if (e.target.tagName === "INPUT") setTimeout(fitViewport, 50); });
 if (vv) { vv.addEventListener("resize", fitViewport); vv.addEventListener("scroll", fitViewport); }
 
 let lastDay = dayKey(Date.now());
