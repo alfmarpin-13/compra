@@ -43,7 +43,6 @@ const S = {
   capture: "idle", draft: "", partial: "",
   sheet: null, menu: false, band: null, pantryQ: "", histQ: "", histSel: new Set(),
   fresh: new Set(),
-  voice: SR && LS.get("noVoice", "") !== "1" ? "voice" : "dictate",
 };
 let sub = null;
 
@@ -260,7 +259,7 @@ function vList() {
   else if (!pend.length && !done.length && S.capture !== "listening") {
     body = S.store
       ? `<p class="storeempty">No hay artículos para ${esc(storeName(S.store))}. Elige Todas para ver el resto.</p>`
-      : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o mantén pulsado para hablar.</p></div>`;
+      : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o toca el micro y habla.</p></div>`;
   } else {
     body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
     if (S.capture === "listening") body += `<div class="partial" data-key="partial" aria-live="polite">${esc(S.partial)}<span class="caret"></span></div>`;
@@ -301,18 +300,14 @@ function vSug() {
 }
 function vDock() {
   if (S.capture === "typing") {
-    const side = S.voice === "voice"
-      ? `<button class="dk-side dk-voice-mini" data-voice="1" aria-label="Mantén pulsado para hablar">${ic("mic", 22)}</button>`
-      : `<button class="dk-side" data-act="closeDraft" aria-label="Cerrar">${ic("x", 22)}</button>`;
+    const side = `<button class="dk-side dk-voice-mini" data-act="voice" aria-label="Toca y habla">${ic("mic", 22)}</button>`;
     return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
       <form class="line" id="draftForm"><input id="draft" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
       <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button></form></div>
       ${side}</div>`;
   }
   const on = S.capture === "listening";
-  const voiceBtn = S.voice === "voice"
-    ? `<button class="dk-voice ${on ? "on" : ""}" data-voice="1" aria-label="Mantén pulsado y habla">${ic("mic", 20, "mic")}<span>${on ? "Escuchando…" : "Pulsa y habla"}</span></button>`
-    : `<button class="dk-voice" data-act="dictate">${ic("mic", 20, "mic")}<span>Dictar</span></button>`;
+  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para terminar" : "Toca y habla"}">${ic("mic", 20, "mic")}<span>${on ? `Escuchando…<small>toca para parar</small>` : "Toca y habla"}</span></button>`;
   return `<div class="dock" data-key="dock">
     <button class="dk-add" data-act="type">${ic("plus", 20)}<span>Añadir</span></button>
     ${voiceBtn}
@@ -532,7 +527,6 @@ function shPrefs() {
    <div><p class="labelsm" style="font-size:14px;color:var(--ink);margin-bottom:12px">Cuenta</p>
      <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
    <div class="btns"><button class="btn out" data-act="logout">${ic("log-out", 18)}Cerrar sesión</button></div>
-   ${SR && S.voice === "dictate" ? `<button class="btn out" data-act="voiceRetry">${ic("mic", 18)}Volver a probar «Pulsa y habla»</button>` : ""}
    <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
    <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a>, CC BY-SA 4.0. Iconos de interfaz: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>, ISC. Tipografías Bricolage Grotesque y Figtree, OFL.</p>
    </div>`;
@@ -676,18 +670,24 @@ function openTyping() {
   focusDraft();
 }
 
-/* ---------- Pulsa y habla ---------- */
-// En iOS el reconocimiento continuo falla en silencio: allí se usa una sola frase y no se reinicia
-// (iOS solo deja arrancarlo con el dedo). Si no llega nada, se pasa a «Dictar» con el teclado.
+/* ---------- Toca y habla ---------- */
+// Tocar para hablar: el micro se arranca en el «click» (el iPhone solo lo permite con un toque completo,
+// no al apoyar el dedo). Termina solo al callarse o al volver a tocar. En iOS, una frase por vez.
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-let rec = null, recText = "", recHeld = false, recStart = 0, recGotResult = false, recError = false, recMax = null, voiceFails = 0;
+let rec = null, recText = "", recOn = false, recStart = 0, recGotResult = false, recError = false, recMax = null, voiceFails = 0;
+function toggleVoice() {
+  if (S.capture === "listening") return stopListening();
+  if (!SR) return voiceFallback("Este navegador no reconoce la voz. Usa el micro del teclado.");
+  if (S.capture === "typing") { const inp = root.querySelector("#draft"); if (inp) inp.blur(); }
+  startListening();
+}
 function startListening(prefix = "") {
-  if (S.voice !== "voice" || rec) return;
+  if (rec) return;
   try {
     rec = new SR();
     rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = !IOS; rec.maxAlternatives = 1;
-  } catch (e) { voiceUnavailable(); return; }
-  recText = prefix; recHeld = true;
+  } catch (e) { rec = null; return voiceFallback("No se ha podido abrir el micrófono. Usa el micro del teclado."); }
+  recText = prefix; recOn = true;
   if (!prefix) { recStart = Date.now(); recGotResult = false; recError = false; }
   let finals = prefix ? prefix + " " : "";
   rec.onresult = (ev) => {
@@ -702,29 +702,29 @@ function startListening(prefix = "") {
     renderPartial();
   };
   rec.onerror = (ev) => {
-    if (ev.error === "not-allowed" || ev.error === "service-not-allowed" || ev.error === "audio-capture" || ev.error === "language-not-supported") {
-      recError = true; rec = null; recHeld = false; clearTimeout(recMax); S.capture = "idle"; S.partial = "";
-      voiceUnavailable();
-    }
+    if (ev.error === "no-speech" || ev.error === "aborted") return; // lo gestiona onend
+    recError = true; rec = null; recOn = false; clearTimeout(recMax); S.capture = "idle"; S.partial = "";
+    if (ev.error === "not-allowed") voiceFallback("El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono, o usa el micro del teclado.");
+    else voiceFallback("El reconocimiento de voz no responde ahora. Usa el micro del teclado.");
   };
   rec.onend = () => {
     const r = rec; rec = null;
     if (!r || recError) return;
-    // Fuera de iOS, si el navegador corta solo y sigue pulsado, se vuelve a escuchar sin perder lo dicho.
-    if (recHeld && !IOS) { try { startListening(recText); if (rec) return; } catch (e) {} }
-    if (recHeld) return; // en iOS: se espera a que suelte el dedo y se procesa lo que haya
+    // Fuera de iOS, si el navegador corta solo sin que se haya dicho nada aún, sigue escuchando.
+    if (recOn && !IOS && !recText) { try { startListening(recText); if (rec) return; } catch (e) {} }
+    recOn = false;
     finishListening(recText);
   };
   S.capture = "listening"; S.partial = ""; S.band = null; S.sheet = null;
-  try { rec.start(); } catch (e) { rec = null; S.capture = "idle"; voiceUnavailable(); return; }
+  try { rec.start(); } catch (e) { rec = null; recOn = false; S.capture = "idle"; return voiceFallback("No se ha podido abrir el micrófono. Usa el micro del teclado."); }
   clearTimeout(recMax);
-  recMax = setTimeout(stopListening, 30000); // por si el sistema se traga el «soltar»
+  recMax = setTimeout(stopListening, 30000);
   render();
   const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
 }
 function stopListening() {
-  if (!recHeld) return;
-  recHeld = false;
+  if (!recOn) return;
+  recOn = false;
   clearTimeout(recMax);
   if (rec) {
     const r = rec;
@@ -735,16 +735,16 @@ function stopListening() {
 }
 function finishListening(text) {
   if (S.capture !== "listening") return;
-  const held = Date.now() - recStart;
+  clearTimeout(recMax);
+  const listened = Date.now() - recStart;
   S.capture = "idle"; S.partial = "";
   text = (text || "").trim();
   if (!text) {
     render();
-    if (held < 600) { toast("Mantén pulsado mientras hablas."); return; }
-    // Pulsado un buen rato y no ha llegado nada: en este dispositivo la voz no funciona.
     voiceFails++;
-    if (!recGotResult && (navigator.standalone || voiceFails >= 2)) { voiceUnavailable(); return; }
-    toast("No te he oído. Mantén pulsado mientras hablas.");
+    // Escuchó un buen rato y no llegó nada dos veces seguidas: el iPhone no está devolviendo la voz.
+    if (!recGotResult && listened > 1500 && voiceFails >= 2) { voiceFails = 0; return voiceFallback("No me llega lo que dices. Prueba con el micro del teclado."); }
+    toast("No te he oído. Toca el micro y habla.");
     return;
   }
   voiceFails = 0;
@@ -757,13 +757,12 @@ function finishListening(text) {
   }
   render();
 }
-function voiceUnavailable() {
-  S.voice = "dictate";
-  LS.set("noVoice", "1");
+/** Si la voz no va, se abre el campo de escribir para usar el micro del teclado. El botón sigue siendo el micro. */
+function voiceFallback(msg) {
   S.capture = "typing";
   render();
   focusDraft();
-  toast("La voz no funciona aquí. Pulsa el micro del teclado para dictar.");
+  toast(msg);
 }
 
 /* ---------- Edición ---------- */
@@ -911,13 +910,6 @@ function rebuy() {
    =================================================================== */
 let lp = null, lpFired = false, lpXY = null;
 root.addEventListener("pointerdown", (e) => {
-  const v = e.target.closest("[data-voice]");
-  if (v && S.voice === "voice") {
-    e.preventDefault();
-    if (S.capture === "typing") { const inp = root.querySelector("#draft"); if (inp) inp.blur(); S.capture = "idle"; }
-    startListening();
-    return;
-  }
   if (e.button && e.button !== 0) return;
   const target = e.target.closest("[data-act='ptoggle'], .row[data-id], .tile[data-id]");
   if (target && !e.target.closest(".edb")) {
@@ -931,13 +923,10 @@ root.addEventListener("pointerdown", (e) => {
   }
 });
 root.addEventListener("pointermove", (e) => { if (lpXY && Math.hypot(e.clientX - lpXY[0], e.clientY - lpXY[1]) > 8) clearTimeout(lp); });
-// Soltar el dedo termina la escucha. Un «cancel» del sistema no la corta (iOS lo lanza a veces al mantener pulsado).
-["pointerup", "touchend", "mouseup"].forEach((t) => window.addEventListener(t, () => { clearTimeout(lp); stopListening(); }));
-window.addEventListener("pointercancel", () => clearTimeout(lp));
+["pointerup", "pointercancel"].forEach((t) => window.addEventListener(t, () => clearTimeout(lp)));
 root.addEventListener("pointerleave", () => clearTimeout(lp));
 root.addEventListener("scroll", () => clearTimeout(lp), true);
 root.addEventListener("contextmenu", (e) => {
-  if (e.target.closest("[data-voice]")) { e.preventDefault(); return; }
   const t = e.target.closest("[data-act='ptoggle'], .row[data-id], .tile[data-id]");
   if (!t) return;
   e.preventDefault(); clearTimeout(lp); lpFired = true;
@@ -1022,7 +1011,6 @@ function act(a, el, e) {
     case "undo": return runUndo();
     case "closeBand": S.band = null; return render();
     case "type": return openTyping();
-    case "dictate": return openTyping();
     case "closeDraft": S.capture = "idle"; S.draft = ""; return render();
     case "quick": {
       const p = productById(k); if (!p) return;
@@ -1058,7 +1046,7 @@ function act(a, el, e) {
     case "prefs": S.menu = false; S.sheet = { type: "prefs" }; return render();
     case "theme": S.theme = k; LS.set("theme", k); return render();
     case "logout": return doLogout();
-    case "voiceRetry": S.voice = "voice"; voiceFails = 0; LS.set("noVoice", ""); S.sheet = null; render(); return toast("Mantén pulsado «Pulsa y habla» mientras hablas.");
+    case "voice": return toggleVoice();
   }
 }
 

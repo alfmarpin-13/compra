@@ -75,7 +75,7 @@ Mismo diseño que el prototipo. Resumen:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
    - **«Comprado hoy · N»:** separador plegable al final. Desplegado, muestra lo tachado hoy, tachado y atenuado, con la nota «Toca uno para devolverlo a la lista. Mañana pasa solo al historial».
-   - **Barra inferior fija:** «+ Añadir», «Pulsa y habla» y un botón redondo que abre la Despensa.
+   - **Barra inferior fija:** «+ Añadir», «Toca y habla» y un botón redondo que abre la Despensa.
 3. **Despensa.**
    - **Cabecera:** ←, «Despensa» y +.
    - **Buscador** en forma de pastilla: «Buscar entre N productos».
@@ -123,12 +123,12 @@ Mismo diseño que el prototipo. Resumen:
 - **Aprendizaje:** si al añadir se elige una tienda distinta de la habitual, esa pasa a ser la tienda habitual del producto en la despensa.
 - Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte, **sin avisos emergentes**.
 
-### 5.4 Pulsa y habla
-- Mantener pulsado el botón activa el reconocimiento de voz (`SpeechRecognition` / `webkitSpeechRecognition`, idioma `es-ES`, con resultados provisionales). Al soltar se procesa.
+### 5.4 Toca y habla
+- **Tocar** el botón del micrófono («Toca y habla») activa el reconocimiento de voz (`SpeechRecognition` / `webkitSpeechRecognition`, idioma `es-ES`, con resultados provisionales). Termina solo al callarse, o al volver a tocar, y entonces se procesa. No se usa «mantener pulsado»: el iPhone solo deja arrancar el micro con un toque completo.
 - La transcripción va apareciendo al final de la lista mientras hablas.
 - El texto dictado pasa por el mismo intérprete de 5.3 y siempre termina en la hoja de confirmación.
 - **Orden de tachado por voz:** «He comprado todo lo de Mercadona menos los huevos», y variantes como «ya tengo», «hemos cogido» o «excepto», abre la hoja **«Marcar como comprado»**. Lista los artículos que verías en esa tienda con casillas; las excepciones salen desmarcadas con «lo dejo pendiente». Al confirmar: «Se han tachado N artículos» con Deshacer, que los devuelve todos.
-- **Comprobación de disponibilidad:** si el navegador no tiene reconocimiento de voz (o falla en la app instalada en iOS), el botón pasa a «Dictar» y abre el campo de texto con el foco puesto. Así se puede usar el dictado del teclado del iPhone, y el intérprete hace el resto. Nunca debe quedar un botón que no haga nada.
+- **Comprobación de disponibilidad:** el botón es siempre el del micrófono; **no hay botón «Dictar»** (decisión de Alfonso). Si el navegador no tiene reconocimiento de voz, no da permiso o no devuelve nada, al tocarlo se abre el campo de texto con el foco puesto y un aviso para usar el micro del teclado. Nunca debe quedar un botón que no haga nada.
 
 ### 5.5 Editar un artículo de la lista
 - Hoja «Editar artículo» con: nombre, dónde se compra (chips: Cualquier súper y cada tienda), «Mover a…» (categorías) y Eliminar (con Deshacer).
@@ -218,7 +218,7 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
 ```
 
 - **Tipografía:** títulos en **Bricolage Grotesque** 800 con espaciado de letras de −1,2 px; texto en **Figtree** 400–700. Ambas por Google Fonts (licencia OFL).
-- **Acento lima:** botón «Pulsa y habla» (fondo verde bosque y texto lima en claro), chip de tienda seleccionada, botón de despensa, insignias «Toca» e inicial de quién apuntó algo.
+- **Acento lima:** botón «Toca y habla» (fondo verde bosque y texto lima en claro), chip de tienda seleccionada, botón de despensa, insignias «Toca» e inicial de quién apuntó algo.
 - **Logo:** `logo.svg` (cesta de mimbre verde bosque sobre lima). Se usa en:
   - la cabecera, a 32 px con esquinas de 9 px;
   - la pantalla de entrada;
@@ -295,7 +295,7 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 - [ ] Tachar → aviso con Deshacer, y Deshacer lo devuelve.
 - [ ] Lo tachado hoy está en «Comprado hoy». Mañana está en el Historial bajo «Ayer».
 - [ ] «He comprado todo lo de Mercadona menos los huevos» → hoja con todo menos huevos marcado; al confirmar, aviso con Deshacer.
-- [ ] Sin reconocimiento de voz disponible, «Pulsa y habla» se convierte en «Dictar» y funciona con el dictado del teclado.
+- [ ] Sin reconocimiento de voz disponible, al tocar el micro se abre el campo de escribir para usar el dictado del teclado (sin botón «Dictar»).
 - [ ] Editar en la despensa cambia también el artículo pendiente. Borrar una tienda pasa sus cosas a «Cualquier súper».
 - [ ] Modo claro y oscuro idénticos al prototipo; casillas y lista. En el ordenador: lápiz al pasar el ratón y rueda en la barra de tiendas.
 - [ ] Se instala en el iPhone con el icono de la cesta y abre a pantalla completa.

@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v13 · 19/11/2026
+- Micrófono: ahora se toca para hablar (antes había que mantener pulsado, y el iPhone no lo permitía). Termina solo al callarse o al volver a tocar.
+- Sin botón «Dictar»: siempre es el micrófono. Si la voz no va, abre el campo de escribir para usar el micro del teclado.
+
 ## v12 · 19/11/2026
 - Sin selección de texto ni menú «Copiar / Consultar» al mantener pulsado (solo en los campos de escribir).
 
