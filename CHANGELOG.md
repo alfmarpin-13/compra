@@ -2,6 +2,16 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v23 · 19/11/2026
+- Arrastrar a izquierda o derecha: el contenido sigue al dedo y, al soltar, termina de deslizarse a la otra pestaña (o vuelve a su sitio).
+- Con el teclado abierto, las hojas (como «Nuevo producto») quedan justo encima del teclado, sin irse hacia arriba ni dejar hueco.
+- El iPhone ya no ofrece «Autorrellenar contacto» en los campos de nombre (rótulos «Producto», «Artículo» y «Tienda»).
+- Al abrir la app se ve entera desde el primer instante, sin el icono solo arriba.
+- Al buscar en la Despensa (o escribir en una hoja), la barra de «Añadir» no sube con el teclado.
+- Las primeras casillas de Lista y Despensa quedan a la misma altura.
+- El Historial sale de la cabecera y queda solo en el menú ⋮.
+- Animación del Historial arreglada: la pantalla entra limpia por la derecha, con sombra, sin mezclarse con la de debajo.
+
 ## v22 · 19/11/2026
 - Pestañas con icono: la cesta es la Lista y la estantería, la Despensa. La activa se abre y enseña su nombre, y una pastilla lima se desliza de una a otra.
 - Deslizar el dedo a la izquierda o a la derecha cambia entre Lista y Despensa.
