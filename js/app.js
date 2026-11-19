@@ -223,7 +223,7 @@ function renderInner() {
   render.depth = depth;
   if (render.dir) h = h.replace('<div class="scr', `<div class="scr nav-${render.dir}`);
   tpl.innerHTML = h;
-  const viewKey = S.phase + ":" + S.view + ":" + S.layout;
+  const viewKey = S.phase + ":" + S.view + ":" + S.layout + ":" + (S.store || "");
   const sameView = viewKey === render.view;
   const before = sameView ? flipSnapshot() : new Map();
   morphChildren(root, tpl.content);
@@ -443,11 +443,14 @@ function vDock() {
   const typing = S.capture === "typing", on = S.capture === "listening";
   const pantry = S.view === "pantry";
   const ph = pantry ? "Productos para la despensa" : "Escribe qué necesitas";
-  const field = typing
+  const field = on
+    ? `<button class="dk-cancel" data-act="cancelVoice" aria-label="Cancelar">${ic("x", 22)}</button>`
+    : typing
     ? `<form class="dk-line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="${ph}" aria-label="${ph}" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done"><button class="dk-send" type="submit" id="draftSubmit" aria-label="Añadir" ${S.draft.trim() ? "" : "disabled"}>${ic("arrow-up", 20)}</button></form>`
     : `<button class="dk-add" data-act="type" aria-label="${pantry ? "Añadir productos a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>`;
-  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>${S.voiceReady ? "Escuchando…" : "Un momento…"}<small>toca para parar</small></span>` : ""}</button>`;
-  return `<div class="dock ${on ? "listening" : ""} ${typing ? "typing" : ""}" data-key="dock">
+  // El texto del micro está siempre (oculto en reposo) para que al ensancharse no salte nada.
+  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para terminar" : "Toca y habla"}">${ic("mic", 22, "mic")}<span class="dk-vt">${on && S.voiceReady ? "Escuchando…" : "Un momento…"}<small>toca para terminar</small></span></button>`;
+  return `<div class="dock ${on ? "voice-on" : ""} ${typing ? "typing" : ""}" data-key="dock">
     ${typing ? `<div id="sug" class="dk-sug" data-key="dk-sug">${vSug()}</div>` : ""}
     <div class="dk-row" data-key="dk-row"><div class="dk-field" data-key="dk-field">${field}</div>${voiceBtn}</div></div>`;
 }
@@ -994,8 +997,8 @@ function endVoice() {
   S.capture = "idle"; S.partial = ""; S.voiceReady = false;
 }
 function updateVoiceBtn() {
-  const b = root.querySelector(".dk-voice span");
-  if (b && S.capture === "listening") b.innerHTML = (S.voiceReady ? "Escuchando…" : "Un momento…") + "<small>toca para parar</small>";
+  const b = root.querySelector(".dk-voice .dk-vt");
+  if (b && S.capture === "listening") b.innerHTML = (S.voiceReady ? "Escuchando…" : "Un momento…") + "<small>toca para terminar</small>";
 }
 /** Toca el micro (o silencio tras hablar): para y procesa lo dicho. Espera las últimas palabras de Safari. */
 function stopListening() {

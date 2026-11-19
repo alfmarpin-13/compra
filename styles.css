@@ -237,11 +237,11 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .scr[data-key="history"] .pad,.scr[data-key="options"] .pad{padding-bottom:calc(var(--sab) + 24px)}
 .scr[data-key="history"] .bottombtn{padding-bottom:calc(var(--sab) + 6px)}
 .dock{flex-direction:column;align-items:stretch;gap:8px}
-.dk-row{display:flex;gap:10px;align-items:center}
+.dk-row{display:flex;gap:10px;align-items:center;height:52px}
 /* La pastilla de la izquierda es la misma en reposo y escribiendo: solo cambia su contenido */
-.dk-field{flex:1;min-width:0;min-height:52px;border-radius:14px;background:var(--pressed);display:flex;align-items:center;transition:flex .25s ease,background .25s}
+.dk-field{flex:none;width:calc(100% - 62px);height:52px;min-width:0;overflow:hidden;border-radius:14px;background:var(--pressed);display:flex;align-items:center;transition:width .5s var(--spring),border-radius .5s var(--spring),background .25s}
 .dock.typing .dk-field{background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--primary)}
-.dk-add{flex:1;align-self:stretch;min-height:52px;border-radius:14px;display:flex;align-items:center;gap:6px;padding:8px 12px;font:600 14px/20px var(--fb);text-align:left;color:var(--muted)}
+.dk-add{flex:1;align-self:stretch;min-height:52px;white-space:nowrap;border-radius:14px;display:flex;align-items:center;gap:6px;padding:8px 12px;font:600 14px/20px var(--fb);text-align:left;color:var(--muted)}
 .dk-line{flex:1;display:flex;align-items:center;gap:6px;padding:0 6px 0 14px;min-width:0}
 .dk-line input{flex:1;min-width:0;border:0;outline:none;background:none;font:500 16px/24px var(--fb);color:var(--ink);padding:0}
 .dk-line input::placeholder{color:var(--muted);opacity:1}
@@ -252,11 +252,14 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .dk-sug .from{font:600 11px/16px var(--fb);letter-spacing:.3px;color:var(--muted);margin:0 4px}
 .dk-sug .sug{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
 .dk-sug .sug::-webkit-scrollbar{display:none}
-.dk-voice{flex:0 0 52px;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0;background:var(--primary);color:var(--on-primary);font:700 14px/18px var(--fb);text-align:left;overflow:hidden;white-space:nowrap;transition:flex .25s ease,border-radius .25s ease,padding .25s ease}
-.dk-voice.on{flex:1 0 190px;border-radius:16px;justify-content:flex-start;padding:0 16px}
-.dock.listening .dk-field{flex:0 0 52px}
-.dock.listening .dk-add{justify-content:center;padding:0}
-.dock.listening .dk-add span{display:none}
+.dk-voice{flex:none;width:52px;height:52px;border-radius:26px;display:flex;align-items:center;gap:10px;padding:0 15px;background:var(--primary);color:var(--on-primary);font:700 14px/18px var(--fb);text-align:left;overflow:hidden;white-space:nowrap;transition:width .5s var(--spring),border-radius .5s var(--spring)}
+.dk-voice .mic{flex:none}
+.dk-vt{opacity:0;transition:opacity .2s ease}
+.dk-voice.on .dk-vt{opacity:1;transition:opacity .3s ease .15s}
+/* Escuchando (clase voice-on; ojo: .listening es la burbuja de la lista): el micro ocupa la barra y a la izquierda queda solo «cancelar»; la barra no cambia de tamaño */
+.dock.voice-on .dk-field{width:52px;border-radius:26px}
+.dock.voice-on .dk-voice{width:calc(100% - 62px);border-radius:16px}
+.dk-cancel{width:52px;height:52px;flex:none;display:grid;place-items:center;color:var(--ink);animation:fadein .3s ease}
 .dk-voice.on .mic{animation:pulse 1.1s ease-in-out infinite}
 .dk-voice small{display:block;font:500 11px/14px var(--fb);opacity:.8}
 @keyframes pulse{50%{transform:scale(1.22)}}
