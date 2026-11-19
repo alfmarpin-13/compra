@@ -217,9 +217,8 @@ function slot(id, big) {
   const logo = st.icon && LOGOS[st.icon] ? st.icon : !st.icon ? autoLogo(st.name) : null;
   if (logo) return logoSpan(logo, big);
   const g = storeIcon(st);
-  // Genérica sin icono elegido: hueco neutro con borde discontinuo para su futuro logo.
-  if (st.kind === "generic" && !st.icon) return `<span class="slot store${big ? " lg" : ""}" data-logo-slot="${esc(st.id)}" aria-hidden="true">${ic(g, big ? 16 : 10)}</span>`;
-  return `<span class="slot${big ? " lg" : ""}" aria-hidden="true">${ic(g, big ? 16 : 11)}</span>`;
+  // Sin logo: el icono a una tinta, del mismo tamaño que los logos y sin recuadro.
+  return `<span class="slot${big ? " lg" : ""}" aria-hidden="true">${ic(g, big ? 26 : 17)}</span>`;
 }
 function vChips() {
   const count = (st) => S.pending.filter((i) => inStore(i, st)).length;

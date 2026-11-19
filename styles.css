@@ -73,20 +73,16 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .chip.on .n{color:var(--on-accent);opacity:.8}
 .chip.sm{height:32px;padding:0 12px;font-size:13px}
 .chip.iconchip{width:52px;height:40px;padding:0;justify-content:center}
-.chip.iconchip .slot{--sw:36px;--sh:22px;background-color:transparent}
-.chip.iconchip .slot.logo{background:currentColor}
-.chip.iconchip.on .slot.logo{background:var(--on-accent)}
+.chip.iconchip .slot{--sw:36px;--sh:22px}
 .chip:disabled{opacity:.4}
 
 /* hueco neutro para el logo de la tienda (sin marcas) */
 /* Todas las tiendas ocupan el mismo hueco (mismo ancho), con el icono o el logo centrado. */
-.slot{--sw:24px;--sh:18px;width:var(--sw);height:var(--sh);border-radius:5px;display:inline-grid;place-items:center;flex:none;background:color-mix(in srgb,var(--primary) 11%,transparent);color:var(--primary)}
-.slot.lg{--sw:44px;--sh:30px;border-radius:8px}
-.slot.store{background:transparent;border:1px dashed color-mix(in srgb,var(--outline) 80%,transparent);color:var(--muted)}
-.chip.on .slot{color:var(--on-accent);background:color-mix(in srgb,var(--on-accent) 12%,transparent)}
-.slot.logo,.chip.on .slot.logo{border-radius:0;border:0;background:currentColor;color:var(--primary);-webkit-mask:var(--logo) center/contain no-repeat;mask:var(--logo) center/contain no-repeat}
-.chip.on .slot.logo{background:var(--on-accent)}
-.chip.on .slot.store{background:transparent;border-color:color-mix(in srgb,var(--on-accent) 45%,transparent)}
+.slot{--sw:24px;--sh:18px;width:var(--sw);height:var(--sh);display:inline-grid;place-items:center;flex:none;background:none;border:0;color:var(--primary)}
+.slot.lg{--sw:44px;--sh:30px}
+.slot .icon{stroke-width:2}
+.chip.on .slot{color:var(--on-accent)}
+.slot.logo{background:currentColor;-webkit-mask:var(--logo) center/contain no-repeat;mask:var(--logo) center/contain no-repeat}
 
 /* ---------- Lista ---------- */
 .list{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 0 18px;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
