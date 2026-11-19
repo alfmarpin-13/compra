@@ -303,7 +303,7 @@ function vSug() {
 }
 function vDock() {
   if (S.capture === "typing") {
-    const side = `<button class="dk-side dk-voice-mini" data-act="voice" aria-label="Toca y habla">${ic("mic", 22)}</button>`;
+    const side = ""; // escribiendo no hay micro: solo el campo, «Añadir» y la X
     return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
       <form class="line" id="draftForm"><input id="draft" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
       <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button>

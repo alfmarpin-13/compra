@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v17 · 19/11/2026
+- Más margen a la izquierda en el campo de escribir.
+- Sin botón de micrófono mientras se escribe.
+
 ## v16 · 19/11/2026
 - Botones de la cabecera: solo iconos, sin fondo.
 - Micrófono: ya no se abre el campo de escribir por su cuenta; el aviso dice la causa exacta si falla, para poder arreglarlo.

@@ -277,6 +277,7 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 
 ## 12. Versiones y forma de trabajar
 
+- **Por bloques, no de uno en uno:** si Alfonso pide varias cosas seguidas, se reúnen y se suben juntas en una sola versión y un solo PR. No se publica una versión por cada cambio pequeño.
 - **Nada directo a `main`.** Cada cambio va en su propia rama y llega a `main` con un PR. Alfonso no quiere revisarlos: el PR se fusiona en cuanto está listo y probado.
 - **Título del PR con la versión:** «vN: resumen corto». La descripción dice qué cambia y cómo se ha probado.
 - **Cada cambio en la web lleva versión nueva:** sube el número en `js/version.js` (`APP_VERSION` y `APP_DATE`) y el mismo número en `VERSION` de `sw.js` (`compra-vN`), y añade la entrada en `CHANGELOG.md`.
