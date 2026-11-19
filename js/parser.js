@@ -85,6 +85,29 @@ function storeAliases(st) {
   return [...set].filter(Boolean).sort((a, b) => b.length - a.length);
 }
 
+const PREP = new Set(["de", "del", "en", "al", "para"]);
+const ART = new Set(["el", "la", "los", "las"]);
+/** Nombre de tienda mal oído al dictar («frutiría», «lipercor» por «del Hipercor», «las armacias»): se acepta
+ *  detrás de una preposición si se parece mucho a un alias de una sola palabra. Devuelve { store, len } o null. */
+export function fuzzyStoreAt(w, i, stores) {
+  if (!PREP.has(w[i])) return null;
+  let j = i + 1;
+  if (ART.has(w[j])) j++;
+  const x = w[j];
+  if (!x || x.length < 4) return null;
+  let best = null, bd = 9;
+  for (const st of stores || []) for (const a of storeAliases(st)) {
+    if (a.includes(" ") || a.length < 4) continue;
+    const cands = [x];
+    if (x[0] === "l" && (w[i] === "de" || w[i] === "del")) cands.push(x.slice(1)); // «de lipercor» = «del hipercor»
+    for (const c of cands) {
+      const d = lev(c, a) / Math.max(c.length, a.length);
+      if (d < bd) { bd = d; best = st; }
+    }
+  }
+  return best && bd <= 0.25 ? { store: best, len: j - i + 1 } : null;
+}
+
 /** Interpreta un trozo («pan de la panadería», «pañales para la niña», «dos pimientos»). */
 export function parseOne(raw, ctx) {
   const { products, stores, pending } = ctx;
@@ -98,6 +121,13 @@ export function parseOne(raw, ctx) {
       for (const a of storeAliases(st)) {
         const re = new RegExp(` (?:(?:de|del|en|al|para) )?(?:(?:el|la|los) )?${a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} `);
         if (re.test(t)) { storeId = st.id; explicit = true; t = t.replace(re, " "); break outer; }
+      }
+    }
+    if (!explicit) {
+      const w = t.trim().split(" ");
+      for (let i = 1; i < w.length; i++) {
+        const f = fuzzyStoreAt(w, i, stores);
+        if (f) { storeId = f.store.id; explicit = true; w.splice(i, f.len); t = " " + w.join(" ") + " "; break; }
       }
     }
   }
@@ -134,9 +164,93 @@ export function parseOne(raw, ctx) {
   return e;
 }
 
-export function parseUtterance(text, ctx) {
+// Palabras de relleno que, sueltas entre productos, no son un producto nuevo («este», «pues»…).
+const STOP = new Set("este esta esto eso ese pues bueno vale venga oye mira que como y e o de del la el los las lo un una unos unas me nos te hace hacen falta es son a al en con por para mas tambien todo toda todos todas otro otra ya si no hay algo".split(" "));
+const isModifierAt = (w, i, ctx) => {
+  // «para la niña», «de Lucía», «del bebé» y «de/del/en (la/el) + tienda» acompañan al producto anterior.
+  const rest = " " + w.slice(i).join(" ") + " ";
+  const m = rest.match(/^ (?:de|para|del|a) (?:la |el |mi |nuestra )?(?:nina|nena|bebe|peque|lucia|chiqui) /);
+  if (m) return m[0].trim().split(" ").length;
+  const m2 = rest.match(/^ (?:de|en|del|en el|en la|para) (?:cualquier|cualquiera) (?:sitio|super|supermercado|lado|tienda|parte) /);
+  if (m2) return m2[0].trim().split(" ").length;
+  for (const st of ctx.stores || []) for (const a of storeAliases(st)) {
+    const r = rest.match(new RegExp(`^ (?:(?:de|del|en|al|para) )?(?:(?:el|la|los) )?${a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} `));
+    if (r && !/^ (?:el|la|los) /.test(r[0]) && (/^ (?:de|del|en|al|para) /.test(r[0]))) return r[0].trim().split(" ").length;
+  }
+  const f = fuzzyStoreAt(w, i, ctx.stores);
+  return f ? f.len : 0;
+};
+/** Al hablar no se dictan comas: «leche pan de la panadería» se separa reconociendo los productos de la despensa
+ *  (el más largo primero), pegando a cada uno lo que le acompaña y dejando como producto nuevo lo que quede entre medias. */
+export function segmentChunk(chunk, ctx) {
+  const raw = String(chunk).trim().split(/\s+/);
+  const w = raw.map((x) => norm(x)).filter(Boolean);
+  if (w.length < 2 || !(ctx.products || []).length) return [chunk];
+  const segs = []; // {words:[...originales], known:bool}
+  let unknown = [];
+  const flush = () => {
+    const content = unknown.filter((x) => !STOP.has(norm(x)));
+    if (content.length) segs.push({ words: unknown.slice(), known: false });
+    unknown = [];
+  };
+  let i = 0;
+  while (i < w.length) {
+    const mod = segs.length || unknown.length ? isModifierAt(w, i, ctx) : 0;
+    if (mod) {
+      flush();
+      if (segs.length) segs[segs.length - 1].words.push(...raw.slice(i, i + mod));
+      i += mod; continue;
+    }
+    let hitLen = 0;
+    for (let L = Math.min(5, w.length - i); L >= 1; L--) {
+      const q = w.slice(i, i + L).join(" ");
+      if (q.length < 3 || STOP.has(q)) continue;
+      if (L > 1 && STOP.has(w[i + L - 1])) continue;
+      const h = matchProduct(stripQuantity(q), ctx.products);
+      if (h && h.score <= 0.2) { hitLen = L; break; }
+    }
+    // Dos productos pegados en una palabra al dictar («lechepan» = leche + pan).
+    let glued = null;
+    if (!hitLen && w[i].length >= 6 && !STOP.has(w[i])) {
+      for (let k = 3; k <= w[i].length - 3 && !glued; k++) {
+        const a = matchProduct(w[i].slice(0, k), ctx.products), b = matchProduct(w[i].slice(k), ctx.products);
+        if (a && b && a.score <= 0.15 && b.score <= 0.15 && a.product !== b.product) glued = [a.product.name, b.product.name];
+      }
+    }
+    if (hitLen) {
+      flush();
+      segs.push({ words: raw.slice(i, i + hitLen), known: true });
+      i += hitLen;
+    } else if (glued) {
+      flush();
+      segs.push({ words: [glued[0]], known: true }, { words: [glued[1]], known: true });
+      i++;
+    } else { unknown.push(raw[i]); i++; }
+  }
+  flush();
+  // Solo se separa si de verdad hay más de un producto y al menos uno es conocido.
+  if (segs.length < 2 || !segs.some((s) => s.known)) return [chunk];
+  return segs.map((s) => s.words.join(" "));
+}
+
+// Muletillas del principio que el dictado deforma («abunta», «la punta», «desecito»).
+const LEAD = ["apunta", "apuntame", "apuntad", "necesito", "necesitamos", "anade", "anademe", "ponme"];
+export function dropLeadFiller(text, products = []) {
+  const ws = String(text).trim().split(/\s+/);
+  let k = 0;
+  while (k < ws.length - 1 && k < 2 && STOP.has(norm(ws[k]))) k++;
+  const x = norm(ws[k] || "");
+  if (k < ws.length - 1 && x.length >= 5 && !matchProduct(x, products) && LEAD.some((f) => lev(x, f) / Math.max(x.length, f.length) <= 0.4)) return ws.slice(k + 1).join(" ");
+  return text;
+}
+
+/** opts.voice: lo dictado no trae comas fiables, así que además se separa reconociendo productos
+ *  («leche pan de la panadería»). Lo escrito no se separa así: «tomate frito» es un producto, no dos. */
+export function parseUtterance(text, ctx, opts = {}) {
   const out = [];
-  for (const chunk of splitUtterance(text)) {
+  if (opts.voice) text = dropLeadFiller(text, ctx.products || []);
+  const chunks = splitUtterance(text);
+  for (const chunk of opts.voice ? chunks.flatMap((c) => segmentChunk(c, ctx)) : chunks) {
     const e = parseOne(chunk, ctx);
     if (!e) continue;
     // Si se repite el mismo producto en la misma frase, solo una vez.
@@ -151,7 +265,7 @@ export function isClear(entries) {
   return entries.length > 0 && entries.every((e) => (e.known || e.explicit) && !e.corrected && !e.dup);
 }
 
-const CMD_RE = / (he|hemos|ya) (comprado|cogido|pillado|tengo|tenemos|compre|compramos)| (ya esta|ya estan|ya lo tengo) |^ (tacha|marca) /;
+const CMD_RE = / (he|hemos|ya|e) (comprado|cogido|pillado|tengo|tenemos|compre|compramos)| (ya esta|ya estan|ya lo tengo) |^ (tacha|marca) | (comprado|cogido) (todo|toda|todos|todas) /;
 
 /** «He comprado todo lo de Mercadona menos los huevos». Devuelve null si no es una orden de tachado. */
 export function parseCommand(text, ctx) {
@@ -160,6 +274,10 @@ export function parseCommand(text, ctx) {
   if (!CMD_RE.test(t)) return null;
   let store = null;
   for (const st of stores) for (const a of storeAliases(st)) if (!store && t.includes(" " + a + " ")) store = st;
+  if (!store) {
+    const w = t.trim().split(/\s+/);
+    for (let i = 0; i < w.length && !store; i++) { const f = fuzzyStoreAt(w, i, stores); if (f) store = f.store; }
+  }
   const target = store || ctx.store || null;
   const base = pending.filter((i) => inStore(i, target));
   const [main, exc] = (() => {
@@ -177,7 +295,7 @@ export function parseCommand(text, ctx) {
       return n === q || (" " + n + " ").includes(" " + q + " ") || lev(q, n) / Math.max(q.length, n.length) <= 0.26;
     });
   }).filter(Boolean);
-  const targets = / todo | toda /.test(main) ? base : findIn(main, pending);
+  const targets = / (todo|toda|todos|todas) /.test(main) ? base : findIn(main, pending);
   const ex = exc ? findIn(exc, targets) : [];
   if (!targets.length) return null;
   return { storeId: target ? target.id : null, text, rows: targets.map((i) => ({ id: i.id, on: !ex.includes(i), ex: ex.includes(i) })) };

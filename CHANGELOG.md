@@ -2,6 +2,13 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v43 · 19/11/2026
+- Micro nuevo, como una nota de voz: graba lo que dices y luego lo transcribe en el propio iPhone con Whisper (ya no se usa el reconocimiento de voz de Safari, que tras cancelar o tras la primera vez se quedaba sordo y se comía palabras). Cada toque abre y cierra el micro de cero, así que funciona todas las veces.
+- Termina solo tras ~2 s de silencio, o al volver a tocar. La X o tocar fuera cancelan, también mientras «Entendiendo…». Si no has dicho nada (o solo hay ruido), avisa en vez de inventarse algo.
+- Mientras grabas, unas barritas siguen tu voz. La primera vez se descarga el modelo (unos 100 MB, con el porcentaje en pantalla) y queda guardado: después funciona sin conexión.
+- A Whisper se le dan los productos de la despensa y las tiendas como pista: acierta mucho más con vuestros nombres. Con una despensa grande, una segunda pasada rápida con los productos que se parecen a lo entendido.
+- Intérprete de voz más tolerante: separa productos aunque no se digan comas, entiende tiendas mal oídas («lipercor», «frutiría») y muletillas deformadas («abunta» por «apunta»). Lo escrito no cambia («tomate frito» sigue siendo un producto).
+
 ## v42 · 19/11/2026
 - Micro: al tocarlo se ensancha de forma fluida hasta ocupar la barra; a la izquierda queda solo un botón para cancelar (sin el «+»). La barra no cambia de tamaño ni de sitio (arreglado un choque de estilos con la burbuja «Te escucho…» que la movía y la hacía saltar).
 - Filtros de tienda instantáneos, sin animación de fundido entre casillas.

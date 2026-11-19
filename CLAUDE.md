@@ -10,6 +10,7 @@ App web instalable (PWA) para la lista de la compra de casa, compartida en tiemp
 
 - **Sin paso de compilación.** HTML, CSS y JavaScript nativos (módulos ES). Igual que el repo hermano `alfmarpin-13/cartera`. Nada de npm, bundlers ni frameworks.
 - **Archivos:** `index.html`, `app.js` (o varios módulos en `js/`), `styles.css`, `manifest.webmanifest`, `sw.js`, `icons/`. Si cabe cómodamente en un único `index.html` como Cartera, también vale.
+- **Única excepción a «sin dependencias»:** el dictado usa `vendor/transformers.min.js` (@huggingface/transformers 4.3.2, Apache-2.0) y `vendor/ort-wasm-simd-threaded.asyncify.*` (onnxruntime-web, MIT, la versión exacta que pide esa transformers), copiados tal cual del paquete npm oficial, sin compilar nada. Sus licencias están en `vendor/`.
 - **Hosting:** GitHub Pages en `https://alfmarpin-13.github.io/compra/`. Todas las rutas son relativas, porque la app vive en un subdirectorio.
 - **Backend:** Firebase, en el plan gratuito Spark.
   - **Firebase Auth**, solo con email y contraseña. Se inicializa con `initializeAuth` (persistencia IndexedDB/local/sesión) y **sin** `popupRedirectResolver`: `getAuth()` carga un iframe de authDomain antes de dar la sesión y en el iPhone tardaba 40-50 s.
@@ -130,8 +131,14 @@ Mismo diseño que el prototipo. Resumen:
 - Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte, **sin avisos emergentes**.
 
 ### 5.4 Toca y habla
-- **Tocar** el botón del micrófono («Toca y habla») activa el reconocimiento de voz (`SpeechRecognition` / `webkitSpeechRecognition`, idioma `es-ES`, con resultados provisionales). Un solo reconocedor en modo continuo (sin él, Safari corta tras la primera frase y se pierden palabras); se colapsan las frases que Safari repite. Termina tras ~2 s de silencio después de hablar, o al volver a tocar, y entonces se procesa. No se usa «mantener pulsado»: el iPhone solo deja arrancar el micro con un toque completo.
-- La transcripción va apareciendo al final de la lista mientras hablas.
+- **Como una nota de voz** (decisión de Alfonso: el reconocimiento de voz de Safari, `SpeechRecognition`, se quedaba sordo en la app instalada tras cancelar o tras la primera vez, y perdía palabras). **Tocar** el micro graba el audio y, al terminar, se transcribe **en el propio dispositivo** con Whisper (`js/voz.js` y `js/voz-worker.js`). No se usa `SpeechRecognition` ni «mantener pulsado» (el iPhone solo deja abrir el micro con un toque completo).
+  - **Grabación:** `getUserMedia` + AudioWorklet (`js/voz-rec.js`; ScriptProcessor si no hay). Cada toque abre y cierra todo (micro y AudioContext), para que no quede nada a medias para la siguiente vez.
+  - **Detector de voz por energía:** termina solo tras ~2 s de silencio después de hablar, o al volver a tocar; si en 8 s no se ha hablado, se para con «No te he oído». Recorta los silencios de los extremos y, si no ha habido voz, **no transcribe** (Whisper se inventa frases con el silencio). Máximo 30 s.
+  - **Transcripción:** Whisper «base» cuantizado (`Xenova/whisper-base`, q8) con transformers.js y onnxruntime-web en `vendor/` (motor wasm de un hilo: GitHub Pages no permite el aislamiento que piden los hilos). Va en un worker para no congelar la pantalla. Idioma español forzado.
+  - **Pista de vocabulario:** antes del audio se le da a Whisper un texto con lo pendiente, los productos de la despensa (los más comprados primero, hasta ~200 tokens) y las tiendas, escrito como texto normal («Leche, pan de molde… Mercadona, Lidl, frutería. Para la niña.»). Sube mucho el acierto con esos nombres. Si la despensa no cabe entera, hay una **segunda pasada** con una pista corta que pone primero los productos que se parecen a lo entendido en la primera; el codificador del audio (lo caro) se calcula una sola vez y se reutiliza (hay que añadir `encoder_outputs` a `forward_params`, porque transformers.js lo descarta si no).
+  - **Descarga:** el modelo (~77 MB) se baja de Hugging Face la primera vez que se usa el micro y el motor (~27 MB) de `vendor/`; quedan guardados en el dispositivo (cachés `transformers-cache` y `compra-voz-1`, que el service worker no borra al cambiar de versión). Mientras, se ve «Preparando el dictado… N %». Después funciona sin conexión.
+  - **En pantalla:** mientras graba, el micro ensanchado dice «Escuchando… toca para terminar» y en la lista sale la burbuja «Te escucho…» con unas barritas que siguen el volumen de la voz. Al terminar, «Entendiendo…» hasta que se abre la hoja. La X (o tocar fuera) cancela en cualquier momento, también mientras entiende.
+  - Lo dictado no trae comas fiables: el intérprete, solo para la voz, separa reconociendo productos de la despensa («leche pan de la panadería» → Leche, Pan en Panadería), perdona nombres de tienda mal oídos («lipercor», «frutiría») y muletillas deformadas al principio («abunta», «desecito»).
 - El texto dictado pasa por el mismo intérprete de 5.3 y siempre termina en la hoja de confirmación.
 - **Orden de tachado por voz:** «He comprado todo lo de Mercadona menos los huevos», y variantes como «ya tengo», «hemos cogido» o «excepto», abre la hoja **«Marcar como comprado»**. Lista los artículos que verías en esa tienda con casillas; las excepciones salen desmarcadas con «lo dejo pendiente». Al confirmar: «Se han tachado N artículos» con Deshacer, que los devuelve todos.
 - **Comprobación de disponibilidad:** el botón es siempre el del micrófono; **no hay botón «Dictar»** y **nunca se abre el campo de escribir por su cuenta** (decisiones de Alfonso). Si no hay permiso, no hay soporte o no llega nada, solo sale un aviso corto.
@@ -302,7 +309,8 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 - [ ] Tachar → la casilla se tacha en su sitio con «Deshacer», y Deshacer lo devuelve.
 - [ ] Lo tachado hoy está en «Comprado hoy». Mañana está en el Historial bajo «Ayer».
 - [ ] «He comprado todo lo de Mercadona menos los huevos» → hoja con todo menos huevos marcado; al confirmar, aviso con Deshacer.
-- [ ] Sin reconocimiento de voz disponible, al tocar el micro sale un aviso; sin botón «Dictar» y sin abrir el campo de escribir.
+- [ ] Sin micro o sin permiso, al tocarlo sale un aviso; sin botón «Dictar» y sin abrir el campo de escribir.
+- [ ] Cancelar el micro y volver a tocarlo vuelve a oír, todas las veces. En silencio o con ruido no se inventa nada («No te he oído»).
 - [ ] Editar en la despensa cambia también el artículo pendiente. Borrar una tienda pasa sus cosas a «Cualquier súper».
 - [ ] Modo claro y oscuro idénticos al prototipo; casillas y lista. En el ordenador: lápiz al pasar el ratón y rueda en la barra de tiendas.
 - [ ] Se instala en el iPhone con el icono de la cesta y abre a pantalla completa.

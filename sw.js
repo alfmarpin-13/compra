@@ -1,10 +1,11 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v42"; // mismo número que js/version.js
+const VERSION = "compra-v43"; // mismo número que js/version.js
 const FIREBASE = "10.14.1";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
   "js/app.js", "js/config.js", "js/version.js", "js/data.js", "js/db.js", "js/iconos.js", "js/parser.js", "js/util.js",
+  "js/voz.js", "js/voz-worker.js", "js/voz-rec.js", "vendor/transformers.min.js", "vendor/ort-wasm-simd-threaded.asyncify.mjs",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/icon-maskable-512.png",
   "fonts/figtree-400.woff2", "fonts/figtree-500.woff2", "fonts/figtree-600.woff2", "fonts/figtree-700.woff2", "fonts/bricolage-grotesque-800.woff2",
   "icons/tiendas/mercadona.png", "icons/tiendas/hipercor.png", "icons/tiendas/lidl.png", "icons/tiendas/domi-velez.png",
@@ -37,13 +38,16 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== VERSION) await caches.delete(k);
+    // El motor y el modelo de voz (unos 100 MB) se guardan aparte y no se borran al cambiar de versión.
+    for (const k of await caches.keys()) if (k !== VERSION && !KEEP.test(k)) await caches.delete(k);
     await self.clients.claim();
   })());
 });
 
+const KEEP = /^(compra-voz|transformers-cache)/;
 const cacheable = (url) =>
-  url.origin === self.location.origin ||
+  (url.origin === self.location.origin && !url.pathname.endsWith(".wasm")) || // el .wasm lo guarda el worker de voz
+
   url.href.startsWith("https://www.gstatic.com/firebasejs/");
 
 self.addEventListener("fetch", (e) => {

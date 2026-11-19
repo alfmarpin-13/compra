@@ -12,6 +12,8 @@ El diseño y el comportamiento siguen `prototipo.html`; las reglas están en `CL
 | `js/app.js` | Interfaz, eventos y acciones |
 | `js/db.js` | Firebase: sesión, lecturas en tiempo real, historial y escrituras |
 | `js/parser.js` | Intérprete de lo que se escribe o se dicta |
+| `js/voz.js`, `js/voz-rec.js`, `js/voz-worker.js` | Micro: graba, detecta cuándo hablas y transcribe con Whisper en el dispositivo |
+| `vendor/` | transformers.js y el motor onnxruntime (wasm), copiados del paquete npm oficial, con sus licencias |
 | `js/data.js` | Categorías, palabras clave, iconos por producto y tiendas iniciales |
 | `js/util.js` | Texto, distancia de edición y fechas en Europe/Madrid |
 | `js/iconos.js` | Iconos Lucide (ISC) y OpenMoji (CC BY-SA 4.0), generados |
@@ -35,7 +37,7 @@ Al entrar por primera vez se crean solas las tiendas iniciales. La despensa empi
 
 Abre la dirección en Safari → botón *Compartir* → *Añadir a pantalla de inicio*. Se abre a pantalla completa con el icono de la cesta.
 
-«Pulsa y habla» usa el reconocimiento de voz del navegador. Si no está disponible (pasa a veces en la app añadida a la pantalla de inicio), el botón pasa a «Dictar» y abre el campo de texto: usa el micro del teclado del iPhone y la app interpreta el texto igual.
+El micro graba lo que dices y lo transcribe en el propio iPhone con Whisper (nada sale del teléfono). La primera vez que lo uses se descargan unos 100 MB (mejor con wifi) y quedan guardados; después funciona sin conexión.
 
 ## Publicar cambios
 
