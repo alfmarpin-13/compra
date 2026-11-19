@@ -32,6 +32,8 @@ export function lev(a, b) {
   return p[n];
 }
 
+/** Nombre limpio: sin espacios al principio ni al final y sin espacios dobles. */
+export const clean = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 export const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 

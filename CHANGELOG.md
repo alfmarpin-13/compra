@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v21 · 19/11/2026
+- Historial: botón con papelera para borrar lo seleccionado (artículos o un día entero), con Deshacer.
+- Los nombres se guardan sin espacios sobrantes (al principio, al final o dobles), y los que ya estaban guardados así se corrigen solos.
+
 ## v20 · 19/11/2026
 - Voz más estable: si el iPhone corta por una pausa, sigue escuchando y junta lo dicho; termina tras un silencio largo o al tocar el micro.
 - Aviso de cuándo hablar: «Un momento…» mientras se prepara y «Te escucho…» cuando ya oye.
