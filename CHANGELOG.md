@@ -2,6 +2,12 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v24 · 19/11/2026
+- El menú ⋮ abre una pantalla completa de Opciones (como los Ajustes del iPhone): Tiendas, Repasar la despensa, Historial, modo Como el iPhone / Claro / Oscuro, cuenta, Compartida con y Cerrar sesión.
+- La barra de «Añadir» y el micro flotan, translúcidas, y la lista pasa por debajo hasta el borde.
+- Campos de nombre de tipo búsqueda: el iPhone deja de ofrecer «Autorrellenar contacto».
+- Navegación entre pantallas siempre en la dirección correcta (entrar por la derecha, volver por la izquierda).
+
 ## v23 · 19/11/2026
 - Arrastrar a izquierda o derecha: el contenido sigue al dedo y, al soltar, termina de deslizarse a la otra pestaña (o vuelve a su sitio).
 - Con el teclado abierto, las hojas (como «Nuevo producto») quedan justo encima del teclado, sin irse hacia arriba ni dejar hueco.

@@ -132,12 +132,13 @@ function morphChildren(from, to) {
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)");
 const SPRING = "cubic-bezier(.32,.72,0,1)";
 // Capas que salen con animación en vez de desaparecer de golpe.
-const LEAVE = /^(sheet-|scrim$|menu$|mscrim$|band-|partial$|main$|history$|login$)/;
+const LEAVE = /^(sheet-|scrim$|menu$|mscrim$|band-|partial$|main$|history$|options$|login$)/;
 function leave(n) {
   if (n.classList.contains("leaving")) return;
   const k = n.dataset.key || "";
   if (REDUCE.matches || !LEAVE.test(k)) { n.remove(); return; }
   n.classList.add("leaving");
+  if (n.classList.contains("scr")) n.classList.add(render.leaveBack ? "pop-out" : "push-away");
   n.dataset.leave = k;
   n.dataset.key = "x-" + k + "-" + Math.random().toString(36).slice(2);
   n.setAttribute("aria-hidden", "true");
@@ -189,11 +190,18 @@ function render() {
   else if (S.phase === "login") h = vLogin();
   else if (S.view === "pantry") h = vPantry();
   else if (S.view === "history") h = vHistory();
+  else if (S.view === "options") h = vOptions();
   else h = vList();
   if (S.phase === "app") {
     if (S.menu) h += vMenu();
     if (S.sheet) h += vSheet();
   }
+  // Dirección de la navegación: más adentro entra por la derecha; al volver, la de arriba sale por la derecha.
+  const depth = S.phase !== "app" ? 0 : S.view === "history" ? 2 : S.view === "options" ? 1 : 0;
+  if (render.depth !== undefined && depth !== render.depth) render.dir = depth > render.depth ? "push" : "pop";
+  render.leaveBack = render.depth !== undefined && depth < render.depth;
+  render.depth = depth;
+  if (render.dir) h = h.replace('<div class="scr', `<div class="scr nav-${render.dir}`);
   tpl.innerHTML = h;
   const viewKey = S.phase + ":" + S.view + ":" + S.layout;
   const sameView = viewKey === render.view;
@@ -365,7 +373,7 @@ function vList() {
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
     }
   }
-  return `<div class="scr ${render.view && render.view.startsWith("app:history") ? "pop" : ""}" data-key="main">
+  return `<div class="scr" data-key="main">
     ${vHeader()}
     <div class="folder from-l ${S.swipeIn === "l" ? "swipe-l" : ""}" data-key="folder-list">
       ${vChips()}
@@ -401,7 +409,7 @@ function vDock() {
   if (S.capture === "typing") {
     const side = ""; // escribiendo no hay micro: solo el campo, «Añadir» y la X
     return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
-      <form class="line" id="draftForm"><input id="draft" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
+      <form class="line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
       <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button>
       <button class="dclose" type="button" data-act="closeDraft" aria-label="Cerrar">${ic("x", 20)}</button></form></div>
       ${side}</div>`;
@@ -412,6 +420,32 @@ function vDock() {
   return `<div class="dock ${on ? "listening" : ""}" data-key="dock">
     <button class="dk-add" data-act="${S.view === "pantry" ? "pnew" : "type"}" aria-label="${S.view === "pantry" ? "Añadir producto a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>
     ${voiceBtn}</div>`;
+}
+/** Opciones a pantalla completa (como los Ajustes del iPhone). */
+function vOptions() {
+  const row = (act, icon, label, extra = "") => `<button class="opt-row" data-act="${act}">${ic(icon, 20)}<span class="opt-l">${label}</span>${extra}${ic("chevron-right", 18, "opt-go")}</button>`;
+  const modes = [["system", "smartphone", "Como el iPhone"], ["light", "sun", "Claro"], ["dark", "moon", "Oscuro"]];
+  return `<div class="scr" data-key="options">
+   <div class="hb back"><button class="ib sm" data-act="back" aria-label="Volver">${ic("arrow-left", 20)}</button><div class="hb-t"><h1 class="hb-name">Opciones</h1></div></div>
+   <div class="pad opts">
+     <div class="opt-group">
+       ${row("stores", "store", "Tiendas", `<span class="opt-v">${S.stores.length}</span>`)}
+       ${row("review1", "rotate-ccw", "Repasar la despensa", dueList().length ? `<span class="opt-v">${dueList().length}</span>` : "")}
+       ${row("history", "history", "Historial")}
+     </div>
+     <p class="opt-h">Modo</p>
+     <div class="seg" role="radiogroup" aria-label="Modo">${modes.map(([k, icn, l]) => `<button class="${S.theme === k ? "on" : ""}" role="radio" aria-checked="${S.theme === k}" data-act="theme" data-k="${k}">${ic(icn, 18)}<span>${l}</span></button>`).join("")}</div>
+     <p class="opt-h">Cuenta</p>
+     <div class="opt-group">
+       <div class="opt-row static"><span class="avatar">${esc(S.me.charAt(0))}</span><span class="opt-l"><b>${esc(S.me)}</b><small>Sesión iniciada en este dispositivo</small></span></div>
+       ${row("share", "users", `Compartida con ${esc(otherName())}`)}
+       <button class="opt-row danger" data-act="logout">${ic("log-out", 20)}<span class="opt-l">Cerrar sesión</span></button>
+     </div>
+     <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
+     <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a>, CC BY-SA 4.0. Iconos de interfaz: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>, ISC. Tipografías Bricolage Grotesque y Figtree, OFL.</p>
+   </div>
+   ${S.band ? vBand() : ""}
+  </div>`;
 }
 function vMenu() {
   return `<div class="mscrim" data-act="closeMenu" data-key="mscrim"></div><div class="menu" role="menu" data-key="menu">
@@ -448,7 +482,7 @@ function vPantry() {
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
   const list = all.filter((p) => !q || singAll(p.nameKey).includes(q) || (q.length >= 4 && matchProduct(q, [p])));
   const due = q ? [] : dueList();
-  return `<div class="scr ${render.view && render.view.startsWith("app:history") ? "pop" : ""}" data-key="main">
+  return `<div class="scr" data-key="main">
    ${vHeader()}
    <div class="folder from-r ${S.swipeIn === "r" ? "swipe-r" : ""}" data-key="folder-pantry">
    <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
@@ -557,7 +591,7 @@ function shEdit(s) {
   const d = s.draft;
   return `<div class="sbody">
    <h2 class="stitle">Editar artículo</h2>
-   <div class="field"><label for="en">Artículo</label><input id="en" name="articulo-compra" value="${esc(d.name)}" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
+   <div class="field"><label for="en">Artículo</label><input id="en" type="search" inputmode="text" autocapitalize="sentences" name="articulo-compra" value="${esc(d.name)}" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
      ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "edStore")).join("")}</div>
      <p class="hint-ph" style="margin-top:8px">Se recordará para la próxima vez que lo apuntéis.</p></div>
@@ -591,7 +625,7 @@ function shSEdit(s) {
   const kind = (k, t, subt) => `<div class="prow tap" data-act="sdKind" data-k="${k}" style="align-items:center" role="radio" aria-checked="${d.kind === k}" tabindex="0"><span class="mini-ck ${d.kind === k ? "on" : ""}" style="border-radius:50%">${d.kind === k ? ic("check", 12) : ""}</span><div class="pmain"><div class="pname">${t}</div><div class="pmeta">${subt}</div></div></div>`;
   return `<div class="sbody">
    <h2 class="stitle">${s.k ? "Editar tienda" : "Nueva tienda"}</h2>
-   <div class="field"><label for="sn">Tienda</label><input id="sn" name="tienda-compra" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
+   <div class="field"><label for="sn">Tienda</label><input id="sn" type="search" inputmode="text" autocapitalize="sentences" name="tienda-compra" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
@@ -643,7 +677,7 @@ function shPEdit(s) {
   return `<div class="sbody">
    <h2 class="stitle">${s.id ? "Editar producto" : "Nuevo producto"}</h2>
    <p class="help" style="margin-top:-8px">Así aparecerá cada vez que lo apuntéis${onList ? ". También se cambia en la lista, donde ya está" : ""}.</p>
-   <div class="field"><label for="pn">Producto</label><input id="pn" name="producto-compra" value="${esc(d.name)}" placeholder="p. ej. Queso de cabra" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
+   <div class="field"><label for="pn">Producto</label><input id="pn" type="search" inputmode="text" autocapitalize="sentences" name="producto-compra" value="${esc(d.name)}" placeholder="p. ej. Queso de cabra" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger);margin-top:-8px">${esc(s.err)}</p>` : ""}
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
      ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "pdStore")).join("")}</div></div>
@@ -1019,6 +1053,7 @@ async function refreshHistory() {
   render();
 }
 function openHistory() {
+  S.backTo = S.view === "options" ? "options" : null;
   S.menu = false; S.band = null; S.view = "history"; S.histSel = new Set(); S.capture = "idle";
   render();
   refreshHistory();
@@ -1117,13 +1152,13 @@ function act(a, el, e) {
   const k = el.dataset.k;
   const sh = S.sheet;
   switch (a) {
-    case "menu": S.menu = !S.menu; return render();
+    case "menu": if (S.capture === "typing") closeTyping(); S.band = null; S.view = "options"; return render();
     case "closeMenu": S.menu = false; return render();
     case "layout": S.layout = S.layout === "grid" ? "list" : "grid"; LS.set("layout", S.layout); return render();
     case "history": return openHistory();
-    case "pantry": S.menu = false; S.band = null; S.view = "pantry"; return render();
-    case "tabList": S.band = null; S.view = "list"; return render();
-    case "back": S.view = "list"; S.band = null; S.histSel = new Set(); return render();
+    case "pantry": S.menu = false; S.band = null; S.view = S.tab = "pantry"; return render();
+    case "tabList": S.band = null; S.view = S.tab = "list"; return render();
+    case "back": S.view = S.view === "history" && S.backTo === "options" ? "options" : (S.tab || "list"); S.backTo = null; S.band = null; S.histSel = new Set(); return render();
     case "store": S.store = k || null; return render();
     case "stores": S.menu = false; S.sheet = { type: "stores" }; return render();
     case "shopAt": if (lpFired) { lpFired = false; return; } S.store = k || null; S.sheet = null; S.view = "list"; return render();
@@ -1227,7 +1262,7 @@ root.addEventListener("input", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && S.capture === "listening") return cancelListening();
   if (e.key === "Escape") {
-    if (S.sheet) S.sheet = null; else if (S.menu) S.menu = false; else if (S.capture === "typing") return closeTyping(); else if (S.view !== "list") S.view = "list";
+    if (S.sheet) S.sheet = null; else if (S.menu) S.menu = false; else if (S.capture === "typing") return closeTyping(); else if (S.view === "history" && S.backTo === "options") S.view = "options"; else if (S.view === "history" || S.view === "options") S.view = S.tab || "list";
     render();
   }
 });
@@ -1255,7 +1290,7 @@ document.addEventListener("touchmove", (e) => {
 let sw = null;
 root.addEventListener("touchstart", (e) => {
   sw = null;
-  if (S.phase !== "app" || S.view === "history" || S.sheet || S.menu || S.capture !== "idle" || e.touches.length !== 1) return;
+  if (S.phase !== "app" || S.view === "history" || S.view === "options" || S.sheet || S.menu || S.capture !== "idle" || e.touches.length !== 1) return;
   if (e.target.closest(".chips, .sug, .dock, .band, input, .hb")) return;
   const t = e.touches[0];
   sw = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, el: root.querySelector(".folder") };
@@ -1286,12 +1321,12 @@ root.addEventListener("touchend", () => {
   if (!commit || REDUCE.matches) {
     el.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], { duration: 380, easing: SPRING }).onfinish = () => { el.style.transform = ""; el.style.transition = ""; };
     el.style.transform = "";
-    if (commit) { S.view = toPantry ? "pantry" : "list"; S.band = null; render(); }
+    if (commit) { S.view = S.tab = toPantry ? "pantry" : "list"; S.band = null; render(); }
     return;
   }
   const out = el.animate([{ transform: `translateX(${dx}px)` }, { transform: `translateX(${toPantry ? -w : w}px)` }], { duration: 200, easing: "cubic-bezier(.3,.6,.4,1)", fill: "forwards" });
   out.onfinish = () => {
-    S.view = toPantry ? "pantry" : "list"; S.band = null; S.swipeIn = toPantry ? "r" : "l";
+    S.view = S.tab = toPantry ? "pantry" : "list"; S.band = null; S.swipeIn = toPantry ? "r" : "l";
     render();
     S.swipeIn = null;
   };
