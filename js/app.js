@@ -399,7 +399,7 @@ function vList() {
 }
 function vBand() {
   const b = S.band;
-  return `<div class="band" data-key="band-${b.n}" role="status"><span class="msg" data-act="closeBand">${esc(b.msg)}</span>${b.undo ? `<button class="undo" data-act="undo">Deshacer</button>` : ""}</div>`;
+  return `<div class="band ${b.undo ? "" : "solo"}" data-key="band-${b.n}" role="status"><span class="msg" data-act="closeBand">${esc(b.msg)}</span>${b.undo ? `<button class="undo" data-act="undo">Deshacer</button>` : ""}</div>`;
 }
 function sugChoices() {
   const q = singAll(norm(S.draft));

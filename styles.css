@@ -252,6 +252,9 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 /* aviso inferior: pastilla compacta de una línea */
 .band{position:absolute;left:50%;bottom:calc(var(--sab) + 96px);transform:translateX(-50%);z-index:20!important;display:flex;align-items:center;gap:6px;max-width:calc(100% - 32px);padding:6px 6px 6px 18px;border-radius:999px;background:var(--toast-bg);color:var(--toast-fg);box-shadow:0 8px 28px rgba(0,0,0,.22);font:500 15px/20px var(--fb);animation:toastIn .5s var(--spring)}
 .band .msg{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 0;cursor:default}
+.band.solo{padding:6px 20px;min-height:52px;justify-content:center}
+.band.solo .msg{text-align:center}
+.band:not(.solo){min-height:52px}
 .band .undo{flex:none;min-height:40px;padding:0 14px;border-radius:999px;color:var(--toast-act);font:700 15px/20px var(--fb)}
 .band.leaving{animation:toastOut .28s ease-in forwards}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,24px) scale(.94)}}
