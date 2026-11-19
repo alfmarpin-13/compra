@@ -209,10 +209,9 @@ function renderInner() {
   if (S.phase === "boot") h = `<div class="scr" data-key="boot">${vHeader()}<div class="folder">${S.bootStuck ? `<div class="diag" data-key="diag"><b>La app no termina de arrancar</b><span>Se ha quedado ${esc(bootStep)}.</span><span>Pulsa «Reparar la app»: borra lo guardado en este iPhone y vuelve a cargar. Tus datos están en Firebase; solo tendrás que volver a entrar.</span><button class="btn fill" data-act="repair">Reparar la app</button></div>` : ""}</div>${vDock()}</div>`;
   else if (S.phase === "setup") h = vSetup();
   else if (S.phase === "login") h = vLogin();
-  else if (S.view === "pantry") h = vPantry();
   else if (S.view === "history") h = vHistory();
   else if (S.view === "options") h = vOptions();
-  else h = vList();
+  else h = vMain();
   if (S.phase === "app") {
     if (S.menu) h += vMenu();
     if (S.sheet) h += vSheet();
@@ -395,19 +394,23 @@ function vList() {
       : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o toca el micro y habla.</p></div>`;
   } else {
     body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-flip data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
-    if (S.capture === "listening") body += vListening();
+    if (S.capture === "listening" && S.view !== "pantry") body += vListening();
     if (done.length) {
       body += `<button class="chkdiv" data-flip data-key="donediv" data-act="toggleChecked" aria-expanded="${S.checkedOpen}"><i></i><span>Comprado hoy · ${done.length}</span>${ic("chevron-down", 16)}<i></i></button>`;
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
     }
   }
-  return `<div class="scr" data-key="main">
-    ${vHeader()}
-    <div class="folder from-l ${S.swipeIn === "l" ? "swipe-l" : ""}" data-key="folder-list">
+  return `<div class="pane folder" data-key="pane-list" aria-hidden="${S.view === "pantry"}">
       ${vChips()}
       <div class="list">${stale}${body}</div>
-    </div>
-    
+    </div>`;
+}
+/** Pantalla principal: Lista y Despensa una al lado de la otra, como páginas (al arrastrar se ve llegar la otra). */
+function vMain() {
+  const idx = S.view === "pantry" ? 1 : 0;
+  return `<div class="scr" data-key="main">
+    ${vHeader()}
+    <div class="pager"><div class="track at-${idx}" data-key="track">${vList()}${vPantry()}</div></div>
     ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
     ${S.band ? vBand() : ""}
     ${vDock()}
@@ -515,20 +518,15 @@ function vPantry() {
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
   const list = all.filter((p) => !q || singAll(p.nameKey).includes(q) || (q.length >= 4 && matchProduct(q, [p])));
   const due = q ? [] : dueList();
-  return `<div class="scr" data-key="main">
-   ${vHeader()}
-   <div class="folder from-r ${S.swipeIn === "r" ? "swipe-r" : ""}" data-key="folder-pantry">
+  return `<div class="pane folder" data-key="pane-pantry" aria-hidden="${S.view !== "pantry"}">
    <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-flip data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
     ${!list.length && S.pantryQ.trim() ? `<div class="noq" data-key="noq"><p>No está en la despensa.</p><button class="btn fill" data-act="pnewq">Añadir «${esc(cap(S.pantryQ.trim()))}»</button></div>` : ""}
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
-   </div></div>
-   
-   ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
-   ${S.band ? vBand() : ""}
-   ${vDock()}</div>`;
+    ${S.capture === "listening" && S.view === "pantry" ? vListening() : ""}
+   </div></div>`;
 }
 
 /* --- Historial --- */
@@ -1383,51 +1381,43 @@ document.addEventListener("touchmove", (e) => {
   if ((dy > 0 && atTop) || (dy < 0 && atBottom)) e.preventDefault();
 }, { passive: false });
 
-// Arrastrar a izquierda/derecha: el contenido sigue al dedo y, al soltar, termina de cambiar de pestaña
-// (o vuelve a su sitio si no se ha arrastrado lo suficiente).
+// Arrastrar a izquierda/derecha: las dos pestañas van una al lado de la otra y siguen al dedo; al soltar,
+// se coloca la que toca con el muelle (o vuelve si no se ha arrastrado lo suficiente).
 let sw = null;
 root.addEventListener("touchstart", (e) => {
   sw = null;
-  if (S.phase !== "app" || S.view === "history" || S.view === "options" || S.sheet || S.menu || S.capture !== "idle" || e.touches.length !== 1) return;
+  if (S.phase !== "app" || S.view === "history" || S.view === "options" || S.sheet || S.capture !== "idle" || e.touches.length !== 1) return;
   if (e.target.closest(".chips, .sug, .dock, .band, input, .hb")) return;
-  const t = e.touches[0];
-  sw = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, el: root.querySelector(".folder") };
+  const t = e.touches[0], el = root.querySelector(".track");
+  if (!el) return;
+  sw = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, el, w: el.getBoundingClientRect().width, idx: S.view === "pantry" ? 1 : 0 };
 }, { passive: true });
 root.addEventListener("touchmove", (e) => {
-  if (!sw || sw.lock || !sw.el) return;
+  if (!sw || sw.lock) return;
   const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
   if (!sw.drag) {
     if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw.lock = true; return; }
     if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
     sw.drag = true; clearTimeout(lp);
   }
-  const allowed = (dx < 0 && S.view !== "pantry") || (dx > 0 && S.view === "pantry");
-  sw.dx = allowed ? dx : dx * 0.2; // resistencia si no hay pestaña hacia ese lado
+  const allowed = (dx < 0 && sw.idx === 0) || (dx > 0 && sw.idx === 1);
+  sw.dx = allowed ? Math.max(-sw.w, Math.min(sw.w, dx)) : dx * 0.2; // resistencia en los extremos
   sw.el.style.transition = "none";
-  sw.el.style.transform = `translateX(${sw.dx}px)`;
+  sw.el.style.transform = `translateX(${-sw.idx * sw.w + sw.dx}px)`;
 }, { passive: true });
 root.addEventListener("touchend", () => {
   if (!sw) return;
   const s0 = sw; sw = null;
-  if (!s0.drag || !s0.el) return;
-  lpFired = true; // que el toque no tache nada
+  if (!s0.drag) return;
+  lpFired = true; // que el arrastre no tache nada
   setTimeout(() => (lpFired = false), 50);
-  const dx = s0.dx, v = Math.abs(dx) / Math.max(1, Date.now() - s0.t);
-  const toPantry = dx < 0 && S.view !== "pantry", toList = dx > 0 && S.view === "pantry";
-  const commit = (toPantry || toList) && (Math.abs(dx) > 90 || (Math.abs(dx) > 40 && v > 0.45));
-  const el = s0.el, w = el.getBoundingClientRect().width;
-  if (!commit || REDUCE.matches) {
-    el.animate([{ transform: `translateX(${dx}px)` }, { transform: "none" }], { duration: 380, easing: SPRING }).onfinish = () => { el.style.transform = ""; el.style.transition = ""; };
-    el.style.transform = "";
-    if (commit) { S.view = S.tab = toPantry ? "pantry" : "list"; S.band = null; render(); }
-    return;
-  }
-  const out = el.animate([{ transform: `translateX(${dx}px)` }, { transform: `translateX(${toPantry ? -w : w}px)` }], { duration: 200, easing: "cubic-bezier(.3,.6,.4,1)", fill: "forwards" });
-  out.onfinish = () => {
-    S.view = S.tab = toPantry ? "pantry" : "list"; S.band = null; S.swipeIn = toPantry ? "r" : "l";
-    render();
-    S.swipeIn = null;
-  };
+  const v = Math.abs(s0.dx) / Math.max(1, Date.now() - s0.t);
+  const toPantry = s0.dx < 0 && s0.idx === 0, toList = s0.dx > 0 && s0.idx === 1;
+  const commit = (toPantry || toList) && (Math.abs(s0.dx) > s0.w * 0.3 || (Math.abs(s0.dx) > 40 && v > 0.45));
+  // Se quita el estilo del dedo: la transición CSS lleva la pista desde donde está hasta su sitio.
+  s0.el.style.transition = ""; s0.el.style.transform = "";
+  if (commit) { S.view = S.tab = toPantry ? "pantry" : "list"; S.band = null; }
+  render();
 });
 // Es una app: sin zoom con dos dedos ni con doble toque.
 ["gesturestart", "gesturechange"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
