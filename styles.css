@@ -164,7 +164,7 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .dk-voice small{display:block;font:500 11px/14px var(--fb);opacity:.8}
 @keyframes pulse{50%{transform:scale(1.22)}}
 .dk-side{width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
-.draft{flex:1;min-width:0}
+.draft{flex:1;min-width:0;padding-left:10px}
 .draft .from{font:600 11px/16px var(--fb);letter-spacing:.3px;color:var(--muted);margin:0 0 6px}
 .draft .sug{display:flex;gap:8px;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;padding:4px 0}
 .draft .sug::-webkit-scrollbar{display:none}
@@ -240,7 +240,7 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .menu button{display:flex;width:100%;align-items:center;gap:12px;min-height:48px;padding:0 16px;font:500 15px/20px var(--fb);text-align:left}
 .menu button .icon{color:var(--muted)}
 .menu .mver{font:500 12px/18px var(--fb);color:var(--muted);opacity:.7;padding:4px 16px 4px 48px}
-.dclose{width:40px;height:44px;display:grid;place-items:center;color:var(--muted);flex:none;margin-right:-6px}
+.dclose{width:44px;height:44px;display:grid;place-items:center;color:var(--muted);flex:none;margin-right:-4px}
 .menu hr{border:0;height:1px;background:var(--line);margin:8px 0}
 .mscrim{position:absolute;inset:0;z-index:70}
 
