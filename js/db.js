@@ -135,34 +135,51 @@ export async function pruneHistory() {
    Las escrituras no se esperan: con la caché persistente se aplican al momento en local
    (y los listeners se disparan), y se suben al servidor cuando haya conexión. */
 const fail = (e) => console.warn("Error al guardar", e);
-const now = () => F.Timestamp.fromMillis(Date.now());
-
-export const newId = (colName) => F.doc(F.collection(db, colName)).id;
+// Las escrituras se pueden preparar antes de que Firebase esté listo (arranque instantáneo):
+// las fechas van como marcas y se convierten al escribir; el lote espera a que haya sesión.
+const T = (ms) => ({ __ts: ms });
+const SERVER = { __server: true };
+let readyResolve;
+const ready = new Promise((r) => (readyResolve = r));
+export const markReady = () => readyResolve();
+function conv(data) {
+  if (!data) return data;
+  const o = {};
+  for (const [k, v] of Object.entries(data)) {
+    o[k] = v && typeof v === "object" && "__ts" in v ? F.Timestamp.fromMillis(v.__ts) : v && v.__server ? F.serverTimestamp() : v;
+  }
+  return o;
+}
+const ID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+/** Identificador como los de Firestore (20 caracteres aleatorios), sin necesitar Firebase cargado. */
+export const newId = () => { const a = crypto.getRandomValues(new Uint8Array(20)); let id = ""; for (const x of a) id += ID_CHARS[x % 62]; return id; };
 
 /** Lote de operaciones: ops = [{op:"set"|"update"|"delete", col, id, data}] */
 export function batch(ops) {
-  for (let i = 0; i < ops.length; i += 450) {
-    const b = F.writeBatch(db);
-    for (const o of ops.slice(i, i + 450)) {
-      const ref = F.doc(db, o.col, o.id);
-      if (o.op === "set") b.set(ref, o.data);
-      else if (o.op === "update") b.update(ref, o.data);
-      else if (o.op === "delete") b.delete(ref);
+  ready.then(() => {
+    for (let i = 0; i < ops.length; i += 450) {
+      const b = F.writeBatch(db);
+      for (const o of ops.slice(i, i + 450)) {
+        const ref = F.doc(db, o.col, o.id);
+        if (o.op === "set") b.set(ref, conv(o.data));
+        else if (o.op === "update") b.update(ref, conv(o.data));
+        else if (o.op === "delete") b.delete(ref);
+      }
+      b.commit().catch(fail);
     }
-    b.commit().catch(fail);
-  }
+  });
 }
 
 export const itemData = (x) => ({
   productId: x.productId, name: x.name, category: x.category, storeId: x.storeId ?? null,
-  addedBy: x.addedBy, addedAt: x.addedAt ? F.Timestamp.fromMillis(x.addedAt) : now(),
-  checked: !!x.checked, checkedAt: x.checkedAt ? F.Timestamp.fromMillis(x.checkedAt) : null, checkedBy: x.checkedBy || null,
+  addedBy: x.addedBy, addedAt: T(x.addedAt || Date.now()),
+  checked: !!x.checked, checkedAt: x.checkedAt ? T(x.checkedAt) : null, checkedBy: x.checkedBy || null,
 });
 export const productData = (x, isNew) => {
-  const d = { name: x.name, nameKey: nameKey(x.name), category: x.category, storeId: x.storeId ?? null, icon: x.icon ?? null, updatedAt: F.serverTimestamp() };
-  if (isNew) d.createdAt = F.serverTimestamp();
+  const d = { name: x.name, nameKey: nameKey(x.name), category: x.category, storeId: x.storeId ?? null, icon: x.icon ?? null, updatedAt: SERVER };
+  if (isNew) d.createdAt = SERVER;
   return d;
 };
-export const checkData = (by) => ({ checked: true, checkedAt: now(), checkedBy: by });
+export const checkData = (by) => ({ checked: true, checkedAt: T(Date.now()), checkedBy: by });
 export const uncheckData = () => ({ checked: false, checkedAt: null, checkedBy: null });
-export const touch = () => ({ updatedAt: F.serverTimestamp() });
+export const touch = () => ({ updatedAt: SERVER });

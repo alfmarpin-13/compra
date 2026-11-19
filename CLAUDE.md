@@ -17,7 +17,7 @@ App web instalable (PWA) para la lista de la compra de casa, compartida en tiemp
   - SDK modular v10 o superior, cargado desde `https://www.gstatic.com/firebasejs/...`.
 - **Repositorio público.** No se sube ningún dato al repo. La configuración web de Firebase (apiKey, projectId…) no es secreta y puede ir en el código. La seguridad la dan las reglas de Firestore (sección 9).
 - **Idioma:** toda la interfaz en español de España.
-- **Rendimiento:** debe abrir al instante desde la pantalla de inicio. El service worker cachea la carcasa de la app.
+- **Rendimiento:** debe abrir al instante desde la pantalla de inicio. El service worker cachea la carcasa de la app. Además se guarda en `localStorage` una copia de lo último mostrado (`compra.snap`) solo para pintar al abrir mientras Firebase arranca; la fuente de verdad sigue siendo Firestore y la copia se sustituye en cuanto llegan sus datos.
 
 ## 2. Usuarios y acceso
 

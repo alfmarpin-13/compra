@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v36 · 19/11/2026
+- Arranque instantáneo: la app enseña al abrir lo último que mostró (guardado en el iPhone) y lo cambia por los datos al día en cuanto Firebase está listo. Lo que se toque en ese momento se guarda al conectar.
+- El programa de Firebase empieza a descargarse a la vez que la app.
+
 ## v35 · 19/11/2026
 - Si la app no termina de arrancar en 8 s, dice en qué paso se ha quedado y ofrece «Reparar la app» (borra lo guardado en el iPhone y vuelve a cargar; hay que volver a entrar). También en Opciones.
 
