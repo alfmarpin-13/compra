@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v31 · 19/11/2026
+- Créditos en Opciones reducidos a una línea: «Iconos de productos: OpenMoji (CC BY-SA 4.0)».
+
 ## v30 · 19/11/2026
 - Lista y Despensa: categorías por orden alfabético (Otros al final) y, dentro de cada una, artículos por orden alfabético.
 

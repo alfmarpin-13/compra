@@ -458,7 +458,7 @@ function vOptions() {
        <button class="opt-row danger" data-act="logout">${ic("log-out", 20)}<span class="opt-l">Cerrar sesión</span></button>
      </div>
      <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
-     <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a>, CC BY-SA 4.0. Iconos de interfaz: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>, ISC. Tipografías Bricolage Grotesque y Figtree, OFL.</p>
+     <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0)</p>
    </div>
    ${S.band ? vBand() : ""}
   </div>`;
@@ -684,7 +684,7 @@ function shPrefs() {
      <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
    <div class="btns"><button class="btn out" data-act="logout">${ic("log-out", 18)}Cerrar sesión</button></div>
    <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
-   <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a>, CC BY-SA 4.0. Iconos de interfaz: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>, ISC. Tipografías Bricolage Grotesque y Figtree, OFL.</p>
+   <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0)</p>
    </div>`;
 }
 function shPEdit(s) {
