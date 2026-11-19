@@ -69,34 +69,14 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .hb.back{padding-left:8px;gap:4px}
 .hb.back .ib{background:transparent}
 
-/* ---------- Pestañas de archivador: Lista / Despensa ---------- */
-:root{--folder:#E2EADD;--card:#FFFFFF}
-:root[data-theme="dark"]{--folder:#18211B;--card:#233029}
-.tabs{display:flex;gap:2px;padding:8px 12px 0;position:relative;z-index:2}
-.tab{position:relative;min-height:46px;padding:0 20px;border-radius:18px 18px 0 0;display:inline-flex;align-items:center;gap:8px;font:600 15px/20px var(--fb);color:var(--muted);transition:background .2s,color .2s}
-.tab .n{font:600 12px/1 var(--fb);color:var(--muted);background:var(--pressed);border-radius:10px;padding:3px 7px}
-.tab.on{background:var(--folder);color:var(--ink)}
-.tab.on .n{background:var(--card);color:var(--ink)}
-/* esquinas curvas hacia fuera, como la pestaña de una carpeta */
-.tab.on::before,.tab.on::after{content:"";position:absolute;bottom:0;width:18px;height:18px;pointer-events:none}
-.tab.on::before{left:-18px;background:radial-gradient(circle at 0 0,transparent 17.5px,var(--folder) 18px)}
-.tab.on::after{right:-18px;background:radial-gradient(circle at 100% 0,transparent 17.5px,var(--folder) 18px)}
-.tab.on:first-child::before{display:none}
-.folder{flex:1;min-height:0;display:flex;flex-direction:column;margin:0 12px;background:var(--folder);border-radius:22px;padding-top:8px;overflow:hidden}
-.folder.first{border-top-left-radius:0}
-.folder .tile,.folder .group,.folder .card,.folder .srch,.folder .trip{background:var(--card)}
-.folder .row .ck{background:var(--card)}
-.folder .chip{background:transparent}
-.folder .chip.on{background:var(--accent)}
-.folder .cnt{background:var(--card)}
-.folder .tgrid,.folder .group{margin-left:12px;margin-right:12px}
-.folder .cath{padding-left:16px;padding-right:20px}
-.folder .chips{padding-left:12px;padding-right:12px}
-.folder .srow2{display:flex;gap:6px;align-items:center;padding:4px 12px 4px}
-.folder .srow2 .srch{flex:1}
-.folder .newp{background:var(--card);color:var(--ink)}
-.folder .pad{padding:2px 12px 24px}
-.folder .partial,.folder .chkdiv,.folder .donehint,.folder .storeempty{padding-left:16px;padding-right:16px}
+/* ---------- Pestañas en la cabecera: Lista / Despensa ---------- */
+.folder{flex:1;min-height:0;display:flex;flex-direction:column}
+.htabs{display:flex;align-items:baseline;gap:14px;min-width:0}
+.htab{position:relative;font:800 24px/1.15 var(--fh);letter-spacing:-1px;color:var(--muted);opacity:.55;padding:6px 0;min-height:44px;white-space:nowrap;transition:opacity .2s,color .2s}
+.htab.on{color:var(--ink);opacity:1}
+.htab.on::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:3px;border-radius:2px;background:var(--accent)}
+.srow2{display:flex;gap:6px;align-items:center}
+.srow2 .srch{flex:1}
 
 /* ---------- Barra de tiendas ---------- */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:6px 20px 10px;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);overscroll-behavior-x:contain}
@@ -145,8 +125,14 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .chkdiv span{font:600 12px/18px var(--fb);color:var(--muted)}
 .chkdiv .icon{color:var(--muted);transition:transform .2s}
 .chkdiv[aria-expanded="true"] .icon{transform:rotate(180deg)}
-.partial{font:500 16px/24px var(--fb);color:var(--primary);padding:9px 20px}
-.partial .caret{display:inline-block;width:2px;height:18px;background:var(--primary);vertical-align:-3px;margin-left:2px;animation:blink 1s steps(1) infinite}
+/* Burbuja de escucha al final de la lista */
+.listening{display:flex;align-items:center;gap:12px;margin:14px 20px 4px;padding:12px 16px;background:var(--card,var(--paper));border-radius:18px;font:500 16px/22px var(--fb);color:var(--muted)}
+.listening.has{color:var(--ink)}
+.wave{display:flex;align-items:center;gap:3px;height:20px;flex:none}
+.wave i{display:block;width:3px;height:6px;border-radius:2px;background:var(--primary);opacity:.45}
+.wave.on i{opacity:1;animation:wave 1s ease-in-out infinite}
+.wave.on i:nth-child(2){animation-delay:.15s}.wave.on i:nth-child(3){animation-delay:.3s}.wave.on i:nth-child(4){animation-delay:.45s}
+@keyframes wave{0%,100%{height:6px}50%{height:20px}}
 @keyframes blink{50%{opacity:0}}
 .empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:64px 24px 24px}
 .empty h2{font:800 26px/34px var(--fh);letter-spacing:-1.2px;margin-bottom:8px}

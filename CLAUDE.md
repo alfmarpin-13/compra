@@ -69,16 +69,16 @@ Mismo diseño que el prototipo. Resumen:
 
 1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
 2. **Lista (principal).**
-   - **Cabecera compacta:** logo de 32 px, «Compra» y tres botones: cambiar vista (casillas/lista), historial y menú ⋮. Solo iconos, sin fondo (decisión de Alfonso).
+   - **Cabecera compacta:** logo de 32 px, las pestañas «Lista» / «Despensa» y tres botones: cambiar vista (casillas/lista), historial y menú ⋮. Solo iconos, sin fondo (decisión de Alfonso).
    - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
    - **Contenido:** artículos pendientes agrupados por categoría, en el orden fijo de categorías. Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
    - **«Comprado hoy · N»:** separador plegable al final. Desplegado, muestra lo tachado hoy, tachado y atenuado, con la nota «Toca uno para devolverlo a la lista. Mañana pasa solo al historial».
-   - **Pestañas de archivador «Lista» y «Despensa»** bajo la cabecera, con su contador. La pestaña activa se funde con la carpeta que contiene su contenido (no son pantallas aparte).
-   - **Barra inferior fija:** «+ Añadir» y, a la derecha, el botón redondo del micrófono (solo el icono). Al tocarlo se ensancha con «Escuchando… toca para parar».
+   - **Pestañas «Lista» y «Despensa» en la cabecera,** en el sitio del título «Compra», junto al logo. No son pantallas aparte.
+   - **Barra inferior fija:** «+ Añadir» (en la Despensa crea un producto nuevo; mismo sitio en las dos pestañas) y, a la derecha, el botón redondo del micrófono (solo el icono). Al tocarlo se ensancha con «Escuchando… toca para parar».
 3. **Despensa** (pestaña junto a «Lista», misma cabecera).
-   - **Buscador** con un botón + al lado para un producto nuevo.
+   - **Buscador.** El producto nuevo se crea con «+ Añadir» de la barra de abajo.
    - **Buscador** en forma de pastilla: «Buscar entre N productos».
    - **«Os toca reponer»**, con «Repasar» a la derecha.
    - **Todo el catálogo por categorías,** en casillas o lista según la vista elegida. Lo que ya está en la lista va resaltado con un check.
