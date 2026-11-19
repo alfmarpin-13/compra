@@ -1,6 +1,6 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v32"; // mismo número que js/version.js
+const VERSION = "compra-v33"; // mismo número que js/version.js
 const FIREBASE = "10.14.1";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
@@ -19,7 +19,17 @@ self.addEventListener("install", (e) => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
     // cache: "reload" para no guardar copias viejas de la caché HTTP de GitHub Pages.
-    await c.addAll(SHELL.map((u) => new Request(u, { cache: "reload" })));
+    // Cada archivo se pide con la versión en la URL: así el CDN de GitHub Pages no puede devolver una copia
+    // vieja de algún archivo y mezclar versiones (pasaba justo después de publicar). Se guarda con su nombre normal.
+    await Promise.all(SHELL.map(async (u) => {
+      const r = await fetch(`${u}${u.includes("?") ? "&" : "?"}v=${VERSION}`, { cache: "reload" });
+      if (!r.ok) throw new Error(`No se pudo descargar ${u}`);
+      await c.put(new Request(u), r);
+    }));
+    // Comprobación: el número de version.js tiene que coincidir con el de este service worker.
+    const vr = await c.match("js/version.js");
+    const vtxt = vr ? await vr.clone().text() : "";
+    if (!vtxt.includes(`"${VERSION.replace("compra-v", "")}"`)) throw new Error("Versión a medio publicar; se reintentará");
     await Promise.all(REMOTE.map((u) => fetch(u, { mode: "cors", cache: "reload" }).then((r) => r.ok && c.put(u, r)).catch(() => {})));
     await self.skipWaiting();
   })());
