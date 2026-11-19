@@ -30,11 +30,11 @@ input{font:inherit;color:inherit}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* ---------- Franja superior en la app instalada en iOS ----------
-   iOS 26+ difumina la parte de arriba de las apps de la pantalla de inicio y no se puede desactivar.
-   En la app instalada se deja libre esa franja (pintada de color liso) y el contenido empieza debajo. */
+   iOS 26+ difumina la parte de arriba de las apps de la pantalla de inicio. Una franja fija y opaca
+   del color del fondo (más de 10 px) hace que iOS la pinte lisa; se deja un margen mínimo debajo. */
 @supports (-webkit-touch-callout:none){
-  @media (display-mode:standalone){ :root{--edge:2.5rem} }
-  :root.standalone{--edge:2.5rem}
+  @media (display-mode:standalone){ :root{--edge:6px} }
+  :root.standalone{--edge:6px}
 }
 .topband{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--ground);z-index:50;pointer-events:none;transition:background .2s}
 /* Con una hoja abierta, la franja se oscurece igual que el velo del resto de la pantalla. */
@@ -42,7 +42,9 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 :root[data-theme="dark"] body:has(.scrim) .topband{background:color-mix(in srgb,#000 55%,var(--ground))}
 
 /* ---------- Contenedor ---------- */
-.app{position:relative;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
+.app{position:fixed;top:0;left:0;right:0;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
+/* Con el teclado abierto, sin hueco del indicador de inicio bajo la barra de escribir. */
+.app.kb{--sab:6px}
 .scr{position:absolute;inset:0;display:flex;flex-direction:column;padding-top:var(--sat);padding-bottom:var(--sab);padding-left:var(--sal);padding-right:var(--sar)}
 .scr > *{position:relative;z-index:1}
 .splash{position:absolute;inset:0;display:grid;place-items:center}

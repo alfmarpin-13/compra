@@ -203,9 +203,9 @@ const STORE_ICONS = ["store", "shopping-basket", "croissant", "wheat", "cake-sli
 const autoStoreIcon = (name, kind) => (kind === "generic" ? "store" : bestKeyword(name, STORE_ICON_LIST) || "store");
 // Logos de tienda en una sola tinta (se pintan con el color del texto mediante una máscara).
 const LOGOS = {
-  "logo-mercadona": { file: "icons/tiendas/mercadona.png", r: 1, match: "mercadona" },
+  "logo-mercadona": { file: "icons/tiendas/mercadona.png", r: 1.27, match: "mercadona" },
   "logo-hipercor": { file: "icons/tiendas/hipercor.png", r: 1.77, match: "hipercor" },
-  "logo-lidl": { file: "icons/tiendas/lidl.png", r: 1, match: "lidl" },
+  "logo-lidl": { file: "icons/tiendas/lidl.png", r: 2.53, match: "lidl" },
   "logo-domi-velez": { file: "icons/tiendas/domi-velez.png", r: 2.875, match: "domi velez" },
 };
 const autoLogo = (name) => Object.keys(LOGOS).find((k) => (" " + nameKey(name) + " ").includes(" " + LOGOS[k].match + " ")) || null;
@@ -227,7 +227,6 @@ function vChips() {
   return `<div class="chips" role="tablist" aria-label="Tiendas">
     <button class="chip ${!S.store ? "on" : ""}" role="tab" aria-selected="${!S.store}" data-act="store" data-k="">Todas<span class="n">${count(null)}</span></button>
     ${shown.map((s) => `<button class="chip ${S.store === s.id ? "on" : ""}" role="tab" aria-selected="${S.store === s.id}" data-act="store" data-k="${esc(s.id)}" data-key="chip-${esc(s.id)}">${slot(s.id)}${esc(s.name)}<span class="n">${count(s)}</span></button>`).join("")}
-    <button class="chip" data-act="stores" aria-label="Ver y editar tiendas">${ic("pencil", 15)}Tiendas</button>
   </div>`;
 }
 function groupRows(rows) {
@@ -534,6 +533,7 @@ function shPrefs() {
    <div><p class="labelsm" style="font-size:14px;color:var(--ink);margin-bottom:12px">Cuenta</p>
      <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
    <div class="btns"><button class="btn out" data-act="logout">${ic("log-out", 18)}Cerrar sesión</button></div>
+   ${SR && S.voice === "dictate" ? `<button class="btn out" data-act="voiceRetry">${ic("mic", 18)}Volver a probar «Pulsa y habla»</button>` : ""}
    <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
    <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a>, CC BY-SA 4.0. Iconos de interfaz: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>, ISC. Tipografías Bricolage Grotesque y Figtree, OFL.</p>
    </div>`;
@@ -678,14 +678,18 @@ function openTyping() {
 }
 
 /* ---------- Pulsa y habla ---------- */
-let rec = null, recText = "", recHeld = false, recStart = 0;
+// En iOS el reconocimiento continuo falla en silencio: allí se usa una sola frase y no se reinicia
+// (iOS solo deja arrancarlo con el dedo). Si no llega nada, se pasa a «Dictar» con el teclado.
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let rec = null, recText = "", recHeld = false, recStart = 0, recGotResult = false, recError = false, recMax = null, voiceFails = 0;
 function startListening(prefix = "") {
   if (S.voice !== "voice" || rec) return;
   try {
     rec = new SR();
-    rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
+    rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = !IOS; rec.maxAlternatives = 1;
   } catch (e) { voiceUnavailable(); return; }
-  recText = prefix; recHeld = true; if (!prefix) recStart = Date.now();
+  recText = prefix; recHeld = true;
+  if (!prefix) { recStart = Date.now(); recGotResult = false; recError = false; }
   let finals = prefix ? prefix + " " : "";
   rec.onresult = (ev) => {
     let interim = "";
@@ -693,40 +697,58 @@ function startListening(prefix = "") {
       const r = ev.results[k];
       if (r.isFinal) finals += r[0].transcript + " "; else interim += r[0].transcript;
     }
+    recGotResult = true;
     recText = (finals + interim).replace(/\s+/g, " ").trim();
     S.partial = recText;
     renderPartial();
   };
   rec.onerror = (ev) => {
     if (ev.error === "not-allowed" || ev.error === "service-not-allowed" || ev.error === "audio-capture" || ev.error === "language-not-supported") {
-      rec = null; recHeld = false; S.capture = "idle"; S.partial = "";
+      recError = true; rec = null; recHeld = false; clearTimeout(recMax); S.capture = "idle"; S.partial = "";
       voiceUnavailable();
     }
   };
   rec.onend = () => {
     const r = rec; rec = null;
-    if (!r) return;
-    if (recHeld) {
-      // Algunos navegadores cortan solos: si sigue pulsado, se vuelve a escuchar sin perder lo dicho.
-      try { startListening(recText); if (rec) return; } catch (e) {}
-    }
+    if (!r || recError) return;
+    // Fuera de iOS, si el navegador corta solo y sigue pulsado, se vuelve a escuchar sin perder lo dicho.
+    if (recHeld && !IOS) { try { startListening(recText); if (rec) return; } catch (e) {} }
+    if (recHeld) return; // en iOS: se espera a que suelte el dedo y se procesa lo que haya
     finishListening(recText);
   };
   S.capture = "listening"; S.partial = ""; S.band = null; S.sheet = null;
   try { rec.start(); } catch (e) { rec = null; S.capture = "idle"; voiceUnavailable(); return; }
+  clearTimeout(recMax);
+  recMax = setTimeout(stopListening, 30000); // por si el sistema se traga el «soltar»
   render();
   const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
 }
 function stopListening() {
   if (!recHeld) return;
   recHeld = false;
-  if (rec) { try { rec.stop(); } catch (e) { finishListening(recText); } }
+  clearTimeout(recMax);
+  if (rec) {
+    const r = rec;
+    try { r.stop(); } catch (e) { rec = null; finishListening(recText); return; }
+    // Si el motor no avisa de que ha terminado, se procesa igualmente.
+    setTimeout(() => { if (rec === r) { rec = null; try { r.abort(); } catch (e) {} finishListening(recText); } }, 2500);
+  } else finishListening(recText);
 }
 function finishListening(text) {
-  const short = Date.now() - recStart < 400;
+  if (S.capture !== "listening") return;
+  const held = Date.now() - recStart;
   S.capture = "idle"; S.partial = "";
   text = (text || "").trim();
-  if (!text) { render(); toast(short ? "Mantén pulsado mientras hablas." : "No te he oído. Mantén pulsado mientras hablas."); return; }
+  if (!text) {
+    render();
+    if (held < 600) { toast("Mantén pulsado mientras hablas."); return; }
+    // Pulsado un buen rato y no ha llegado nada: en este dispositivo la voz no funciona.
+    voiceFails++;
+    if (!recGotResult && (navigator.standalone || voiceFails >= 2)) { voiceUnavailable(); return; }
+    toast("No te he oído. Mantén pulsado mientras hablas.");
+    return;
+  }
+  voiceFails = 0;
   const cmd = parseCommand(text, ctx());
   if (cmd && cmd.rows.length) S.sheet = { type: "command", ...cmd, voice: true };
   else {
@@ -742,7 +764,7 @@ function voiceUnavailable() {
   S.capture = "typing";
   render();
   focusDraft();
-  toast("El reconocimiento de voz no funciona aquí. Usa el micro del teclado para dictar.");
+  toast("La voz no funciona aquí. Pulsa el micro del teclado para dictar.");
 }
 
 /* ---------- Edición ---------- */
@@ -910,7 +932,9 @@ root.addEventListener("pointerdown", (e) => {
   }
 });
 root.addEventListener("pointermove", (e) => { if (lpXY && Math.hypot(e.clientX - lpXY[0], e.clientY - lpXY[1]) > 8) clearTimeout(lp); });
-["pointerup", "pointercancel"].forEach((t) => window.addEventListener(t, () => { clearTimeout(lp); stopListening(); }));
+// Soltar el dedo termina la escucha. Un «cancel» del sistema no la corta (iOS lo lanza a veces al mantener pulsado).
+["pointerup", "touchend", "mouseup"].forEach((t) => window.addEventListener(t, () => { clearTimeout(lp); stopListening(); }));
+window.addEventListener("pointercancel", () => clearTimeout(lp));
 root.addEventListener("pointerleave", () => clearTimeout(lp));
 root.addEventListener("scroll", () => clearTimeout(lp), true);
 root.addEventListener("contextmenu", (e) => {
@@ -1035,6 +1059,7 @@ function act(a, el, e) {
     case "prefs": S.menu = false; S.sheet = { type: "prefs" }; return render();
     case "theme": S.theme = k; LS.set("theme", k); return render();
     case "logout": return doLogout();
+    case "voiceRetry": S.voice = "voice"; voiceFails = 0; LS.set("noVoice", ""); S.sheet = null; render(); return toast("Mantén pulsado «Pulsa y habla» mientras hablas.");
   }
 }
 
@@ -1106,6 +1131,16 @@ function startData() {
   });
   refreshHistory();
 }
+const vv = window.visualViewport;
+function fitViewport() {
+  if (!vv) return;
+  const kb = window.innerHeight - vv.height > 80; // teclado abierto
+  root.style.top = kb ? vv.offsetTop + "px" : "";
+  root.style.height = kb ? vv.height + "px" : "";
+  root.classList.toggle("kb", kb);
+}
+if (vv) { vv.addEventListener("resize", fitViewport); vv.addEventListener("scroll", fitViewport); }
+
 let lastDay = dayKey(Date.now());
 function checkDay() {
   const d = dayKey(Date.now());

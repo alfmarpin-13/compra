@@ -70,7 +70,7 @@ Mismo diseño que el prototipo. Resumen:
 1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
 2. **Lista (principal).**
    - **Cabecera compacta:** logo de 32 px, «Compra» y tres botones redondos pequeños: cambiar vista (casillas/lista), historial y menú ⋮.
-   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Al final, «✎ Tiendas». En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
+   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
    - **Contenido:** artículos pendientes agrupados por categoría, en el orden fijo de categorías. Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
