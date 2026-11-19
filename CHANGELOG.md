@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v12 · 19/11/2026
+- Sin selección de texto ni menú «Copiar / Consultar» al mantener pulsado (solo en los campos de escribir).
+
 ## v11 · 19/11/2026
 - Iconos de tienda a una tinta, sin recuadro, igual que los logos.
 
