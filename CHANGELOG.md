@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v38 · 19/11/2026
+- Sesión al instante: Firebase ya no carga a escondidas la página de inicio de sesión con Google (que no usamos) antes de decir quién eres. Era lo que hacía tardar 40-50 s en «comprobando la sesión».
+
 ## v37 · 19/11/2026
 - Conexión con Firebase pensada para datos móviles (long polling desde el principio): evita esperas de 30-60 s cuando la conexión en streaming se queda colgada.
 - Caché de Firestore de una sola pestaña: no espera a coordinarse con otras pestañas.
