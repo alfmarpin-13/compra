@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    // Sustituye los dos UID por los de Authentication → Usuarios.
+    function esDeCasa() {
+      return request.auth != null &&
+        request.auth.uid in ['UID_ALFONSO', 'UID_MARILUZ'];
+    }
+    function nulableString(v) { return v == null || v is string; }
+    function nulableTime(v) { return v == null || v is timestamp; }
+
+    match /stores/{id} {
+      allow read, delete: if esDeCasa();
+      allow create, update: if esDeCasa()
+        && request.resource.data.keys().hasOnly(['name', 'kind', 'order', 'aliases'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.kind in ['generic', 'unique']
+        && request.resource.data.order is number
+        && request.resource.data.aliases is list;
+    }
+
+    match /products/{id} {
+      allow read, delete: if esDeCasa();
+      allow create, update: if esDeCasa()
+        && request.resource.data.keys().hasOnly(['name', 'nameKey', 'category', 'storeId', 'icon', 'createdAt', 'updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.nameKey is string
+        && request.resource.data.category is string
+        && nulableString(request.resource.data.storeId)
+        && nulableString(request.resource.data.get('icon', null));
+    }
+
+    match /items/{id} {
+      allow read, delete: if esDeCasa();
+      allow create, update: if esDeCasa()
+        && request.resource.data.keys().hasOnly(['productId', 'name', 'category', 'storeId', 'addedBy', 'addedAt', 'checked', 'checkedAt', 'checkedBy'])
+        && request.resource.data.productId is string
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.category is string
+        && nulableString(request.resource.data.storeId)
+        && request.resource.data.addedBy is string
+        && request.resource.data.addedAt is timestamp
+        && request.resource.data.checked is bool
+        && nulableTime(request.resource.data.checkedAt)
+        && nulableString(request.resource.data.checkedBy);
+    }
+
+    // Cualquier otra ruta: solo la casa (y en la práctica la app no usa más).
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,293 @@
+# Compra: lista de la compra compartida
+
+App web instalable (PWA) para la lista de la compra de casa, compartida en tiempo real entre **Alfonso** y **Mariluz**. Se usa sobre todo en iPhone 17 Pro (Safari y añadida a la pantalla de inicio) y también en el ordenador.
+
+**Referencia obligatoria: `prototipo.html`.** Es un prototipo funcional, ya validado, del diseño y el comportamiento. Ábrelo y úsalo como fuente de verdad visual: maquetación, colores, tipografía, tamaños, textos y flujos. Lo que este documento dice y el prototipo no hace, o hace distinto, manda este documento. No copies del prototipo sus apaños de demo, que están listados en «Lo que NO hay que copiar».
+
+---
+
+## 1. Stack y restricciones
+
+- **Sin paso de compilación.** HTML, CSS y JavaScript nativos (módulos ES). Igual que el repo hermano `alfmarpin-13/cartera`. Nada de npm, bundlers ni frameworks.
+- **Archivos:** `index.html`, `app.js` (o varios módulos en `js/`), `styles.css`, `manifest.webmanifest`, `sw.js`, `icons/`. Si cabe cómodamente en un único `index.html` como Cartera, también vale.
+- **Hosting:** GitHub Pages en `https://alfmarpin-13.github.io/compra/`. Todas las rutas son relativas, porque la app vive en un subdirectorio.
+- **Backend:** Firebase, en el plan gratuito Spark.
+  - **Firebase Auth**, solo con email y contraseña.
+  - **Cloud Firestore**, con caché persistente local (`persistentLocalCache` con `persistentMultipleTabManager`) para que funcione sin conexión y sincronice al volver.
+  - SDK modular v10 o superior, cargado desde `https://www.gstatic.com/firebasejs/...`.
+- **Repositorio público.** No se sube ningún dato al repo. La configuración web de Firebase (apiKey, projectId…) no es secreta y puede ir en el código. La seguridad la dan las reglas de Firestore (sección 9).
+- **Idioma:** toda la interfaz en español de España.
+- **Rendimiento:** debe abrir al instante desde la pantalla de inicio. El service worker cachea la carcasa de la app.
+
+## 2. Usuarios y acceso
+
+- Solo dos usuarios: `alfonso` y `mariluz`.
+- En la pantalla de entrada se escribe el usuario a secas. Por dentro se traduce a un email ficticio: `alfonso@compra.app` y `mariluz@compra.app`.
+- Las cuentas las crea Alfonso a mano en la consola de Firebase. No hay registro, ni pantalla de alta, ni «olvidé mi contraseña».
+- Sesión persistente: «Recordarme en este iPhone» marcado por defecto, con `browserLocalPersistence`.
+- **Sin sesión no se muestra ningún dato**, aunque alguien tenga la URL.
+- Para saber quién soy: la parte del email antes de la `@`, con la primera letra en mayúscula.
+
+## 3. Modelo de datos (Firestore)
+
+Hay una única casa, así que las colecciones van en la raíz.
+
+```
+stores/{storeId}
+  name: string            // "Mercadona"
+  kind: "generic" | "unique"
+  order: number           // posición en la barra de tiendas
+  aliases: string[]       // para reconocerla al escribir o dictar: ["mercadona","merca"]
+
+products/{productId}      // la DESPENSA: catálogo de lo que soléis comprar
+  name: string            // "Leche entera"
+  nameKey: string         // normalizado sin tildes ni mayúsculas, para buscar y evitar duplicados
+  category: string        // id de categoría (sección 6)
+  storeId: string | null  // tienda habitual; null = «Cualquier súper»
+  icon: string | null     // clave de icono (sección 7); null = icono de su categoría
+  createdAt, updatedAt
+
+items/{itemId}            // la LISTA: cada vez que se apunta algo
+  productId: string
+  name, category, storeId // copia del producto en el momento de apuntarlo (storeId puede ser distinto «esta vez»)
+  addedBy: "Alfonso" | "Mariluz"
+  addedAt: timestamp
+  checked: boolean
+  checkedAt: timestamp | null
+  checkedBy: string | null
+```
+
+- **Lista pendiente:** `items` con `checked == false`.
+- **«Comprado hoy»:** `checked == true` y `checkedAt` dentro del día local de hoy (zona `Europe/Madrid`).
+- **Historial:** `checked == true` y `checkedAt` anterior a hoy, agrupado por día. No hay que mover documentos: el paso al historial es solo una consulta. Mantén 12 meses y borra lo más antiguo de forma perezosa al abrir el historial.
+- **«Os toca reponer»** se calcula en el cliente a partir del historial (sección 5.8).
+- Todo con `onSnapshot`, en tiempo real.
+
+## 4. Pantallas
+
+Mismo diseño que el prototipo. Resumen:
+
+1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
+2. **Lista (principal).**
+   - **Cabecera compacta:** logo de 32 px, «Compra» y tres botones redondos pequeños: cambiar vista (casillas/lista), historial y menú ⋮.
+   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Al final, «✎ Tiendas». En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
+   - **Contenido:** artículos pendientes agrupados por categoría, en el orden fijo de categorías. Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
+     - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
+     - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
+   - **«Comprado hoy · N»:** separador plegable al final. Desplegado, muestra lo tachado hoy, tachado y atenuado, con la nota «Toca uno para devolverlo a la lista. Mañana pasa solo al historial».
+   - **Barra inferior fija:** «+ Añadir», «Pulsa y habla» y un botón redondo que abre la Despensa.
+3. **Despensa.**
+   - **Cabecera:** ←, «Despensa» y +.
+   - **Buscador** en forma de pastilla: «Buscar entre N productos».
+   - **«Os toca reponer»**, con «Repasar» a la derecha.
+   - **Todo el catálogo por categorías,** en casillas o lista según la vista elegida. Lo que ya está en la lista va resaltado con un check.
+   - Si la búsqueda no encuentra nada: «No está en la despensa» y un botón «Añadir «X»», que abre la ficha con el nombre ya escrito.
+4. **Historial:** ←, «Historial», buscador y tarjetas por día («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir estos artículos (N)», que se salta lo que ya está pendiente.
+5. **Tiendas** (hoja inferior): lista de todas las tiendas con su tipo, lo pendiente y un lápiz. Tocar una abre la lista filtrada por esa tienda. Abajo, «Añadir tienda».
+6. **Preferencias** (menú ⋮): modo Como el iPhone / Claro / Oscuro, cuenta y cerrar sesión.
+7. **Menú ⋮:** Tiendas, Despensa, Repasar la despensa, Historial, Compartida con…, Preferencias, Cerrar sesión.
+
+## 5. Reglas de funcionamiento
+
+### 5.1 Tiendas genéricas y únicas
+- **Genérica** (Mercadona, Hipercor, Lidl): su vista muestra los artículos asignados a ella y también todos los de «Cualquier súper» (`storeId == null`).
+- **Única** (Frutería, Carnicería, Panadería, Farmacia): su vista muestra solo lo asignado a ella.
+- «Todas» lo muestra todo.
+- El contador de cada tienda en la barra es lo que verías al abrirla.
+
+### 5.2 Tachar
+- Tocar un artículo pendiente lo tacha: `checked = true`, `checkedAt = ahora`, `checkedBy = yo`.
+- Sale un aviso abajo, «Se ha tachado Huevos», con **Deshacer** durante unos 6 s.
+- Tocar un artículo en «Comprado hoy» lo devuelve a pendiente, sin aviso.
+- Mantener pulsado (500 ms) abre su edición. En el ordenador, también con clic derecho o con un lápiz que aparece al pasar el ratón (solo en dispositivos con `hover`).
+
+### 5.3 Añadir escribiendo
+- «+ Añadir» abre un campo sobre la barra inferior: «Escribe qué necesitas».
+- Mientras escribes, sugiere productos de la despensa: primero lo que «Os toca reponer» y luego lo que coincide.
+- Se pueden escribir varios a la vez: «leche, pan de la panadería y pañales para la niña».
+- **Separadores:** comas, « y », « e », «también». Se ignoran muletillas como «me hace falta», «necesito», «apunta» o «hay que comprar».
+- **Interpretación de cada trozo:**
+  - Se busca en la despensa tolerando faltas: distancia de edición normalizada de 0,26 o menos, singular o plural y sin tildes.
+  - «de/del/en + tienda» fija la tienda; se reconoce por el nombre o los alias de la tienda.
+  - «para la niña / de Lucía / del bebé» asigna la categoría Lucía.
+  - «de/en cualquier súper / da igual dónde» fija «Cualquier súper».
+  - Los números y las cantidades se descartan («dos pimientos» → Pimientos). **La app no guarda cantidades.**
+  - Un producto que no está en la despensa se crea en ella, con la categoría deducida por palabras clave y «Otros» si no hay coincidencia.
+- **Si todo está claro,** se añade directamente: el producto es conocido o la tienda se dijo, no hay faltas corregidas ni duplicados. Aviso: «Añadido: Leche entera · Mercadona» con Deshacer.
+- **Si no,** se abre la hoja **«Esto es lo que he entendido»** (o «¿Dónde lo apunto?» si es uno solo). Por cada artículo, una casilla para incluirlo, su categoría y tienda, y una nota según el caso:
+  - corrección: «Entiendo «Plátanos» (escribiste «platnos»)»;
+  - duplicado: «Ya está en la lista. No lo duplico»;
+  - tienda habitual: «Normalmente lo apuntáis en Mercadona. ¿Lo dejo ahí o en cualquier súper?», con botones [Mercadona] [Cualquier súper] [Otra…];
+  - producto nuevo: «Es nuevo. Lo de fruta soléis comprarlo en Frutería», usando la tienda dominante de esa categoría si reúne al menos el 60 %.
+  - Botones: Cancelar y «Añadir N».
+- **Aprendizaje:** si al añadir se elige una tienda distinta de la habitual, esa pasa a ser la tienda habitual del producto en la despensa.
+- Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte, **sin avisos emergentes**.
+
+### 5.4 Pulsa y habla
+- Mantener pulsado el botón activa el reconocimiento de voz (`SpeechRecognition` / `webkitSpeechRecognition`, idioma `es-ES`, con resultados provisionales). Al soltar se procesa.
+- La transcripción va apareciendo al final de la lista mientras hablas.
+- El texto dictado pasa por el mismo intérprete de 5.3 y siempre termina en la hoja de confirmación.
+- **Orden de tachado por voz:** «He comprado todo lo de Mercadona menos los huevos», y variantes como «ya tengo», «hemos cogido» o «excepto», abre la hoja **«Marcar como comprado»**. Lista los artículos que verías en esa tienda con casillas; las excepciones salen desmarcadas con «lo dejo pendiente». Al confirmar: «Se han tachado N artículos» con Deshacer, que los devuelve todos.
+- **Comprobación de disponibilidad:** si el navegador no tiene reconocimiento de voz (o falla en la app instalada en iOS), el botón pasa a «Dictar» y abre el campo de texto con el foco puesto. Así se puede usar el dictado del teclado del iPhone, y el intérprete hace el resto. Nunca debe quedar un botón que no haga nada.
+
+### 5.5 Editar un artículo de la lista
+- Hoja «Editar artículo» con: nombre, dónde se compra (chips: Cualquier súper y cada tienda), «Mover a…» (categorías) y Eliminar (con Deshacer).
+- La nota «Se recordará para la próxima vez que lo apuntéis» indica que cambiar tienda o categoría también actualiza el producto en la despensa.
+
+### 5.6 Editar la despensa
+- Se abre manteniendo pulsado (o con el lápiz o el clic derecho en el ordenador) un producto de la Despensa, o con el «+» para uno nuevo.
+- Hoja «Editar producto» / «Nuevo producto» con: nombre, dónde se compra, categoría y «Borrar de la despensa» (con Deshacer).
+- Si el producto está pendiente en la lista, los cambios se aplican también allí.
+- No se permiten dos productos con el mismo `nameKey`.
+- En la Despensa, tocar un producto lo apunta en la lista o lo quita de ella.
+
+### 5.7 Tiendas editables
+- **Añadir:** nombre y tipo (Genérica: «Le caen también las cosas de «Cualquier súper», como los huevos»; Única: «Solo lo que se compra allí, como en la farmacia»).
+- **Editar:** nombre, tipo, «Mover antes» y «Mover después» (cambian `order`).
+- **Borrar:** pide confirmación. Lo asignado a esa tienda (artículos pendientes y productos de la despensa) pasa a «Cualquier súper».
+- El nombre nuevo se añade a `aliases`.
+
+### 5.8 Os toca reponer
+- Para cada producto con dos o más compras en el historial: el intervalo es la mediana de días entre compras.
+- Toca reponer si los días desde la última compra son al menos el 90 % del intervalo y no está ya pendiente.
+- Se ordena por «retraso relativo».
+- **«Repasar la despensa»** muestra esos productos uno a uno: «Comprado hace X días. Soléis comprarlo cada Y», con los botones Saltar y Añadir.
+
+### 5.9 Lo que NO hay en la app
+- Cantidades: ni gramos, ni kilos, ni unidades.
+- «Empezar compra» / «Terminar compra», y el modo compra.
+- Varias listas.
+- Avisos de lo que hace la otra persona, como «Mariluz ha tachado…».
+- Logos de marcas de supermercado. Cada tienda genérica lleva un hueco neutro (icono de tienda con borde discontinuo) donde más adelante podrá ir su logo monocromo.
+
+## 6. Datos iniciales
+
+Al primer arranque, si `stores` está vacía, crea:
+
+| order | id | name | kind | aliases |
+|---|---|---|---|---|
+| 0 | mercadona | Mercadona | generic | mercadona, merca |
+| 1 | hipercor | Hipercor | generic | hipercor, corte ingles, el corte ingles |
+| 2 | lidl | Lidl | generic | lidl, lidel |
+| 3 | fruteria | Frutería | unique | fruteria, frutero |
+| 4 | carniceria | Carnicería | unique | carniceria, carnicero |
+| 5 | panaderia | Panadería | unique | panaderia, panadero, horno |
+| 6 | farmacia | Farmacia | unique | farmacia |
+
+**Categorías:** lista fija en el código, en este orden. Cada una tiene un color para claro y otro para oscuro, en tonos tierra como los del prototipo.
+
+1. Fruta
+2. Verdura
+3. Carne
+4. Pescado y marisco
+5. Charcutería
+6. Quesos
+7. Lácteos y huevos
+8. Pan
+9. Bollería y dulces (galletas incluidas)
+10. Café e infusiones
+11. Pasta y arroz
+12. Legumbres
+13. Conservas y salsas
+14. Aceite y especias
+15. Repostería (harina, azúcar…)
+16. Aperitivos
+17. Congelados
+18. Bebidas
+19. Lucía (cosas de la niña; color = el primario de la app)
+20. Higiene
+21. Limpieza
+22. Hogar
+23. Otros
+
+**Despensa:** empieza vacía y se va llenando sola con lo que se apunta.
+
+Las palabras clave para deducir la categoría de un producto nuevo están en `KW` dentro del prototipo; adáptalas a estas categorías.
+
+## 7. Identidad visual «Lima»
+
+Copia exacta del prototipo. Tokens:
+
+```
+Claro:  ground #F3F4EE · paper #FFFFFF · ink #132019 · muted #5D6A61
+        primary #1C3A2D · on-primary #D9F56E · accent (lima) #D9F56E · on-accent #1C3A2D
+        tint #E2EADD · line #E1E5DC · outline #A9B3AA · pressed #EBEEE5
+Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
+        primary #D9F56E · on-primary #0E1511 · accent #D9F56E · on-accent #0E1511
+        tint #233029 · line #26312A · outline #4C5A51 · pressed #1E2922
+```
+
+- **Tipografía:** títulos en **Bricolage Grotesque** 800 con espaciado de letras de −1,2 px; texto en **Figtree** 400–700. Ambas por Google Fonts (licencia OFL).
+- **Acento lima:** botón «Pulsa y habla» (fondo verde bosque y texto lima en claro), chip de tienda seleccionada, botón de despensa, insignias «Toca» e inicial de quién apuntó algo.
+- **Logo:** `logo.svg` (cesta de mimbre verde bosque sobre lima). Se usa en:
+  - la cabecera, a 32 px con esquinas de 9 px;
+  - la pantalla de entrada;
+  - el favicon;
+  - los iconos PWA. Genera PNG de 180 (apple-touch-icon), 192 y 512, más una versión *maskable* con margen de seguridad. No pongas texto en el icono.
+- **Iconos de producto:** set **OpenMoji** de línea (CC BY-SA 4.0), coloreado con `currentColor` en el color de la categoría.
+  - Diccionario de palabras clave → icono, para que un producto nuevo («leche semidesnatada») encuentre su icono («leche») automáticamente.
+  - Sin coincidencia, se usa el icono de su categoría.
+  - Atribución en Preferencias: «Iconos de productos: OpenMoji, CC BY-SA 4.0».
+- **Iconos de interfaz y de categoría:** trazo de 1,8 px en caja de 24, extremos redondeados, al estilo **Lucide** (licencia ISC). No reutilices los trazados del prototipo que vienen de otros proyectos sin comprobar su licencia; usa Lucide o dibújalos.
+- Toques de al menos 44 px, contraste AA y respeto a `prefers-reduced-motion`.
+
+## 8. PWA
+
+- `manifest.webmanifest`: `name` «Compra», `short_name` «Compra», `display: standalone`, `start_url` y `scope` `./`, `background_color` = ground y `theme_color` = ground. Si el manifiesto no permite variar por tema, usa los colores del modo claro.
+- `<meta name="theme-color">` actualizado según el tema, con `apple-mobile-web-app-capable` y la barra de estado acorde.
+- `viewport-fit=cover` y márgenes con `env(safe-area-inset-*)` para la isla dinámica y el indicador de inicio.
+- **Service worker:** precache de la carcasa (HTML, CSS, JS, fuentes e iconos) con versión en el nombre de la caché. Los datos los gestiona la caché de Firestore. Al haber versión nueva, se aplica en la siguiente apertura, sin avisos.
+
+## 9. Seguridad: reglas de Firestore
+
+Alfonso pegará los dos UID tras crear los usuarios.
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function esDeCasa() {
+      return request.auth != null &&
+        request.auth.uid in ['UID_ALFONSO', 'UID_MARILUZ'];
+    }
+    match /{document=**} {
+      allow read, write: if esDeCasa();
+    }
+  }
+}
+```
+
+Añade validaciones básicas de forma en `items`, `products` y `stores` (campos y tipos esperados) si no complican el código.
+
+## 10. Lo que NO hay que copiar del prototipo
+
+- La barra de estado falsa del iPhone, el marco de teléfono y el indicador de inicio dibujado.
+- `window.__demo`, los datos de ejemplo (LIST0, CATALOG0, HISTORY0) y el guardado en `localStorage` como base de datos.
+- El inicio de sesión simulado, la voz simulada con frases fijas y la sincronización simulada («Mariluz ha añadido…»).
+- Las referencias internas a «Usuals», «palette», «plum/grove/tide» y el estilo de fondo con ilustraciones.
+
+## 11. Configuración que hace Alfonso (guíale paso a paso cuando llegue el momento)
+
+1. Crear el proyecto en Firebase (plan Spark).
+2. Authentication → método Correo/contraseña → crear los usuarios `alfonso@compra.app` y `mariluz@compra.app`. En Configuración → Acciones de usuario, desactivar la creación de cuentas.
+3. Firestore → crear la base de datos en una región europea (`europe-southwest1`, Madrid, o `eur3`) en modo producción → pegar las reglas con los UID.
+4. Configuración del proyecto → añadir app web → copiar el objeto `firebaseConfig` en el código.
+5. Authentication → Dominios autorizados → añadir `alfmarpin-13.github.io`.
+6. GitHub → repo `compra` → Settings → Pages → desplegar desde `main`, carpeta raíz.
+
+## 12. Criterios de aceptación
+
+- [ ] Sin sesión, nada visible. Con usuario o contraseña incorrectos, solo el error genérico.
+- [ ] Alfonso apunta algo en el iPhone y aparece en menos de 2 s en el de Mariluz, y al revés.
+- [ ] Sin conexión: se puede apuntar y tachar, y al recuperar la conexión se sincroniza sin perder nada.
+- [ ] «huevos» sin tienda → aparece en Mercadona, Hipercor y Lidl, y NO en Farmacia ni en Frutería.
+- [ ] Una tienda sin artículos propios pendientes no sale en la barra, pero sí en Tiendas.
+- [ ] «platnos, pan de la panadería y pañales para la niña» → hoja con Plátanos (corregido), Pan en Panadería y Pañales en Lucía.
+- [ ] «dos pimientos» → «Pimientos», sin cantidad en ningún sitio.
+- [ ] Tachar → aviso con Deshacer, y Deshacer lo devuelve.
+- [ ] Lo tachado hoy está en «Comprado hoy». Mañana está en el Historial bajo «Ayer».
+- [ ] «He comprado todo lo de Mercadona menos los huevos» → hoja con todo menos huevos marcado; al confirmar, aviso con Deshacer.
+- [ ] Sin reconocimiento de voz disponible, «Pulsa y habla» se convierte en «Dictar» y funciona con el dictado del teclado.
+- [ ] Editar en la despensa cambia también el artículo pendiente. Borrar una tienda pasa sus cosas a «Cualquier súper».
+- [ ] Modo claro y oscuro idénticos al prototipo; casillas y lista. En el ordenador: lápiz al pasar el ratón y rueda en la barra de tiendas.
+- [ ] Se instala en el iPhone con el icono de la cesta y abre a pantalla completa.
