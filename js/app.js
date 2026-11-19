@@ -196,11 +196,16 @@ function vHeader() {
       <button class="ib sm" data-act="menu" aria-label="Más opciones" aria-expanded="${S.menu}">${ic("ellipsis-vertical", 20)}</button>
     </div></div>`;
 }
+// Iconos que se pueden elegir para una tienda.
+const STORE_ICONS = ["store", "shopping-basket", "croissant", "wheat", "cake-slice", "apple", "carrot", "beef", "drumstick", "fish", "ham", "cheese", "milk", "coffee", "wine", "pill", "spray-can", "baby", "leaf", "house"];
+const autoStoreIcon = (name, kind) => (kind === "generic" ? "store" : bestKeyword(name, STORE_ICON_LIST) || "store");
+const storeIcon = (st) => (st.icon && LUCIDE[st.icon] ? st.icon : autoStoreIcon(st.name, st.kind));
 function slot(id, big) {
   const st = storeById(id);
   if (!st) return "";
-  if (st.kind === "generic") return `<span class="slot store${big ? " lg" : ""}" data-logo-slot="${esc(st.id)}" aria-hidden="true">${ic("store", big ? 16 : 10)}</span>`;
-  const g = bestKeyword(st.name, STORE_ICON_LIST) || "store";
+  const g = storeIcon(st);
+  // Genérica sin icono elegido: hueco neutro con borde discontinuo para su futuro logo.
+  if (st.kind === "generic" && !st.icon) return `<span class="slot store${big ? " lg" : ""}" data-logo-slot="${esc(st.id)}" aria-hidden="true">${ic(g, big ? 16 : 10)}</span>`;
   return `<span class="slot${big ? " lg" : ""}" aria-hidden="true">${ic(g, big ? 16 : 11)}</span>`;
 }
 function vChips() {
@@ -478,6 +483,9 @@ function shSEdit(s) {
    <div class="field"><label for="sn">Nombre</label><input id="sn" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off"></div>
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
+   <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
+     <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
+     ${STORE_ICONS.map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Icono ${g}">${ic(g, 18)}</button>`).join("")}</div></div>
    ${s.k ? `<div><p class="labelsm" style="margin-bottom:8px">Posición en la barra de tiendas</p><div class="wrap">
      <button class="chip sm" data-act="sdMove" data-k="-1" ${ix <= 0 ? "disabled" : ""}>Mover antes</button><button class="chip sm" data-act="sdMove" data-k="1" ${ix >= S.stores.length - 1 ? "disabled" : ""}>Mover después</button></div></div>` : ""}
    ${s.k ? (s.confirm ? `<p class="note" style="margin:0">¿Borrar ${esc(storeName(s.k))}?${n || np ? ` Lo que tenga asignado (${[n ? plural(n, "artículo de la lista", "artículos de la lista") : "", np ? plural(np, "producto de la despensa", "productos de la despensa") : ""].filter(Boolean).join(" y ")}) pasará a «Cualquier súper».` : ""}</p>
@@ -802,12 +810,12 @@ function saveStore(sh) {
   if (sh.k) {
     const st = storeById(sh.k);
     const aliases = [...new Set([...(st.aliases || []), k])];
-    DB.batch([{ op: "update", col: "stores", id: st.id, data: { name, kind: sh.draft.kind, aliases } }]);
+    DB.batch([{ op: "update", col: "stores", id: st.id, data: { name, kind: sh.draft.kind, aliases, icon: sh.draft.icon || null } }]);
   } else {
     let id = slugId(k), n = 2;
     while (S.stores.some((s) => s.id === id)) id = slugId(k) + "-" + n++;
     const order = S.stores.reduce((m, s) => Math.max(m, s.order), -1) + 1;
-    DB.batch([{ op: "set", col: "stores", id, data: { name, kind: sh.draft.kind, order, aliases: [k] } }]);
+    DB.batch([{ op: "set", col: "stores", id, data: { name, kind: sh.draft.kind, order, aliases: [k], icon: sh.draft.icon || null } }]);
   }
   S.sheet = { type: "stores" };
   render();
@@ -937,8 +945,9 @@ function act(a, el, e) {
     case "store": S.store = k || null; return render();
     case "stores": S.menu = false; S.sheet = { type: "stores" }; return render();
     case "shopAt": if (lpFired) { lpFired = false; return; } S.store = k || null; S.sheet = null; S.view = "list"; return render();
-    case "sedit": { e.stopPropagation(); const st = storeById(k); S.sheet = { type: "sedit", k, draft: { name: st.name, kind: st.kind } }; return render(); }
-    case "snew": S.sheet = { type: "sedit", k: null, draft: { name: "", kind: "unique" } }; return render();
+    case "sedit": { e.stopPropagation(); const st = storeById(k); S.sheet = { type: "sedit", k, draft: { name: st.name, kind: st.kind, icon: st.icon || null } }; return render(); }
+    case "snew": S.sheet = { type: "sedit", k: null, draft: { name: "", kind: "unique", icon: null } }; return render();
+    case "sdIcon": sh.draft.name = root.querySelector("#sn").value; sh.draft.icon = k || null; return render();
     case "sdKind": sh.draft.name = root.querySelector("#sn").value; sh.draft.kind = k; return render();
     case "sdMove": sh.draft.name = root.querySelector("#sn").value; return moveStore(sh, +k);
     case "sdDel": sh.draft.name = root.querySelector("#sn").value; sh.confirm = true; return render();

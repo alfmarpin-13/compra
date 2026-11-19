@@ -50,7 +50,7 @@ function productFrom(d) {
 }
 function storeFrom(d) {
   const x = d.data();
-  return { id: d.id, name: x.name || d.id, kind: x.kind === "unique" ? "unique" : "generic", order: typeof x.order === "number" ? x.order : 99, aliases: Array.isArray(x.aliases) ? x.aliases : [] };
+  return { id: d.id, name: x.name || d.id, kind: x.kind === "unique" ? "unique" : "generic", order: typeof x.order === "number" ? x.order : 99, aliases: Array.isArray(x.aliases) ? x.aliases : [], icon: typeof x.icon === "string" ? x.icon : null };
 }
 
 /**

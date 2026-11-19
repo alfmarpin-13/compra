@@ -12,11 +12,12 @@ service cloud.firestore {
     match /stores/{id} {
       allow read, delete: if esDeCasa();
       allow create, update: if esDeCasa()
-        && request.resource.data.keys().hasOnly(['name', 'kind', 'order', 'aliases'])
+        && request.resource.data.keys().hasOnly(['name', 'kind', 'order', 'aliases', 'icon'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0
         && request.resource.data.kind in ['generic', 'unique']
         && request.resource.data.order is number
-        && request.resource.data.aliases is list;
+        && request.resource.data.aliases is list
+        && nulableString(request.resource.data.get('icon', null));
     }
 
     match /products/{id} {

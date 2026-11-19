@@ -67,6 +67,7 @@ input{font:inherit;color:inherit}
 .chip .n{font:600 12px/1 var(--fb);color:var(--muted)}
 .chip.on .n{color:var(--on-accent);opacity:.8}
 .chip.sm{height:32px;padding:0 12px;font-size:13px}
+.chip.iconchip{width:44px;height:40px;padding:0;justify-content:center}
 .chip:disabled{opacity:.4}
 
 /* hueco neutro para el logo de la tienda (sin marcas) */
