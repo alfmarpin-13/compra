@@ -438,6 +438,7 @@ html.ready .folder.swipe-l{animation:swipeL .38s var(--spring)}
 /* Diagnóstico visible */
 .diag{margin:24px 20px;padding:16px 18px;border-radius:16px;background:var(--paper);display:flex;flex-direction:column;gap:6px;font:400 14px/20px var(--fb);color:var(--muted)}
 .diag b{font:600 16px/22px var(--fb);color:var(--ink)}
+.diag .btn{margin-top:8px;align-self:stretch}
 #fatal{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:999;padding:12px 14px;border-radius:14px;background:#A72F48;color:#fff;font:500 13px/18px Figtree,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 
 @media (prefers-reduced-motion:reduce){

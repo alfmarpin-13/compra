@@ -206,7 +206,7 @@ function renderInner() {
   applyTheme();
   let h = "";
   // Al arrancar se pinta ya la cabecera en su sitio, para que el logo no salte al cargar.
-  if (S.phase === "boot") h = `<div class="scr" data-key="boot">${vHeader()}<div class="folder"></div>${vDock()}</div>`;
+  if (S.phase === "boot") h = `<div class="scr" data-key="boot">${vHeader()}<div class="folder">${S.bootStuck ? `<div class="diag" data-key="diag"><b>La app no termina de arrancar</b><span>Se ha quedado ${esc(bootStep)}.</span><span>Pulsa «Reparar la app»: borra lo guardado en este iPhone y vuelve a cargar. Tus datos están en Firebase; solo tendrás que volver a entrar.</span><button class="btn fill" data-act="repair">Reparar la app</button></div>` : ""}</div>${vDock()}</div>`;
   else if (S.phase === "setup") h = vSetup();
   else if (S.phase === "login") h = vLogin();
   else if (S.view === "pantry") h = vPantry();
@@ -386,7 +386,7 @@ function vList() {
   const pend = visible([...S.pending.filter((i) => !ticking.has(i.id)), ...justTicked]).sort(sortAdded);
   const done = visible(S.today.filter((i) => !ticking.has(i.id))).sort((a, b) => b.checkedAt - a.checkedAt);
   let body = "";
-  if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span></div>`;
+  if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span><button class="btn out" data-act="repair">Reparar la app</button></div>`;
   else if (!S.ready.pending) body = S.slowLoad ? `<div class="diag" data-key="diag"><b>Esperando a Firebase…</b><span>Si tarda mucho, comprueba la conexión. Si sigue igual, mándale a Claude una captura.</span></div>` : "";
   else if (!pend.length && !done.length && S.capture !== "listening") {
     body = S.store
@@ -468,6 +468,9 @@ function vOptions() {
        <div class="opt-row static"><span class="avatar">${esc(S.me.charAt(0))}</span><span class="opt-l"><b>${esc(S.me)}</b><small>Sesión iniciada en este dispositivo</small></span></div>
        ${row("share", "users", `Compartida con ${esc(otherName())}`)}
        <button class="opt-row danger" data-act="logout">${ic("log-out", 20)}<span class="opt-l">Cerrar sesión</span></button>
+     </div>
+     <div class="opt-group" style="margin-top:12px">
+       <button class="opt-row" data-act="repair">${ic("rotate-ccw", 20)}<span class="opt-l">Reparar la app<small>Si algo no carga bien. Hay que volver a entrar.</small></span></button>
      </div>
      <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
      <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0)</p>
@@ -1329,6 +1332,7 @@ function act(a, el, e) {
     case "prefs": S.menu = false; S.sheet = { type: "prefs" }; return render();
     case "theme": S.theme = k; LS.set("theme", k); return render();
     case "logout": return doLogout();
+    case "repair": el.disabled = true; el.textContent = "Reparando…"; return repairApp();
     case "voice": return toggleVoice();
     case "cancelVoice": return cancelListening();
   }
@@ -1519,13 +1523,20 @@ function checkDay() {
 setInterval(checkDay, 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkDay(); });
 
+/* ---------- Arranque, con vigilante y reparación ---------- */
+let bootStep = "abriendo la app";
 async function boot() {
   applyTheme();
   render();
   if (!isConfigured()) { S.phase = "setup"; return render(); }
+  // Si a los 8 s sigue arrancando, se dice en qué paso se ha quedado y se ofrece reparar.
+  setTimeout(() => { if (S.phase === "boot") { S.bootStuck = true; render(); } }, 8000);
+  bootStep = "cargando Firebase";
   try { await DB.connect(firebaseConfig); }
   catch (e) { console.error(e); showFatal("No se ha podido cargar Firebase: " + (e && e.message)); S.phase = "setup"; return render(); }
+  bootStep = "comprobando la sesión";
   DB.onUser((user) => {
+    S.bootStuck = false;
     if (user) {
       S.me = DB.whoFromEmail(user.email);
       S.meKey = S.me.toLowerCase();
@@ -1536,6 +1547,20 @@ async function boot() {
     }
     render();
   });
+}
+/** Borra la caché de la app y el almacenamiento interno (sesión y caché de Firestore) y vuelve a cargar.
+ *  Los datos están en Firebase: no se pierde nada, solo hay que volver a iniciar sesión. */
+async function repairApp() {
+  try { for (const k of await caches.keys()) await caches.delete(k); } catch (e) {}
+  try { for (const r of (await navigator.serviceWorker?.getRegistrations?.()) || []) await r.unregister(); } catch (e) {}
+  try {
+    const dbs = indexedDB.databases ? await indexedDB.databases() : [];
+    const names = new Set(dbs.map((d) => d.name).filter(Boolean));
+    ["firebaseLocalStorageDb", "firebase-heartbeat-database", "firebase-installations-database"].forEach((n) => names.add(n));
+    await Promise.all([...names].map((n) => new Promise((res) => { const q = indexedDB.deleteDatabase(n); q.onsuccess = q.onerror = q.onblocked = () => res(); })));
+  } catch (e) {}
+  try { for (const k of Object.keys(localStorage)) if (!k.startsWith("compra.theme") && !k.startsWith("compra.layout")) localStorage.removeItem(k); } catch (e) {}
+  location.replace(location.pathname + "?r=" + Date.now());
 }
 
 // Actualizaciones: al volver a la app se busca versión nueva; si ya se instaló, se recarga
