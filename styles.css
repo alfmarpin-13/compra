@@ -288,7 +288,9 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .trip .titem{display:flex;align-items:center;gap:16px;min-height:48px;font:500 16px/24px var(--fb);cursor:pointer;padding-left:12px;width:100%;text-align:left}
 .trip .titem .ago{margin-left:auto;font:500 12px/18px var(--fb);color:var(--muted)}
 .bottombtn{padding:12px 20px 4px;background:var(--ground)}
-.bottombtn .btn{width:100%}
+.bottombtn{display:flex;gap:10px}
+.bottombtn .btn{flex:1}
+.bottombtn .delbtn{flex:0 0 56px;padding:0;color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,transparent)}
 .histempty{font:400 14px/21px var(--fb);color:var(--muted);padding:28px 4px}
 
 /* ---------- Entrada ---------- */

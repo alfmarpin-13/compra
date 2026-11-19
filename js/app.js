@@ -4,7 +4,7 @@ import { APP_VERSION, APP_DATE } from "./version.js";
 import * as DB from "./db.js";
 import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW } from "./data.js";
 import { LUCIDE, OPENMOJI } from "./iconos.js";
-import { esc, norm, nameKey, singAll, lev, cap, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
+import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
 import { parseUtterance, parseCommand, isClear, inStore, matchProduct, guessCategory as guessCat } from "./parser.js";
 
 /* ===================================================================
@@ -411,7 +411,7 @@ function vHistory() {
       ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<button class="titem" data-key="${i.id}" data-act="selItem" data-k="${i.id}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button>`; }).join("")}
     </div>`).join("")}
    </div>
-   ${sel ? `<div class="bottombtn" data-key="rebuy"><button class="btn fill" data-act="rebuy">Volver a añadir estos artículos (${sel})</button></div>` : ""}
+   ${sel ? `<div class="bottombtn" data-key="rebuy"><button class="btn out delbtn" data-act="histDel" aria-label="Borrar del historial (${sel})">${ic("trash-2", 20)}</button><button class="btn fill" data-act="rebuy">Volver a añadir (${sel})</button></div>` : ""}
    ${S.band ? vBand() : ""}
   </div>`;
 }
@@ -618,8 +618,9 @@ function markFresh(ids) {
 /** Apunta artículos. entries: [{name, category, storeId, productId?, include}] */
 function addEntries(entries) {
   const ops = [], added = [], seen = new Set();
-  for (const e of entries) {
+  for (let e of entries) {
     if (e.include === false) continue;
+    e = { ...e, name: cap(clean(e.name)) };
     const k = nameKey(e.name);
     if (!k || seen.has(k)) continue;
     let p = (e.productId && productById(e.productId)) || productByKey(k);
@@ -820,7 +821,7 @@ function openEdit(id) {
 }
 function saveEdit(sh) {
   const i = S.pending.find((x) => x.id === sh.id) || S.today.find((x) => x.id === sh.id);
-  const name = cap(root.querySelector("#en").value.trim());
+  const name = cap(clean(root.querySelector("#en").value));
   if (!i || !name) { S.sheet = null; render(); return; }
   const ops = [];
   const k = nameKey(name);
@@ -844,7 +845,7 @@ function openPEdit(id, name) {
   render();
 }
 function savePEdit(sh) {
-  const name = cap(root.querySelector("#pn").value.trim());
+  const name = cap(clean(root.querySelector("#pn").value));
   if (!name) { root.querySelector("#pn").focus(); return; }
   const k = nameKey(name);
   const clash = S.products.find((p) => p.nameKey === k && p.id !== sh.id);
@@ -883,7 +884,7 @@ function deleteProduct(sh) {
 
 /* ---------- Tiendas ---------- */
 function saveStore(sh) {
-  const name = cap(root.querySelector("#sn").value.trim());
+  const name = cap(clean(root.querySelector("#sn").value));
   if (!name) { sh.err = "Escribe un nombre."; render(); return; }
   const k = nameKey(name);
   if (S.stores.some((s) => nameKey(s.name) === k && s.id !== sh.k)) { sh.err = "Ya hay una tienda con ese nombre."; sh.draft.name = name; render(); return; }
@@ -948,6 +949,23 @@ function rebuy() {
   S.histSel = new Set();
   S.view = "list";
   toast(added.length ? `${plural(added.length, "artículo añadido", "artículos añadidos")} a la lista` : "Ya estaba todo en la lista.", added.length ? undoAdd(added) : null);
+}
+
+/** Borra del historial lo seleccionado, con Deshacer. */
+function deleteHistory() {
+  const all = new Map([...S.today, ...S.history].map((i) => [i.id, i]));
+  const gone = [...S.histSel].map((id) => all.get(id)).filter(Boolean);
+  if (!gone.length) return;
+  DB.batch(gone.map((i) => ({ op: "delete", col: "items", id: i.id })));
+  const ids = new Set(gone.map((i) => i.id));
+  S.history = S.history.filter((i) => !ids.has(i.id));
+  S.histSel = new Set();
+  toast(gone.length === 1 ? `Borrado del historial: ${gone[0].name}` : `Borrados ${gone.length} artículos del historial`, () => {
+    DB.batch(gone.map((i) => ({ op: "set", col: "items", id: i.id, data: DB.itemData(i) })));
+    // Lo de hoy vuelve solo por el listener; lo de días anteriores se repone en memoria.
+    S.history = [...S.history, ...gone.filter((i) => !S.today.some((t) => t.id === i.id))];
+    render();
+  });
 }
 
 /* ===================================================================
@@ -1088,6 +1106,7 @@ function act(a, el, e) {
     }
     case "selItem": if (S.histSel.has(k)) S.histSel.delete(k); else S.histSel.add(k); return render();
     case "rebuy": return rebuy();
+    case "histDel": return deleteHistory();
     case "share": S.menu = false; S.sheet = { type: "share" }; return render();
     case "prefs": S.menu = false; S.sheet = { type: "prefs" }; return render();
     case "theme": S.theme = k; LS.set("theme", k); return render();
@@ -1149,17 +1168,34 @@ function stopData() {
   if (sub) { sub.stop(); sub = null; }
   Object.assign(S, { stores: [], products: [], pending: [], today: [], history: [], historyLoaded: false, ready: { stores: false, products: false, pending: false }, view: "list", store: null, band: null, capture: "idle", draft: "", histSel: new Set() });
 }
+// Corrige nombres guardados con espacios sobrantes (una vez por documento).
+const cleaned = new Set();
+function fixSpaces(col, list) {
+  const ops = [];
+  for (const x of list) {
+    const n = clean(x.name);
+    if (n && n !== x.name && !cleaned.has(col + x.id)) {
+      cleaned.add(col + x.id);
+      const data = { name: n };
+      if (col === "products") data.nameKey = nameKey(n);
+      ops.push({ op: "update", col, id: x.id, data });
+      x.name = n;
+    }
+  }
+  if (ops.length) DB.batch(ops);
+  return list;
+}
 let initialPending = true;
 function startData() {
   initialPending = true;
   sub = DB.subscribe({
-    stores(list) { S.stores = list; S.ready.stores = true; if (S.store && !storeById(S.store)) S.store = null; render(); },
-    products(list) { S.products = list; S.ready.products = true; render(); },
+    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; if (S.store && !storeById(S.store)) S.store = null; render(); },
+    products(list) { S.products = fixSpaces("products", list); S.ready.products = true; render(); },
     pending(list, added) {
       // Lo que apunta la otra persona se resalta igual, sin avisos.
       if (!initialPending) markFresh(added.filter((a) => !a.local).map((a) => a.id));
       initialPending = false;
-      S.pending = list; S.ready.pending = true; render();
+      S.pending = fixSpaces("items", list); S.ready.pending = true; render();
     },
     today(list) { S.today = list; render(); },
     error(e) { console.warn("Firestore", e); },

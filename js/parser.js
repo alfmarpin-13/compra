@@ -113,7 +113,7 @@ export function parseOne(raw, ctx) {
   }
 
   const hit = matchProduct(t, products);
-  const e = { raw: String(raw).trim(), q: t, include: true, showAll: false, explicit, lucia };
+  const e = { raw: String(raw).replace(/\s+/g, " ").trim(), q: t, include: true, showAll: false, explicit, lucia };
   if (hit) {
     const p = hit.product;
     e.productId = p.id; e.name = p.name; e.category = lucia ? "lucia" : p.category; e.known = true;

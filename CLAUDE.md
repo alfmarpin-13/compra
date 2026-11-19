@@ -83,7 +83,7 @@ Mismo diseño que el prototipo. Resumen:
    - **«Os toca reponer»**, con «Repasar» a la derecha.
    - **Todo el catálogo por categorías,** en casillas o lista según la vista elegida. Lo que ya está en la lista va resaltado con un check.
    - Si la búsqueda no encuentra nada: «No está en la despensa» y un botón «Añadir «X»», que abre la ficha con el nombre ya escrito.
-4. **Historial:** ←, «Historial», buscador y tarjetas por día («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir estos artículos (N)», que se salta lo que ya está pendiente.
+4. **Historial:** ←, «Historial», buscador y tarjetas por día («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir (N)», que se salta lo que ya está pendiente, y un botón con papelera para borrar lo seleccionado del historial (con Deshacer).
 5. **Tiendas** (hoja inferior): lista de todas las tiendas con su tipo, lo pendiente y un lápiz. Tocar una abre la lista filtrada por esa tienda. Abajo, «Añadir tienda».
 6. **Preferencias** (menú ⋮): modo Como el iPhone / Claro / Oscuro, cuenta y cerrar sesión.
 7. **Menú ⋮:** Tiendas, Despensa, Repasar la despensa, Historial, Compartida con…, Preferencias, Cerrar sesión.
