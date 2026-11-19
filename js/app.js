@@ -412,6 +412,7 @@ function sugChoices() {
   return ok.map((x) => x[1]).slice(0, 8);
 }
 function vSug() {
+  if (S.view === "pantry") return "";
   const xs = sugChoices();
   if (!xs.length) return "";
   const allDue = xs.every(isDue);
@@ -421,7 +422,7 @@ function vDock() {
   if (S.capture === "typing") {
     const side = ""; // escribiendo no hay micro: solo el campo, «Añadir» y la X
     return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
-      <form class="line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
+      <form class="line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="${S.view === "pantry" ? "Productos para la despensa" : "Escribe qué necesitas"}" aria-label="${S.view === "pantry" ? "Productos para la despensa" : "Escribe qué necesitas"}" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
       <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button>
       <button class="dclose" type="button" data-act="closeDraft" aria-label="Cerrar">${ic("x", 20)}</button></form></div>
       ${side}</div>`;
@@ -430,7 +431,7 @@ function vDock() {
   // Micro a la derecha: botón redondo solo con el icono; al escuchar se ensancha y pide tocar para parar.
   const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>${S.voiceReady ? "Escuchando…" : "Un momento…"}<small>toca para parar</small></span>` : ""}</button>`;
   return `<div class="dock ${on ? "listening" : ""}" data-key="dock">
-    <button class="dk-add" data-act="${S.view === "pantry" ? "pnew" : "type"}" aria-label="${S.view === "pantry" ? "Añadir producto a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>
+    <button class="dk-add" data-act="type" aria-label="${S.view === "pantry" ? "Añadir productos a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>
     ${voiceBtn}</div>`;
 }
 /** Opciones a pantalla completa (como los Ajustes del iPhone). */
@@ -558,6 +559,7 @@ function entryChips(e, ix) {
   return keys.map((k) => storeChip(k, e.storeId, "eStore", `data-i="${ix}"`)).join("") + (e.showAll ? "" : `<button class="chip sm" data-act="eMore" data-i="${ix}">Otra…</button>`);
 }
 function entryNote(e) {
+  if (e.inPantry) return `<p class="note">Ya está en la despensa.</p>`;
   if (e.dup) return `<p class="note">Ya está en la lista. No lo duplico.</p>`;
   let h = "";
   if (e.corrected) h += `<p class="note">Entiendo «${esc(e.name)}» (escribiste «${esc(e.corrected)}»).</p>`;
@@ -577,7 +579,7 @@ function shReview(s) {
   const n = s.entries.filter((e) => e.include).length;
   s.entries.forEach((e, ix) => (e._ix = ix));
   return `<div class="sbody">
-   <div class="shead"><h2>${s.entries.length > 1 ? "Esto es lo que he entendido" : "¿Dónde lo apunto?"}</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
+   <div class="shead"><h2>${s.entries.length > 1 ? "Esto es lo que he entendido" : s.target === "pantry" ? "¿Dónde se compra?" : "¿Dónde lo apunto?"}</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
    <p class="said">${s.voice ? "Has dicho" : "Has escrito"} <q>${esc(s.said)}</q></p>
    <div class="card">${s.entries.map((e, ix) => `<div class="prow ${e.include ? "" : "off"}">
       <button class="mini-ck ${e.include ? "on" : ""}" data-act="eInc" data-i="${ix}" role="checkbox" aria-checked="${e.include}" aria-label="Incluir ${esc(e.name)}">${e.include ? ic("check", 14) : ""}</button>
@@ -587,7 +589,7 @@ function shReview(s) {
         ${entryNote(e)}
       </div></div>`).join("")}</div>
    </div>
-   <div class="sfoot"><button class="btn out" data-act="closeSheet">Cancelar</button><button class="btn fill" data-act="eAdd" ${n ? "" : "disabled"}>Añadir${n ? " " + n : ""}</button></div>`;
+   <div class="sfoot"><button class="btn out" data-act="closeSheet">Cancelar</button><button class="btn fill" data-act="eAdd" ${n ? "" : "disabled"}>${s.target === "pantry" ? "Guardar" : "Añadir"}${n ? " " + n : ""}</button></div>`;
 }
 function shCommand(s) {
   const n = s.rows.filter((r) => r.on).length;
@@ -773,6 +775,28 @@ function addEntries(entries) {
   markFresh(added.map((a) => a.id));
   return added;
 }
+/** Crea productos en la despensa (no los apunta en la lista). */
+function addProducts(entries) {
+  const ops = [], made = [], seen = new Set();
+  for (let e of entries) {
+    if (e.include === false) continue;
+    const name = cap(clean(e.name)), k = nameKey(name);
+    if (!k || seen.has(k) || productByKey(k)) continue;
+    seen.add(k);
+    const id = newProductId(k);
+    const p = { id, name, nameKey: k, category: e.category, storeId: e.storeId ?? null, icon: iconKeyFor(name) };
+    ops.push({ op: "set", col: "products", id, data: DB.productData(p, true) });
+    S.products.push(p);
+    made.push(p);
+  }
+  if (ops.length) DB.batch(ops);
+  return made;
+}
+function pantryAddedToast(made) {
+  if (!made.length) return toast("Ya estaba todo en la despensa.");
+  toast(made.length === 1 ? `${made[0].name} añadido a la despensa` : `${made.length} productos añadidos a la despensa`,
+    () => DB.batch(made.map((p) => ({ op: "delete", col: "products", id: p.id }))));
+}
 function undoAdd(added) {
   return () => DB.batch(added.map((a) => ({ op: "delete", col: "items", id: a.id })));
 }
@@ -808,9 +832,27 @@ function addProductToList(p, fresh = true) {
 
 /* ---------- Escribir ---------- */
 function ctx() { return { products: S.products, stores: S.stores, pending: S.pending, store: currentStore() }; }
+/** Entradas para la despensa: mismo intérprete, pero lo que ya existe en la despensa no se vuelve a crear. */
+function pantryEntries(text) {
+  const entries = parseUtterance(text, { ...ctx(), pending: [] });
+  for (const e of entries) {
+    e.inPantry = !!(e.known && !e.corrected) || !!productByKey(nameKey(e.name));
+    e.dup = e.inPantry; e.include = !e.inPantry;
+  }
+  return entries;
+}
 function submitDraft() {
   const text = S.draft.trim();
   if (!text) return;
+  if (S.view === "pantry") {
+    const entries = pantryEntries(text);
+    if (!entries.length) return;
+    S.draft = "";
+    // Directo solo si todo es nuevo y con la tienda dicha; si no, la hoja para confirmar.
+    if (entries.every((e) => !e.inPantry && e.explicit && !e.corrected)) { pantryAddedToast(addProducts(entries)); focusDraft(); }
+    else { S.capture = "idle"; S.sheet = { type: "review", target: "pantry", said: text, entries, voice: false }; render(); }
+    return;
+  }
   const cmd = parseCommand(text, ctx());
   if (cmd && cmd.rows.length) { S.draft = ""; S.capture = "idle"; S.sheet = { type: "command", ...cmd, voice: false }; render(); return; }
   const entries = parseUtterance(text, ctx());
@@ -948,6 +990,12 @@ function finishListening(text) {
   S.capture = "idle"; S.partial = ""; S.voiceReady = false;
   text = (text || "").trim();
   if (!text) { render(); toast("No te he oído. Toca el micro y habla."); return; }
+  if (S.view === "pantry") {
+    const entries = pantryEntries(text);
+    if (!entries.length) { render(); toast("No he entendido qué añadir."); return; }
+    S.sheet = { type: "review", target: "pantry", said: text, entries, voice: true };
+    return render();
+  }
   const cmd = parseCommand(text, ctx());
   if (cmd && cmd.rows.length) S.sheet = { type: "command", ...cmd, voice: true };
   else {
@@ -1240,7 +1288,10 @@ function act(a, el, e) {
     case "eInc": { const en = sh.entries[+el.dataset.i]; en.include = !en.include; return render(); }
     case "eStore": { const en = sh.entries[+el.dataset.i]; en.storeId = k || null; return render(); }
     case "eMore": sh.entries[+el.dataset.i].showAll = true; return render();
-    case "eAdd": { const added = addEntries(sh.entries); S.sheet = null; return addedToast(added); }
+    case "eAdd": {
+      if (sh.target === "pantry") { const made = addProducts(sh.entries); S.sheet = null; return pantryAddedToast(made); }
+      const added = addEntries(sh.entries); S.sheet = null; return addedToast(added);
+    }
     case "cToggle": sh.rows[+el.dataset.i].on = !sh.rows[+el.dataset.i].on; return render();
     case "cApply": {
       const ids = sh.rows.filter((r) => r.on && S.pending.some((i) => i.id === r.id)).map((r) => r.id);

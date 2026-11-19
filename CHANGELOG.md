@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v29 · 19/11/2026
+- Despensa: «+ Añadir» abre el mismo campo de escribir que la lista; se pueden escribir o dictar varios productos y sale la hoja «Esto es lo que he entendido» con categoría y tienda sugeridas. Se guardan solo en la despensa (sin apuntarlos en la lista) y avisa de lo que ya estaba.
+
 ## v28 · 19/11/2026
 - Las tipografías (Bricolage Grotesque para títulos y Figtree para el texto) van dentro de la app: ya no se descargan de Google Fonts.
 
