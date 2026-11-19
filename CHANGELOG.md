@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v35 · 19/11/2026
+- Si la app no termina de arrancar en 8 s, dice en qué paso se ha quedado y ofrece «Reparar la app» (borra lo guardado en el iPhone y vuelve a cargar; hay que volver a entrar). También en Opciones.
+
 ## v34 · 19/11/2026
 - Diagnóstico visible: si Firebase no deja leer los datos, si tarda demasiado o si la app falla al pintar, se ve un aviso con el motivo exacto en vez de una pantalla vacía.
 
