@@ -386,6 +386,7 @@ function vList() {
   const pend = visible([...S.pending.filter((i) => !ticking.has(i.id)), ...justTicked]).sort(sortAdded);
   const done = visible(S.today.filter((i) => !ticking.has(i.id))).sort((a, b) => b.checkedAt - a.checkedAt);
   let body = "";
+  const stale = S.bootStuck && !S.live ? `<div class="diag" data-key="diag"><b>Sin conexión con Firebase todavía</b><span>Lo que ves es lo último guardado en este iPhone; lo que hagas se guardará al conectar. Se ha quedado ${esc(bootStep)}.</span><button class="btn out" data-act="repair">Reparar la app</button></div>` : "";
   if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span><button class="btn out" data-act="repair">Reparar la app</button></div>`;
   else if (!S.ready.pending) body = S.slowLoad ? `<div class="diag" data-key="diag"><b>Esperando a Firebase…</b><span>Si tarda mucho, comprueba la conexión. Si sigue igual, mándale a Claude una captura.</span></div>` : "";
   else if (!pend.length && !done.length && S.capture !== "listening") {
@@ -404,7 +405,7 @@ function vList() {
     ${vHeader()}
     <div class="folder from-l ${S.swipeIn === "l" ? "swipe-l" : ""}" data-key="folder-list">
       ${vChips()}
-      <div class="list">${body}</div>
+      <div class="list">${stale}${body}</div>
     </div>
     
     ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
@@ -754,7 +755,7 @@ function runUndo() {
 const slugId = (k) => k.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "x";
 function newProductId(k) {
   const base = slugId(k);
-  return S.products.some((p) => p.id === base) ? DB.newId("products") : base;
+  return S.products.some((p) => p.id === base) ? DB.newId() : base;
 }
 function markFresh(ids) {
   ids.forEach((id) => S.fresh.add(id));
@@ -783,7 +784,7 @@ function addEntries(entries) {
       ops.push({ op: "update", col: "products", id: p.id, data: { storeId, ...DB.touch() } }); // aprende la tienda elegida
       p.storeId = storeId;
     }
-    const id = DB.newId("items");
+    const id = DB.newId();
     const item = { productId: p.id, name: p.name, category: e.category || p.category, storeId, addedBy: S.me, checked: false };
     ops.push({ op: "set", col: "items", id, data: DB.itemData(item) });
     added.push({ id, ...item });
@@ -1448,7 +1449,7 @@ async function doLogin() {
   render();
 }
 function doLogout() {
-  S.menu = false; S.sheet = null;
+  S.menu = false; S.sheet = null; S.live = false; clearSnap();
   stopData();
   DB.logout();
 }
@@ -1476,19 +1477,20 @@ function fixSpaces(col, list) {
 let initialPending = true, serverSynced = false;
 function startData() {
   initialPending = true; serverSynced = false; S.dataError = null; S.slowLoad = false;
+  if (!S.ready.pending) S.ready = { stores: false, products: false, pending: false };
   setTimeout(() => { if (!S.ready.pending) { S.slowLoad = true; render(); } }, 8000);
   sub = DB.subscribe({
-    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; if (S.store && !storeById(S.store)) S.store = null; render(); },
-    products(list) { S.products = fixSpaces("products", list); S.ready.products = true; render(); },
+    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; saveSnap(); if (S.store && !storeById(S.store)) S.store = null; render(); },
+    products(list) { S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); render(); },
     pending(list, added, fromCache) {
       // Lo que apunta la otra persona se resalta igual, sin avisos. Pero solo lo que llega después de la
       // primera carga del servidor: lo que ya estaba no es «nuevo» (si no, todo salía gris al abrir).
       if (!initialPending && serverSynced) markFresh(added.filter((a) => !a.local).map((a) => a.id));
       if (fromCache === false) serverSynced = true;
       initialPending = false;
-      S.pending = fixSpaces("items", list); S.ready.pending = true; render();
+      S.pending = fixSpaces("items", list); S.ready.pending = true; saveSnap(); render();
     },
-    today(list) { S.today = list; render(); },
+    today(list) { S.today = list; saveSnap(); render(); },
     error(e) { console.warn("Firestore", e); S.dataError = (e && (e.code || e.message)) || "desconocido"; render(); },
   });
   refreshHistory();
@@ -1523,14 +1525,38 @@ function checkDay() {
 setInterval(checkDay, 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkDay(); });
 
-/* ---------- Arranque, con vigilante y reparación ---------- */
+/* ---------- Arranque instantáneo, con vigilante y reparación ----------
+   Se guarda en el iPhone una copia de lo último que se mostró (solo para pintar al abrir; no es la base
+   de datos). Al abrir se enseña al momento y, cuando Firebase está listo, se sustituye por los datos al día. */
+const SNAP_KEY = "compra.snap";
+let snapT = null;
+function saveSnap() {
+  if (!S.live || !S.me) return;
+  clearTimeout(snapT);
+  snapT = setTimeout(() => {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify({ me: S.me, stores: S.stores, products: S.products, pending: S.pending, today: S.today, t: Date.now() })); } catch (e) {}
+  }, 600);
+}
+function loadSnap() {
+  try {
+    const x = JSON.parse(localStorage.getItem(SNAP_KEY) || "null");
+    if (!x || !x.me) return false;
+    const today = dayKey(Date.now());
+    Object.assign(S, { me: x.me, meKey: x.me.toLowerCase(), stores: x.stores || [], products: x.products || [], pending: x.pending || [], today: (x.today || []).filter((i) => i.checkedAt && dayKey(i.checkedAt) === today) });
+    S.ready = { stores: true, products: true, pending: true };
+    S.phase = "app";
+    return true;
+  } catch (e) { return false; }
+}
+const clearSnap = () => { try { localStorage.removeItem(SNAP_KEY); } catch (e) {} };
 let bootStep = "abriendo la app";
 async function boot() {
   applyTheme();
+  if (isConfigured()) loadSnap();
   render();
   if (!isConfigured()) { S.phase = "setup"; return render(); }
-  // Si a los 8 s sigue arrancando, se dice en qué paso se ha quedado y se ofrece reparar.
-  setTimeout(() => { if (S.phase === "boot") { S.bootStuck = true; render(); } }, 8000);
+  // Si a los 8 s Firebase aún no está listo, se dice en qué paso va y se ofrece reparar.
+  setTimeout(() => { if (!S.live && S.phase !== "login") { S.bootStuck = true; render(); } }, 8000);
   bootStep = "cargando Firebase";
   try { await DB.connect(firebaseConfig); }
   catch (e) { console.error(e); showFatal("No se ha podido cargar Firebase: " + (e && e.message)); S.phase = "setup"; return render(); }
@@ -1538,10 +1564,13 @@ async function boot() {
   DB.onUser((user) => {
     S.bootStuck = false;
     if (user) {
-      S.me = DB.whoFromEmail(user.email);
-      S.meKey = S.me.toLowerCase();
-      if (S.phase !== "app") { S.phase = "app"; startData(); }
+      const me = DB.whoFromEmail(user.email);
+      if (S.me && S.me !== me) { stopData(); }
+      S.me = me; S.meKey = me.toLowerCase();
+      DB.markReady();
+      if (!S.live) { S.live = true; S.phase = "app"; startData(); }
     } else {
+      S.live = false; clearSnap();
       stopData();
       S.me = ""; S.meKey = ""; S.phase = "login";
     }
