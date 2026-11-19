@@ -1,4 +1,11 @@
 /* Compra · identidad «Lima». Portado de prototipo.html. */
+/* Tipografías dentro de la app (OFL): Bricolage Grotesque 800 para títulos y Figtree para el texto. */
+@font-face{font-family:Figtree;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/figtree-400.woff2") format("woff2");}
+@font-face{font-family:Figtree;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/figtree-500.woff2") format("woff2");}
+@font-face{font-family:Figtree;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/figtree-600.woff2") format("woff2");}
+@font-face{font-family:Figtree;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/figtree-700.woff2") format("woff2");}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:800;font-display:swap;src:url("fonts/bricolage-grotesque-800.woff2") format("woff2");}
+
 :root{
   --fb:Figtree,system-ui,-apple-system,sans-serif;
   --fh:"Bricolage Grotesque",Figtree,system-ui,sans-serif;

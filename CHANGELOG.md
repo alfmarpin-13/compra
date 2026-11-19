@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v28 · 19/11/2026
+- Las tipografías (Bricolage Grotesque para títulos y Figtree para el texto) van dentro de la app: ya no se descargan de Google Fonts.
+
 ## v27 · 19/11/2026
 - Avisos sin «Deshacer» centrados y con el mismo margen a los dos lados; todos con la misma altura.
 
