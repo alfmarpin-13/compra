@@ -143,7 +143,7 @@ const LEAVE = /^(sheet-|scrim$|menu$|mscrim$|band-|partial$|main$|history$|optio
 function leave(n) {
   if (n.classList.contains("leaving")) return;
   const k = n.dataset.key || "";
-  if (REDUCE.matches || !LEAVE.test(k)) { n.remove(); return; }
+  if (REDUCE.matches || !LEAVE.test(k) || (render.instant && n.classList.contains("scr"))) { n.remove(); return; }
   n.classList.add("leaving");
   if (n.classList.contains("scr")) n.classList.add(render.leaveBack ? "pop-out" : "push-away");
   n.dataset.leave = k;
@@ -190,6 +190,8 @@ function flipPlay(before, sameView) {
 const tpl = document.createElement("template");
 let renderFailed = false;
 function render() {
+  // Mientras se arrastra para volver, no se redibuja (se haría al soltar).
+  if (render.hold) { render.pending = true; return; }
   try { renderInner(); renderFailed = false; }
   catch (e) { console.error(e); if (!renderFailed) { renderFailed = true; showFatal("Error al pintar: " + (e && e.message)); } }
 }
@@ -221,6 +223,7 @@ function renderInner() {
   if (render.depth !== undefined && depth !== render.depth) render.dir = depth > render.depth ? "push" : "pop";
   render.leaveBack = render.depth !== undefined && depth < render.depth;
   render.depth = depth;
+  if (render.instant) render.dir = null; // el gesto de volver ya ha hecho la animación con el dedo
   if (render.dir) h = h.replace('<div class="scr', `<div class="scr nav-${render.dir}`);
   tpl.innerHTML = h;
   const viewKey = S.phase + ":" + S.view + ":" + S.layout + ":" + (S.store || "");
@@ -231,6 +234,7 @@ function renderInner() {
   if (!sameView) render.prevView = render.view;
   render.view = viewKey;
   placeLens();
+  render.instant = false;
   if (S.phase === "app") requestAnimationFrame(() => document.documentElement.classList.add("ready"));
 }
 /** Tamaño y posición de la pastilla lima bajo la pestaña activa (se desliza con transición CSS). */
@@ -1268,7 +1272,7 @@ function act(a, el, e) {
     case "history": return openHistory();
     case "pantry": S.menu = false; S.band = null; S.view = S.tab = "pantry"; return render();
     case "tabList": S.band = null; S.view = S.tab = "list"; return render();
-    case "back": S.view = S.view === "history" && S.backTo === "options" ? "options" : (S.tab || "list"); S.backTo = null; S.band = null; S.histSel = new Set(); return render();
+    case "back": goBack(); return render();
     case "store": S.store = k || null; return render();
     case "stores": S.menu = false; S.sheet = { type: "stores" }; return render();
     case "shopAt": if (lpFired) { lpFired = false; return; } S.store = k || null; S.sheet = null; S.view = "list"; return render();
@@ -1438,6 +1442,93 @@ root.addEventListener("touchend", () => {
   s0.el.style.transition = ""; s0.el.style.transform = "";
   if (commit) { S.view = S.tab = toPantry ? "pantry" : "list"; S.band = null; }
   render();
+});
+/* ---------- Volver atrás con el gesto del iPhone ---------- */
+// En Opciones e Historial, deslizar hacia la derecha (desde el borde o desde cualquier sitio, como en iOS)
+// vuelve atrás: la pantalla sigue al dedo y debajo asoma la anterior, un poco desplazada y oscurecida.
+// Al soltar pasado ~1/3 (o con un golpe rápido) se va; si no, vuelve a su sitio con muelle.
+function backView() { return S.view === "history" && S.backTo === "options" ? "options" : (S.tab || "list"); }
+function goBack() { S.view = backView(); S.backTo = null; S.band = null; S.histSel = new Set(); }
+function underHTML(view) {
+  const keep = S.view;
+  S.view = view;
+  try { return view === "options" ? vOptions() : vMain(); } finally { S.view = keep; }
+}
+let eb = null;
+root.addEventListener("touchstart", (e) => {
+  eb = null;
+  if (S.phase !== "app" || (S.view !== "options" && S.view !== "history") || S.sheet || S.menu || e.touches.length !== 1) return;
+  if (e.target.closest("input, .chips")) return;
+  const scr = root.querySelector(`.scr[data-key="${S.view}"]`);
+  if (!scr) return;
+  const t = e.touches[0];
+  eb = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, scr, under: null, w: scr.getBoundingClientRect().width };
+}, { passive: true });
+root.addEventListener("touchmove", (e) => {
+  if (!eb || eb.lock) return;
+  const t = e.touches[0], dx = t.clientX - eb.x, dy = t.clientY - eb.y;
+  if (!eb.drag) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { eb.lock = true; return; }
+    if (dx < 10 || dx < Math.abs(dy) * 1.3) { if (dx < -10) eb.lock = true; return; }
+    eb.drag = true; clearTimeout(lp);
+    // La pantalla de debajo: una copia quieta de la anterior (no se puede tocar).
+    tpl.innerHTML = underHTML(backView());
+    const u = tpl.content.firstElementChild;
+    u.removeAttribute("data-key"); u.classList.add("under"); u.setAttribute("aria-hidden", "true");
+    root.insertBefore(u, eb.scr);
+    eb.under = u;
+    eb.scr.classList.add("dragging");
+    render.hold = true;
+  }
+  eb.dx = Math.max(0, Math.min(eb.w, dx));
+  // Velocidad de los últimos ~120 ms (un golpe rápido vuelve aunque se haya arrastrado poco).
+  const now = Date.now();
+  eb.hist = (eb.hist || []).filter((h) => now - h[0] < 120).concat([[now, eb.dx]]);
+  const p = eb.dx / eb.w;
+  eb.scr.style.transform = `translateX(${eb.dx}px)`;
+  eb.under.style.transform = `translateX(${-28 * (1 - p)}%)`;
+  eb.under.style.filter = `brightness(${0.92 + 0.08 * p})`;
+}, { passive: true });
+root.addEventListener("touchend", () => {
+  if (!eb) return;
+  const g = eb; eb = null;
+  if (!g.drag) return;
+  lpFired = true; setTimeout(() => (lpFired = false), 50); // que el gesto no toque nada al soltar
+  const h0 = (g.hist || [])[0] || [g.t, 0];
+  const v = (g.dx - h0[1]) / Math.max(16, Date.now() - h0[0]);
+  const commit = g.dx > g.w * 0.33 || (g.dx > 30 && v > 0.35);
+  const ms = REDUCE.matches ? 0 : commit ? 300 : 350;
+  const ease = `transform ${ms}ms ${SPRING}, filter ${ms}ms ${SPRING}`;
+  g.scr.style.transition = g.under.style.transition = ease;
+  requestAnimationFrame(() => {
+    g.scr.style.transform = commit ? `translateX(${g.w}px)` : "translateX(0)";
+    g.under.style.transform = commit ? "translateX(0)" : "translateX(-28%)";
+    g.under.style.filter = commit ? "brightness(1)" : "brightness(.92)";
+  });
+  setTimeout(() => {
+    render.hold = false;
+    if (commit) {
+      // Ya se ha visto ir: se cambia de pantalla sin otra animación.
+      g.under.remove();
+      goBack();
+      render.instant = true; render.pending = false;
+      render();
+    } else {
+      g.under.remove();
+      g.scr.classList.remove("dragging");
+      g.scr.style.transition = g.scr.style.transform = "";
+      if (render.pending) { render.pending = false; render(); }
+    }
+  }, ms + 20);
+});
+root.addEventListener("touchcancel", () => {
+  if (!eb) return;
+  const g = eb; eb = null;
+  if (g.under) g.under.remove();
+  g.scr.classList.remove("dragging");
+  g.scr.style.transition = g.scr.style.transform = "";
+  render.hold = false;
+  if (render.pending) { render.pending = false; render(); }
 });
 // Es una app: sin zoom con dos dedos ni con doble toque.
 ["gesturestart", "gesturechange"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));

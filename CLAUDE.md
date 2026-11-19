@@ -86,7 +86,7 @@ Mismo diseño que el prototipo. Resumen:
    - Si la búsqueda no encuentra nada: «No está en la despensa» y un botón «Añadir «X»», que abre la ficha con el nombre ya escrito.
 4. **Historial:** ←, «Historial», buscador y tarjetas por día («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir (N)», que se salta lo que ya está pendiente, y un botón con papelera para borrar lo seleccionado del historial (con Deshacer).
 5. **Tiendas** (hoja inferior): lista de todas las tiendas con su tipo, lo pendiente y un lápiz. Tocar una abre la lista filtrada por esa tienda. Abajo, «Añadir tienda».
-6. **Opciones** (botón ⋮): pantalla completa, no ventana emergente. Tiendas, Repasar la despensa, Historial; modo Como el iPhone / Claro / Oscuro directamente ahí; cuenta, Compartida con… y Cerrar sesión; versión y créditos.
+6. **Opciones** (botón ⋮): pantalla completa, no ventana emergente. En Opciones e Historial funciona el **gesto de volver del iPhone** (decisión de Alfonso): deslizar a la derecha, desde el borde o desde cualquier sitio, hace que la pantalla siga al dedo con la anterior asomando debajo; al soltar pasado ~1/3 o con un golpe rápido vuelve, si no se recoloca. Tiendas, Repasar la despensa, Historial; modo Como el iPhone / Claro / Oscuro directamente ahí; cuenta, Compartida con… y Cerrar sesión; versión y créditos.
 7. **Barra inferior flotante y translúcida:** el contenido se desplaza por detrás de ella.
 
 ### Animaciones
