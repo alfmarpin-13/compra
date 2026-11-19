@@ -134,7 +134,8 @@ function render() {
   statsCache = null;
   applyTheme();
   let h = "";
-  if (S.phase === "boot") h = `<div class="splash" data-key="boot">${LOGO(72, "Compra")}</div>`;
+  // Al arrancar se pinta ya la cabecera en su sitio, para que el logo no salte al cargar.
+  if (S.phase === "boot") h = `<div class="scr" data-key="list"><div class="hb"><div class="hb-t"><span class="hb-brand">${LOGO(32)}<span class="hb-name">Compra</span></span></div></div></div>`;
   else if (S.phase === "setup") h = vSetup();
   else if (S.phase === "login") h = vLogin();
   else if (S.view === "pantry") h = vPantry();

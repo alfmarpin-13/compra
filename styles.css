@@ -36,7 +36,10 @@ input{font:inherit;color:inherit}
   @media (display-mode:standalone){ :root{--edge:2.5rem} }
   :root.standalone{--edge:2.5rem}
 }
-.topband{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--ground);z-index:50;pointer-events:none}
+.topband{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--ground);z-index:50;pointer-events:none;transition:background .2s}
+/* Con una hoja abierta, la franja se oscurece igual que el velo del resto de la pantalla. */
+body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--ground))}
+:root[data-theme="dark"] body:has(.scrim) .topband{background:color-mix(in srgb,#000 55%,var(--ground))}
 
 /* ---------- Contenedor ---------- */
 .app{position:relative;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
