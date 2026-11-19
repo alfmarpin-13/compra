@@ -275,7 +275,12 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 5. Authentication → Dominios autorizados → añadir `alfmarpin-13.github.io`.
 6. GitHub → repo `compra` → Settings → Pages → desplegar desde `main`, carpeta raíz.
 
-## 12. Criterios de aceptación
+## 12. Versiones
+
+- **Cada cambio que se suba lleva versión nueva:** sube el número en `js/version.js` (`APP_VERSION` y `APP_DATE`) y el mismo número en `VERSION` de `sw.js` (`compra-vN`).
+- La versión se ve en Preferencias, debajo de «Cerrar sesión», en gris claro, para que Alfonso sepa si el iPhone tiene la última.
+
+## 13. Criterios de aceptación
 
 - [ ] Sin sesión, nada visible. Con usuario o contraseña incorrectos, solo el error genérico.
 - [ ] Alfonso apunta algo en el iPhone y aparece en menos de 2 s en el de Mariluz, y al revés.

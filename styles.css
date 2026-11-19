@@ -286,6 +286,7 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .acct + .acct{margin-top:12px}
 .acct b{font:600 14px/20px var(--fb);display:block}
 .acct span{font:400 12px/18px var(--fb);color:var(--muted)}
+.version{font:500 12px/18px var(--fb);color:var(--muted);opacity:.7;text-align:center;margin-top:-8px}
 .credits{font:400 12px/18px var(--fb);color:var(--muted)}
 .credits a{color:inherit}
 

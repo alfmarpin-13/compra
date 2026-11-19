@@ -1,5 +1,6 @@
 // Compra · lista de la compra compartida. Interfaz y lógica de la app.
 import { firebaseConfig, isConfigured } from "./config.js";
+import { APP_VERSION, APP_DATE } from "./version.js";
 import * as DB from "./db.js";
 import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW } from "./data.js";
 import { LUCIDE, OPENMOJI } from "./iconos.js";
@@ -532,6 +533,7 @@ function shPrefs() {
    <div><p class="labelsm" style="font-size:14px;color:var(--ink);margin-bottom:12px">Cuenta</p>
      <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
    <div class="btns"><button class="btn out" data-act="logout">${ic("log-out", 18)}Cerrar sesión</button></div>
+   <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
    <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a>, CC BY-SA 4.0. Iconos de interfaz: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a>, ISC. Tipografías Bricolage Grotesque y Figtree, OFL.</p>
    </div>`;
 }
