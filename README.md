@@ -50,3 +50,4 @@ Para no gastar el cupo gratuito, la app escucha en tiempo real solo lo pendiente
 - Iconos de producto: [OpenMoji](https://openmoji.org), CC BY-SA 4.0.
 - Iconos de interfaz y categoría: [Lucide](https://lucide.dev), ISC.
 - Tipografías: Bricolage Grotesque y Figtree (Google Fonts), OFL.
+- Logos de tiendas (`icons/tiendas/`): marcas de sus propietarios, en versión de una tinta solo para uso doméstico.

@@ -199,10 +199,21 @@ function vHeader() {
 // Iconos que se pueden elegir para una tienda.
 const STORE_ICONS = ["store", "shopping-basket", "croissant", "wheat", "cake-slice", "apple", "carrot", "beef", "drumstick", "fish", "ham", "cheese", "milk", "coffee", "wine", "pill", "spray-can", "baby", "leaf", "house"];
 const autoStoreIcon = (name, kind) => (kind === "generic" ? "store" : bestKeyword(name, STORE_ICON_LIST) || "store");
+// Logos de tienda en una sola tinta (se pintan con el color del texto mediante una máscara).
+const LOGOS = {
+  "logo-mercadona": { file: "icons/tiendas/mercadona.png", r: 1, match: "mercadona" },
+  "logo-hipercor": { file: "icons/tiendas/hipercor.png", r: 1.77, match: "hipercor" },
+  "logo-lidl": { file: "icons/tiendas/lidl.png", r: 1, match: "lidl" },
+  "logo-domi-velez": { file: "icons/tiendas/domi-velez.png", r: 2.875, match: "domi velez" },
+};
+const autoLogo = (name) => Object.keys(LOGOS).find((k) => (" " + nameKey(name) + " ").includes(" " + LOGOS[k].match + " ")) || null;
+const logoSpan = (key, big) => `<span class="slot logo${big ? " lg" : ""}" style="--logo:url('${LOGOS[key].file}');--r:${LOGOS[key].r}" aria-hidden="true"></span>`;
 const storeIcon = (st) => (st.icon && LUCIDE[st.icon] ? st.icon : autoStoreIcon(st.name, st.kind));
 function slot(id, big) {
   const st = storeById(id);
   if (!st) return "";
+  const logo = st.icon && LOGOS[st.icon] ? st.icon : !st.icon ? autoLogo(st.name) : null;
+  if (logo) return logoSpan(logo, big);
   const g = storeIcon(st);
   // Genérica sin icono elegido: hueco neutro con borde discontinuo para su futuro logo.
   if (st.kind === "generic" && !st.icon) return `<span class="slot store${big ? " lg" : ""}" data-logo-slot="${esc(st.id)}" aria-hidden="true">${ic(g, big ? 16 : 10)}</span>`;
@@ -484,7 +495,8 @@ function shSEdit(s) {
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
-     <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
+     <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${autoLogo(d.name) ? logoSpan(autoLogo(d.name)) : ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
+     ${Object.keys(LOGOS).map((g) => `<button class="chip sm ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Logo ${LOGOS[g].match}">${logoSpan(g)}</button>`).join("")}
      ${STORE_ICONS.map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Icono ${g}">${ic(g, 18)}</button>`).join("")}</div></div>
    ${s.k ? `<div><p class="labelsm" style="margin-bottom:8px">Posición en la barra de tiendas</p><div class="wrap">
      <button class="chip sm" data-act="sdMove" data-k="-1" ${ix <= 0 ? "disabled" : ""}>Mover antes</button><button class="chip sm" data-act="sdMove" data-k="1" ${ix >= S.stores.length - 1 ? "disabled" : ""}>Mover después</button></div></div>` : ""}

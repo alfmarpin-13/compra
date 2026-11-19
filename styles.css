@@ -75,6 +75,9 @@ input{font:inherit;color:inherit}
 .slot.lg{width:28px;height:28px;border-radius:8px}
 .slot.store{background:transparent;border:1px dashed color-mix(in srgb,var(--outline) 80%,transparent);color:var(--muted)}
 .chip.on .slot{color:var(--on-accent);background:color-mix(in srgb,var(--on-accent) 12%,transparent)}
+.slot.logo,.chip.on .slot.logo{--h:16px;width:calc(var(--h) * var(--r));height:var(--h);border-radius:0;border:0;background:currentColor;color:var(--primary);-webkit-mask:var(--logo) center/contain no-repeat;mask:var(--logo) center/contain no-repeat}
+.slot.logo.lg{--h:26px}
+.chip.on .slot.logo{background:var(--on-accent)}
 .chip.on .slot.store{background:transparent;border-color:color-mix(in srgb,var(--on-accent) 45%,transparent)}
 
 /* ---------- Lista ---------- */

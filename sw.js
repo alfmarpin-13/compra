@@ -1,11 +1,12 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v4";
+const VERSION = "compra-v5";
 const FIREBASE = "10.14.1";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
   "js/app.js", "js/config.js", "js/data.js", "js/db.js", "js/iconos.js", "js/parser.js", "js/util.js",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/icon-maskable-512.png",
+  "icons/tiendas/mercadona.png", "icons/tiendas/hipercor.png", "icons/tiendas/lidl.png", "icons/tiendas/domi-velez.png",
 ];
 const REMOTE = [
   `https://www.gstatic.com/firebasejs/${FIREBASE}/firebase-app.js`,
