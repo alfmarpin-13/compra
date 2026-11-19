@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v19 · 19/11/2026
+- «Lista» y «Despensa» pasan a ser pestañas de archivador bajo la cabecera, en vez de una pantalla aparte.
+- La barra de abajo queda con «+ Añadir» y el micro; el + de producto nuevo va junto al buscador de la despensa.
+
 ## v18 · 19/11/2026
 - Micrófono a la derecha: botón redondo solo con el icono; al tocarlo se ensancha con «Escuchando… toca para parar».
 

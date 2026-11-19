@@ -271,13 +271,24 @@ function vList() {
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
     }
   }
-  return `<div class="scr" data-key="list">
+  return `<div class="scr" data-key="main">
     ${vHeader()}
-    ${vChips()}
-    <div class="list">${body}</div>
+    ${vTabs()}
+    <div class="folder first" data-key="folder-list">
+      ${vChips()}
+      <div class="list">${body}</div>
+    </div>
     ${S.capture === "typing" ? `<div class="catcher" data-act="closeDraft"></div>` : ""}
     ${S.band ? vBand() : ""}
     ${vDock()}
+  </div>`;
+}
+/** Pestañas de archivador: Lista y Despensa, pegadas a la carpeta de abajo. */
+function vTabs() {
+  const list = S.view !== "pantry";
+  return `<div class="tabs" role="tablist">
+    <button class="tab ${list ? "on" : ""}" role="tab" aria-selected="${list}" data-act="tabList">Lista<span class="n">${S.pending.length}</span></button>
+    <button class="tab ${!list ? "on" : ""}" role="tab" aria-selected="${!list}" data-act="pantry">Despensa<span class="n">${S.products.length}</span></button>
   </div>`;
 }
 function vBand() {
@@ -315,7 +326,6 @@ function vDock() {
   const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>Escuchando…<small>toca para parar</small></span>` : ""}</button>`;
   return `<div class="dock ${on ? "listening" : ""}" data-key="dock">
     <button class="dk-add" data-act="type" aria-label="Añadir">${ic("plus", 20)}<span>Añadir</span></button>
-    <button class="dk-side" data-act="pantry" aria-label="Despensa">${ic("shelving-unit", 22)}</button>
     ${voiceBtn}</div>`;
 }
 function vMenu() {
@@ -353,16 +363,20 @@ function vPantry() {
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
   const list = all.filter((p) => !q || singAll(p.nameKey).includes(q) || (q.length >= 4 && matchProduct(q, [p])));
   const due = q ? [] : dueList();
-  return `<div class="scr" data-key="pantry">
-   <div class="hb back"><button class="ib sm" data-act="back" aria-label="Volver">${ic("arrow-left", 20)}</button><div class="hb-t"><h1 class="hb-name">Despensa</h1></div>
-     <div class="hb-r"><button class="ib sm" data-act="pnew" aria-label="Nuevo producto">${ic("plus", 20)}</button></div></div>
-   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
+  return `<div class="scr" data-key="main">
+   ${vHeader()}
+   ${vTabs()}
+   <div class="folder" data-key="folder-pantry">
+   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label><button class="ib sm newp" data-act="pnew" aria-label="Nuevo producto">${ic("plus", 22)}</button></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
     ${!list.length && S.pantryQ.trim() ? `<div class="noq" data-key="noq"><p>No está en la despensa.</p><button class="btn fill" data-act="pnewq">Añadir «${esc(cap(S.pantryQ.trim()))}»</button></div>` : ""}
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
-   </div>${S.band ? vBand() : ""}</div>`;
+   </div></div>
+   ${S.capture === "typing" ? `<div class="catcher" data-act="closeDraft"></div>` : ""}
+   ${S.band ? vBand() : ""}
+   ${vDock()}</div>`;
 }
 
 /* --- Historial --- */
@@ -969,7 +983,8 @@ function act(a, el, e) {
     case "closeMenu": S.menu = false; return render();
     case "layout": S.layout = S.layout === "grid" ? "list" : "grid"; LS.set("layout", S.layout); return render();
     case "history": return openHistory();
-    case "pantry": S.menu = false; S.capture = "idle"; S.band = null; S.view = "pantry"; return render();
+    case "pantry": S.menu = false; S.band = null; S.view = "pantry"; return render();
+    case "tabList": S.band = null; S.view = "list"; return render();
     case "back": S.view = "list"; S.band = null; S.histSel = new Set(); return render();
     case "store": S.store = k || null; return render();
     case "stores": S.menu = false; S.sheet = { type: "stores" }; return render();
