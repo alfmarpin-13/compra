@@ -2,6 +2,14 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v20 · 19/11/2026
+- Voz más estable: si el iPhone corta por una pausa, sigue escuchando y junta lo dicho; termina tras un silencio largo o al tocar el micro.
+- Aviso de cuándo hablar: «Un momento…» mientras se prepara y «Te escucho…» cuando ya oye.
+- La línea con cursor se cambia por una burbuja con ondas que muestra lo que vas diciendo.
+- Con el micro activo, tocar en cualquier otro sitio cancela la escucha sin apuntar nada.
+- Las pestañas «Lista» y «Despensa» pasan a la cabecera, en el sitio del título «Compra» (sin la carpeta de la v19).
+- En la Despensa, «+ Añadir» está abajo, en el mismo sitio que en la lista, y crea un producto nuevo.
+
 ## v19 · 19/11/2026
 - «Lista» y «Despensa» pasan a ser pestañas de archivador bajo la cabecera, en vez de una pantalla aparte.
 - La barra de abajo queda con «+ Añadir» y el micro; el + de producto nuevo va junto al buscador de la despensa.

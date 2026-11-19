@@ -147,9 +147,17 @@ function render() {
   tpl.innerHTML = h;
   morphChildren(root, tpl.content);
 }
+function vListening() {
+  const txt = S.partial || (S.voiceReady ? "Te escucho…" : "Un momento…");
+  return `<div class="listening ${S.partial ? "has" : ""}" data-key="partial" aria-live="polite"><span class="wave ${S.voiceReady ? "on" : ""}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ltext">${esc(txt)}</span></div>`;
+}
 function renderPartial() {
-  const p = root.querySelector(".partial");
-  if (p) { p.innerHTML = esc(S.partial) + '<span class="caret"></span>'; const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight; }
+  const p = root.querySelector(".listening");
+  if (!p) return;
+  p.classList.toggle("has", !!S.partial);
+  p.querySelector(".wave").classList.toggle("on", !!S.voiceReady);
+  p.querySelector(".ltext").textContent = S.partial || (S.voiceReady ? "Te escucho…" : "Un momento…");
+  const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
 }
 
 // Color de la barra de estado del iPhone (theme-color). Con una hoja abierta se oscurece igual que el velo:
@@ -193,7 +201,12 @@ function vLogin() {
 }
 
 function vHeader() {
-  return `<div class="hb"><div class="hb-t"><span class="hb-brand">${LOGO(32)}<span class="hb-name">Compra</span></span></div>
+  const list = S.view !== "pantry";
+  // Las dos pestañas van en el sitio del título «Compra».
+  return `<div class="hb"><div class="hb-t"><span class="hb-brand">${LOGO(32)}<span class="htabs" role="tablist">
+      <button class="htab ${list ? "on" : ""}" role="tab" aria-selected="${list}" data-act="tabList">Lista</button>
+      <button class="htab ${!list ? "on" : ""}" role="tab" aria-selected="${!list}" data-act="pantry">Despensa</button>
+    </span></span></div>
     <div class="hb-r">
       <button class="ib sm" data-act="layout" aria-label="${S.layout === "grid" ? "Ver como lista" : "Ver como casillas"}">${ic(S.layout === "grid" ? "list" : "layout-grid", 20)}</button>
       <button class="ib sm" data-act="history" aria-label="Historial">${ic("history", 20)}</button>
@@ -265,7 +278,7 @@ function vList() {
       : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o toca el micro y habla.</p></div>`;
   } else {
     body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
-    if (S.capture === "listening") body += `<div class="partial" data-key="partial" aria-live="polite">${esc(S.partial)}<span class="caret"></span></div>`;
+    if (S.capture === "listening") body += vListening();
     if (done.length) {
       body += `<button class="chkdiv" data-key="donediv" data-act="toggleChecked" aria-expanded="${S.checkedOpen}"><i></i><span>Comprado hoy · ${done.length}</span>${ic("chevron-down", 16)}<i></i></button>`;
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
@@ -273,22 +286,14 @@ function vList() {
   }
   return `<div class="scr" data-key="main">
     ${vHeader()}
-    ${vTabs()}
-    <div class="folder first" data-key="folder-list">
+    <div class="folder" data-key="folder-list">
       ${vChips()}
       <div class="list">${body}</div>
     </div>
     ${S.capture === "typing" ? `<div class="catcher" data-act="closeDraft"></div>` : ""}
+    ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
     ${S.band ? vBand() : ""}
     ${vDock()}
-  </div>`;
-}
-/** Pestañas de archivador: Lista y Despensa, pegadas a la carpeta de abajo. */
-function vTabs() {
-  const list = S.view !== "pantry";
-  return `<div class="tabs" role="tablist">
-    <button class="tab ${list ? "on" : ""}" role="tab" aria-selected="${list}" data-act="tabList">Lista<span class="n">${S.pending.length}</span></button>
-    <button class="tab ${!list ? "on" : ""}" role="tab" aria-selected="${!list}" data-act="pantry">Despensa<span class="n">${S.products.length}</span></button>
   </div>`;
 }
 function vBand() {
@@ -323,9 +328,9 @@ function vDock() {
   }
   const on = S.capture === "listening";
   // Micro a la derecha: botón redondo solo con el icono; al escuchar se ensancha y pide tocar para parar.
-  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>Escuchando…<small>toca para parar</small></span>` : ""}</button>`;
+  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>${S.voiceReady ? "Escuchando…" : "Un momento…"}<small>toca para parar</small></span>` : ""}</button>`;
   return `<div class="dock ${on ? "listening" : ""}" data-key="dock">
-    <button class="dk-add" data-act="type" aria-label="Añadir">${ic("plus", 20)}<span>Añadir</span></button>
+    <button class="dk-add" data-act="${S.view === "pantry" ? "pnew" : "type"}" aria-label="${S.view === "pantry" ? "Añadir producto a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>
     ${voiceBtn}</div>`;
 }
 function vMenu() {
@@ -365,9 +370,8 @@ function vPantry() {
   const due = q ? [] : dueList();
   return `<div class="scr" data-key="main">
    ${vHeader()}
-   ${vTabs()}
    <div class="folder" data-key="folder-pantry">
-   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label><button class="ib sm newp" data-act="pnew" aria-label="Nuevo producto">${ic("plus", 22)}</button></div>
+   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
@@ -375,6 +379,7 @@ function vPantry() {
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
    </div></div>
    ${S.capture === "typing" ? `<div class="catcher" data-act="closeDraft"></div>` : ""}
+   ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
    ${S.band ? vBand() : ""}
    ${vDock()}</div>`;
 }
@@ -699,79 +704,102 @@ function openTyping() {
 }
 
 /* ---------- Toca y habla ---------- */
-// Tocar para hablar: el micro se arranca en el «click» (el iPhone solo lo permite con un toque completo,
-// no al apoyar el dedo). Termina solo al callarse o al volver a tocar. En iOS, una frase por vez.
+// Tocar para hablar: el micro se arranca en el «click» (el iPhone solo lo permite con un toque completo).
+// El iPhone corta la escucha en cada silencio corto: si aún no se ha dicho nada, o justo se acaba de decir
+// algo (pausa entre artículos), se vuelve a escuchar y se junta todo. Se termina tras un silencio largo
+// o al tocar el micro. Tocar fuera mientras escucha cancela sin apuntar nada.
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-let rec = null, recText = "", recOn = false, recStart = 0, recGotResult = false, recError = false, recMax = null;
+let rec = null, recText = "", recOn = false, recStart = 0, recMax = null, recSessionText = "", recEmptyRuns = 0;
 function toggleVoice() {
   if (S.capture === "listening") return stopListening();
   if (!SR) return toast("Este navegador no reconoce la voz.");
   if (S.capture === "typing") { const inp = root.querySelector("#draft"); if (inp) inp.blur(); }
-  startListening();
+  recText = ""; recEmptyRuns = 0; recStart = Date.now();
+  S.voiceReady = false; S.partial = "";
+  S.capture = "listening"; S.band = null; S.sheet = null; S.menu = false;
+  if (!startSession()) { S.capture = "idle"; return toast("No se ha podido abrir el micrófono."); }
+  clearTimeout(recMax);
+  recMax = setTimeout(stopListening, 45000);
+  recOn = true;
+  render();
+  const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
 }
-function startListening(prefix = "") {
-  if (rec) return;
+/** Una sesión del motor de voz. Devuelve false si no se ha podido arrancar. */
+function startSession() {
+  let r;
   try {
-    rec = new SR();
-    rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = !IOS; rec.maxAlternatives = 1;
-  } catch (e) { rec = null; return toast("No se ha podido abrir el micrófono."); }
-  recText = prefix; recOn = true;
-  if (!prefix) { recStart = Date.now(); recGotResult = false; recError = false; }
-  let finals = prefix ? prefix + " " : "";
-  rec.onresult = (ev) => {
+    r = new SR();
+    r.lang = "es-ES"; r.interimResults = true; r.continuous = !IOS; r.maxAlternatives = 1;
+  } catch (e) { return false; }
+  const base = recText;
+  recSessionText = "";
+  let finals = "";
+  r.onaudiostart = r.onstart = () => { if (rec === r && !S.voiceReady) { S.voiceReady = true; renderPartial(); updateVoiceBtn(); } };
+  r.onresult = (ev) => {
+    if (rec !== r) return;
     let interim = "";
     for (let k = ev.resultIndex; k < ev.results.length; k++) {
-      const r = ev.results[k];
-      if (r.isFinal) finals += r[0].transcript + " "; else interim += r[0].transcript;
+      const x = ev.results[k];
+      if (x.isFinal) finals += x[0].transcript + " "; else interim += x[0].transcript;
     }
-    recGotResult = true;
-    recText = (finals + interim).replace(/\s+/g, " ").trim();
+    recSessionText = (finals + interim).replace(/\s+/g, " ").trim();
+    recText = [base, recSessionText].filter(Boolean).join(", ");
     S.partial = recText;
     renderPartial();
   };
-  rec.onerror = (ev) => {
+  r.onerror = (ev) => {
+    if (rec !== r) return;
     if (ev.error === "no-speech" || ev.error === "aborted") return; // lo gestiona onend
-    recError = true; rec = null; recOn = false; clearTimeout(recMax); S.capture = "idle"; S.partial = "";
+    rec = null; recOn = false; clearTimeout(recMax); S.capture = "idle"; S.partial = ""; S.voiceReady = false;
     render();
     if (ev.error === "not-allowed") toast("El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono.");
     else toast(`La voz ha fallado (${ev.error}). Prueba otra vez.`);
   };
-  rec.onend = () => {
-    const r = rec; rec = null;
-    if (!r || recError) return;
-    // Fuera de iOS, si el navegador corta solo sin que se haya dicho nada aún, sigue escuchando.
-    if (recOn && !IOS && !recText) { try { startListening(recText); if (rec) return; } catch (e) {} }
+  r.onend = () => {
+    if (rec !== r) return;
+    rec = null;
+    if (!recOn) return finishListening(recText); // se tocó para parar
+    // ¿Seguir escuchando? Sí si se acaba de decir algo (pausa entre artículos) o si todavía no se ha dicho nada.
+    if (recSessionText) recEmptyRuns = 0; else recEmptyRuns++;
+    const keep = recSessionText ? true : (!recText && Date.now() - recStart < 8000) || (recText && recEmptyRuns < 1);
+    if (keep && startSession()) return;
     recOn = false;
     finishListening(recText);
   };
-  S.capture = "listening"; S.partial = ""; S.band = null; S.sheet = null;
-  try { rec.start(); } catch (e) { rec = null; recOn = false; S.capture = "idle"; return toast("No se ha podido abrir el micrófono."); }
-  clearTimeout(recMax);
-  recMax = setTimeout(stopListening, 30000);
-  render();
-  const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
+  try { r.start(); } catch (e) { return false; }
+  rec = r;
+  return true;
 }
+function updateVoiceBtn() {
+  const b = root.querySelector(".dk-voice span");
+  if (b && S.capture === "listening") b.innerHTML = (S.voiceReady ? "Escuchando…" : "Un momento…") + "<small>toca para parar</small>";
+}
+/** Toca el micro: para y procesa lo dicho. */
 function stopListening() {
-  if (!recOn) return;
+  if (S.capture !== "listening") return;
   recOn = false;
   clearTimeout(recMax);
-  if (rec) {
-    const r = rec;
-    try { r.stop(); } catch (e) { rec = null; finishListening(recText); return; }
-    // Si el motor no avisa de que ha terminado, se procesa igualmente.
-    setTimeout(() => { if (rec === r) { rec = null; try { r.abort(); } catch (e) {} finishListening(recText); } }, 2500);
-  } else finishListening(recText);
+  const r = rec;
+  if (!r) return finishListening(recText);
+  try { r.stop(); } catch (e) { rec = null; return finishListening(recText); }
+  // Si el motor no avisa de que ha terminado, se procesa igualmente.
+  setTimeout(() => { if (rec === r) { rec = null; try { r.abort(); } catch (e) {} finishListening(recText); } }, 2000);
+}
+/** Toca fuera: cancela sin apuntar nada. */
+function cancelListening() {
+  if (S.capture !== "listening") return;
+  recOn = false; clearTimeout(recMax);
+  const r = rec; rec = null;
+  if (r) { try { r.abort(); } catch (e) {} }
+  S.capture = "idle"; S.partial = ""; S.voiceReady = false;
+  render();
 }
 function finishListening(text) {
   if (S.capture !== "listening") return;
   clearTimeout(recMax);
-  S.capture = "idle"; S.partial = "";
+  S.capture = "idle"; S.partial = ""; S.voiceReady = false;
   text = (text || "").trim();
-  if (!text) {
-    render();
-    toast(recGotResult ? "No te he oído. Toca el micro y habla." : "El micro no ha devuelto nada. Toca y habla otra vez.");
-    return;
-  }
+  if (!text) { render(); toast("No te he oído. Toca el micro y habla."); return; }
   const cmd = parseCommand(text, ctx());
   if (cmd && cmd.rows.length) S.sheet = { type: "command", ...cmd, voice: true };
   else {
@@ -781,6 +809,7 @@ function finishListening(text) {
   }
   render();
 }
+
 /* ---------- Edición ---------- */
 function openEdit(id) {
   const i = S.pending.find((x) => x.id === id) || S.today.find((x) => x.id === id);
@@ -1064,6 +1093,7 @@ function act(a, el, e) {
     case "theme": S.theme = k; LS.set("theme", k); return render();
     case "logout": return doLogout();
     case "voice": return toggleVoice();
+    case "cancelVoice": return cancelListening();
   }
 }
 
@@ -1085,6 +1115,7 @@ root.addEventListener("input", (e) => {
   else if (id === "hq") { S.histQ = e.target.value; render(); }
 });
 document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && S.capture === "listening") return cancelListening();
   if (e.key === "Escape") {
     if (S.sheet) S.sheet = null; else if (S.menu) S.menu = false; else if (S.capture === "typing") return closeTyping(); else if (S.view !== "list") S.view = "list";
     render();
