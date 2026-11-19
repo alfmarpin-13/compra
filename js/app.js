@@ -340,10 +340,13 @@ function vChips() {
     ${shown.map((s) => `<button class="chip ${S.store === s.id ? "on" : ""}" role="tab" aria-selected="${S.store === s.id}" data-act="store" data-k="${esc(s.id)}" data-key="chip-${esc(s.id)}">${slot(s.id)}${esc(s.name)}<span class="n">${count(s)}</span></button>`).join("")}
   </div>`;
 }
+// Categorías por orden alfabético (Otros al final) y, dentro de cada una, por nombre (decisión de Alfonso).
+const CATS_AZ = [...CATS].sort((a, b) => (a.k === "otros") - (b.k === "otros") || a.l.localeCompare(b.l, "es"));
+const byName = (a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" });
 function groupRows(rows) {
   const by = {};
   rows.forEach((r) => (by[CAT[r.category] ? r.category : "otros"] ||= []).push(r));
-  return CATS.filter((c) => by[c.k]).map((c) => [c, by[c.k]]);
+  return CATS_AZ.filter((c) => by[c.k]).map((c) => [c, by[c.k].sort(byName)]);
 }
 const byOther = (i) => i.addedBy && S.me && i.addedBy !== S.me;
 function vRow(i) {
@@ -549,7 +552,6 @@ function vSheet() {
   const inner = { review: shReview, command: shCommand, edit: shEdit, stores: shStores, prefs: shPrefs, one: shOne, share: shShare, pedit: shPEdit, sedit: shSEdit }[s.type](s);
   return `<div class="scrim" data-act="closeSheet" data-key="scrim"></div><div class="sheet" role="dialog" aria-modal="true" data-key="sheet-${s.type}"><div class="handle"></div>${inner}</div>`;
 }
-const CATS_AZ = [...CATS].sort((a, b) => (a.k === "otros") - (b.k === "otros") || a.l.localeCompare(b.l, "es"));
 function storeChip(id, selected, act, attrs = "") {
   return `<button class="chip sm ${selected === id ? "on" : ""}" data-act="${act}" data-k="${esc(id || "")}" ${attrs}>${id ? slot(id) : ""}${esc(id ? storeName(id) : GENERIC)}</button>`;
 }
