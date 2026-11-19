@@ -67,16 +67,19 @@ input{font:inherit;color:inherit}
 .chip .n{font:600 12px/1 var(--fb);color:var(--muted)}
 .chip.on .n{color:var(--on-accent);opacity:.8}
 .chip.sm{height:32px;padding:0 12px;font-size:13px}
-.chip.iconchip{width:44px;height:40px;padding:0;justify-content:center}
+.chip.iconchip{width:52px;height:40px;padding:0;justify-content:center}
+.chip.iconchip .slot{--sw:36px;--sh:22px;background-color:transparent}
+.chip.iconchip .slot.logo{background:currentColor}
+.chip.iconchip.on .slot.logo{background:var(--on-accent)}
 .chip:disabled{opacity:.4}
 
 /* hueco neutro para el logo de la tienda (sin marcas) */
-.slot{width:16px;height:16px;border-radius:5px;display:inline-grid;place-items:center;flex:none;background:color-mix(in srgb,var(--primary) 11%,transparent);color:var(--primary)}
-.slot.lg{width:28px;height:28px;border-radius:8px}
+/* Todas las tiendas ocupan el mismo hueco (mismo ancho), con el icono o el logo centrado. */
+.slot{--sw:24px;--sh:18px;width:var(--sw);height:var(--sh);border-radius:5px;display:inline-grid;place-items:center;flex:none;background:color-mix(in srgb,var(--primary) 11%,transparent);color:var(--primary)}
+.slot.lg{--sw:44px;--sh:30px;border-radius:8px}
 .slot.store{background:transparent;border:1px dashed color-mix(in srgb,var(--outline) 80%,transparent);color:var(--muted)}
 .chip.on .slot{color:var(--on-accent);background:color-mix(in srgb,var(--on-accent) 12%,transparent)}
-.slot.logo,.chip.on .slot.logo{--h:16px;width:calc(var(--h) * var(--r));height:var(--h);border-radius:0;border:0;background:currentColor;color:var(--primary);-webkit-mask:var(--logo) center/contain no-repeat;mask:var(--logo) center/contain no-repeat}
-.slot.logo.lg{--h:26px}
+.slot.logo,.chip.on .slot.logo{border-radius:0;border:0;background:currentColor;color:var(--primary);-webkit-mask:var(--logo) center/contain no-repeat;mask:var(--logo) center/contain no-repeat}
 .chip.on .slot.logo{background:var(--on-accent)}
 .chip.on .slot.store{background:transparent;border-color:color-mix(in srgb,var(--on-accent) 45%,transparent)}
 

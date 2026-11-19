@@ -496,7 +496,7 @@ function shSEdit(s) {
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
      <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${autoLogo(d.name) ? logoSpan(autoLogo(d.name)) : ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
-     ${Object.keys(LOGOS).map((g) => `<button class="chip sm ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Logo ${LOGOS[g].match}">${logoSpan(g)}</button>`).join("")}
+     ${Object.keys(LOGOS).map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Logo ${LOGOS[g].match}">${logoSpan(g)}</button>`).join("")}
      ${STORE_ICONS.map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Icono ${g}">${ic(g, 18)}</button>`).join("")}</div></div>
    ${s.k ? `<div><p class="labelsm" style="margin-bottom:8px">Posición en la barra de tiendas</p><div class="wrap">
      <button class="chip sm" data-act="sdMove" data-k="-1" ${ix <= 0 ? "disabled" : ""}>Mover antes</button><button class="chip sm" data-act="sdMove" data-k="1" ${ix >= S.stores.length - 1 ? "disabled" : ""}>Mover después</button></div></div>` : ""}

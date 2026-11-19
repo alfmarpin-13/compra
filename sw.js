@@ -1,6 +1,6 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v6";
+const VERSION = "compra-v7";
 const FIREBASE = "10.14.1";
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
