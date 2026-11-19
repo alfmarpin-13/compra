@@ -78,7 +78,7 @@ Mismo diseño que el prototipo. Resumen:
    - **Pestañas «Lista» y «Despensa» en la cabecera, con icono:** la cesta (logo) es la Lista y la estantería, la Despensa. La activa se abre y muestra su nombre, con una pastilla lima que se desliza de una a otra. Nada de títulos grandes ni subrayados. No son pantallas aparte. Deslizar el dedo a izquierda o derecha cambia de pestaña. Sin zoom (ni doble toque ni dos dedos).
    - **Barra inferior fija:** «+ Añadir» (en la Despensa crea un producto nuevo; mismo sitio en las dos pestañas) y, a la derecha, el botón redondo del micrófono (solo el icono). Al tocarlo se ensancha con «Escuchando… toca para parar».
 3. **Despensa** (pestaña junto a «Lista», misma cabecera).
-   - **Buscador.** El producto nuevo se crea con «+ Añadir» de la barra de abajo.
+   - **Buscador.** «+ Añadir» de la barra abre el mismo campo de escribir que la lista (y el micro igual): mismo intérprete y misma hoja «Esto es lo que he entendido», pero guarda solo en la despensa, sin apuntar en la lista, y marca lo que ya estaba. La ficha completa de un producto se abre manteniéndolo pulsado.
    - **Buscador** en forma de pastilla: «Buscar entre N productos».
    - **«Os toca reponer»**, con «Repasar» a la derecha.
    - **Todo el catálogo por categorías,** en casillas o lista según la vista elegida. Lo que ya está en la lista va resaltado con un check.
