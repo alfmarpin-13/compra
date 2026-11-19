@@ -54,9 +54,6 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
   :root.standalone{--edge:6px}
 }
 .topband{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--ground);z-index:50;pointer-events:none;transition:background .2s}
-/* Con una hoja abierta, la franja se oscurece igual que el velo del resto de la pantalla. */
-body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--ground))}
-:root[data-theme="dark"] body:has(.scrim) .topband{background:color-mix(in srgb,#000 55%,var(--ground))}
 
 /* ---------- Contenedor ---------- */
 .app{position:fixed;top:0;left:0;right:0;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}
@@ -279,12 +276,10 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .btns .btn{flex:1}
 
 /* ---------- Hojas inferiores ---------- */
-.scrim{position:absolute;inset:0;background:color-mix(in srgb,var(--ink) 32%,transparent);z-index:60;animation:fadein .35s ease-out}
-.scrim.leaving{animation:fadeout .32s ease-in forwards}
+.scrim{position:absolute;inset:0;background:transparent;z-index:60}
 @keyframes fadeout{to{opacity:0}}
-:root[data-theme="dark"] .scrim{background:rgba(0,0,0,.55)}
 @keyframes fadein{from{opacity:0}}
-.sheet{position:absolute;left:0;right:0;bottom:0;max-height:90%;background:var(--paper);border-radius:28px 28px 0 0;z-index:61;display:flex;flex-direction:column;padding-bottom:calc(var(--sab) + 8px);animation:sheetIn .55s var(--spring)}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:90%;background:var(--paper);border-radius:28px 28px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.14),0 -1px 0 var(--line);z-index:61;display:flex;flex-direction:column;padding-bottom:calc(var(--sab) + 8px);animation:sheetIn .55s var(--spring)}
 @keyframes sheetIn{from{transform:translateY(100%)}}
 .sheet.leaving{animation:sheetOut .34s cubic-bezier(.4,0,1,1) forwards}
 @keyframes sheetOut{to{transform:translateY(100%)}}

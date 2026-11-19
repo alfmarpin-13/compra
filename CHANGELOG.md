@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v32 · 19/11/2026
+- Las hojas ya no oscurecen el fondo (así no queda la franja de la hora clara sobre fondo oscuro); se separan con una sombra suave. Tocar fuera sigue cerrándolas.
+- «Repasar la despensa» sin nada que reponer: el botón dice «Cerrar».
+
 ## v31 · 19/11/2026
 - Créditos en Opciones reducidos a una línea: «Iconos de productos: OpenMoji (CC BY-SA 4.0)».
 

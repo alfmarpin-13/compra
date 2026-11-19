@@ -255,15 +255,13 @@ function renderPartial() {
   const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
 }
 
-// Color de la barra de estado del iPhone (theme-color). Con una hoja abierta se oscurece igual que el velo:
-// claro = 32 % de tinta sobre el fondo; oscuro = 55 % de negro sobre el fondo.
-const BAR = { light: "#F3F4EE", dark: "#0E1511", lightDim: "#ABB0AA", darkDim: "#060908" };
+// Color de la barra de estado del iPhone (theme-color), el del fondo de la app.
+const BAR = { light: "#F3F4EE", dark: "#0E1511" };
 function applyTheme() {
   const dark = S.theme === "dark" || (S.theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   const t = dark ? "dark" : "light";
   if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
-  const dim = S.phase === "app" && !!S.sheet;
-  const color = BAR[t + (dim ? "Dim" : "")];
+  const color = BAR[t];
   const m = document.querySelector('meta[name="theme-color"]');
   if (m && m.content !== color) m.content = color;
 }
@@ -662,7 +660,7 @@ function shOne(s) {
   if (!p) return `<div class="sbody"><div class="shead"><h2>Repasa la despensa</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
      <p class="big-name" style="font-size:26px;line-height:34px">${!s.queue.length ? "No hay nada que reponer ahora mismo" : s.added === 0 ? "No se añadió nada" : s.added === 1 ? "Se añadió 1 artículo" : `Se añadieron ${s.added} artículos`}</p>
      ${!s.queue.length ? `<p class="help">Cuando algo lleve tiempo sin comprarse según vuestra costumbre, aparecerá aquí.</p>` : ""}
-     <button class="btn fill tall" data-act="closeSheet">Volver a la lista</button></div>`;
+     <button class="btn fill tall" data-act="closeSheet">Cerrar</button></div>`;
   const st = statsFor(p);
   return `<div class="sbody">
    <div class="shead"><h2>Repasa la despensa</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
