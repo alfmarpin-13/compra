@@ -188,7 +188,20 @@ function flipPlay(before, sameView) {
   }
 }
 const tpl = document.createElement("template");
+let renderFailed = false;
 function render() {
+  try { renderInner(); renderFailed = false; }
+  catch (e) { console.error(e); if (!renderFailed) { renderFailed = true; showFatal("Error al pintar: " + (e && e.message)); } }
+}
+/** Muestra un error en pantalla (para poder diagnosticarlo desde una captura). */
+function showFatal(msg) {
+  let el = document.getElementById("fatal");
+  if (!el) { el = document.createElement("div"); el.id = "fatal"; document.body.appendChild(el); }
+  el.textContent = "Compra v" + APP_VERSION + " · " + msg;
+}
+window.addEventListener("error", (e) => showFatal((e.message || "error") + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : "")));
+window.addEventListener("unhandledrejection", (e) => showFatal("Promesa: " + (e.reason && (e.reason.code || e.reason.message) || e.reason)));
+function renderInner() {
   statsCache = null;
   applyTheme();
   let h = "";
@@ -373,7 +386,8 @@ function vList() {
   const pend = visible([...S.pending.filter((i) => !ticking.has(i.id)), ...justTicked]).sort(sortAdded);
   const done = visible(S.today.filter((i) => !ticking.has(i.id))).sort((a, b) => b.checkedAt - a.checkedAt);
   let body = "";
-  if (!S.ready.pending) body = "";
+  if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span></div>`;
+  else if (!S.ready.pending) body = S.slowLoad ? `<div class="diag" data-key="diag"><b>Esperando a Firebase…</b><span>Si tarda mucho, comprueba la conexión. Si sigue igual, mándale a Claude una captura.</span></div>` : "";
   else if (!pend.length && !done.length && S.capture !== "listening") {
     body = S.store
       ? `<p class="storeempty">No hay artículos para ${esc(storeName(S.store))}. Elige Todas para ver el resto.</p>`
@@ -1457,7 +1471,8 @@ function fixSpaces(col, list) {
 }
 let initialPending = true, serverSynced = false;
 function startData() {
-  initialPending = true; serverSynced = false;
+  initialPending = true; serverSynced = false; S.dataError = null; S.slowLoad = false;
+  setTimeout(() => { if (!S.ready.pending) { S.slowLoad = true; render(); } }, 8000);
   sub = DB.subscribe({
     stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; if (S.store && !storeById(S.store)) S.store = null; render(); },
     products(list) { S.products = fixSpaces("products", list); S.ready.products = true; render(); },
@@ -1470,7 +1485,7 @@ function startData() {
       S.pending = fixSpaces("items", list); S.ready.pending = true; render();
     },
     today(list) { S.today = list; render(); },
-    error(e) { console.warn("Firestore", e); },
+    error(e) { console.warn("Firestore", e); S.dataError = (e && (e.code || e.message)) || "desconocido"; render(); },
   });
   refreshHistory();
 }
@@ -1509,7 +1524,7 @@ async function boot() {
   render();
   if (!isConfigured()) { S.phase = "setup"; return render(); }
   try { await DB.connect(firebaseConfig); }
-  catch (e) { console.error(e); S.phase = "setup"; return render(); }
+  catch (e) { console.error(e); showFatal("No se ha podido cargar Firebase: " + (e && e.message)); S.phase = "setup"; return render(); }
   DB.onUser((user) => {
     if (user) {
       S.me = DB.whoFromEmail(user.email);
