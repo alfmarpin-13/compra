@@ -398,13 +398,12 @@ function vList() {
   const stale = S.bootStuck && !S.live ? `<div class="diag" data-key="diag"><b>Sin conexión con Firebase todavía</b><span>Lo que ves es lo último guardado en este iPhone; lo que hagas se guardará al conectar. Se ha quedado ${esc(bootStep)}.</span><button class="btn out" data-act="repair">Reparar la app</button></div>` : "";
   if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span><button class="btn out" data-act="repair">Reparar la app</button></div>`;
   else if (!S.ready.pending) body = S.slowLoad ? `<div class="diag" data-key="diag"><b>Esperando a Firebase…</b><span>Si tarda mucho, comprueba la conexión. Si sigue igual, mándale a Claude una captura.</span></div>` : "";
-  else if (!pend.length && !done.length && !voiceOn()) {
+  else if (!pend.length && !done.length) {
     body = S.store
       ? `<p class="storeempty">No hay artículos para ${esc(storeName(S.store))}. Elige Todas para ver el resto.</p>`
       : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o toca el micro y habla.</p></div>`;
   } else {
     body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-flip data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
-    if (voiceOn() && S.view !== "pantry") body += vListening();
     if (done.length) {
       body += `<button class="chkdiv" data-flip data-key="donediv" data-act="toggleChecked" aria-expanded="${S.checkedOpen}"><i></i><span>Comprado hoy · ${done.length}</span>${ic("chevron-down", 16)}<i></i></button>`;
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
@@ -422,6 +421,7 @@ function vMain() {
     ${vHeader()}
     <div class="pager"><div class="track at-${idx}" data-key="track">${vList()}${vPantry()}</div></div>
     ${voiceOn() ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
+    ${voiceOn() ? vListening() : ""}
     ${S.band ? vBand() : ""}
     ${vDock()}
   </div>`;
@@ -537,7 +537,6 @@ function vPantry() {
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-flip data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
     ${!list.length && S.pantryQ.trim() ? `<div class="noq" data-key="noq"><p>No está en la despensa.</p><button class="btn fill" data-act="pnewq">Añadir «${esc(cap(S.pantryQ.trim()))}»</button></div>` : ""}
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
-    ${voiceOn() && S.view === "pantry" ? vListening() : ""}
    </div></div>`;
 }
 
@@ -972,7 +971,6 @@ async function toggleVoice() {
     onAutoStop: (why) => { if (run === vozRun && S.capture === "listening") stopListening(why); },
   });
   render();
-  const l = root.querySelector(".pane:not([aria-hidden='true']) .list, .pane:not([aria-hidden='true']) .pad"); if (l) l.scrollTop = l.scrollHeight;
   // Mientras hablas, el modelo se va preparando (o descargando la primera vez).
   Voz.preload(vozProgress).catch(() => {});
   try { await started; }

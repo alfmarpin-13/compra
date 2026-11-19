@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v46 · 19/11/2026
+- Al tocar el micro ya no se mueve la lista: el cartel «Te escucho…» flota encima del contenido, justo sobre la barra, en la Lista y en la Despensa.
+
 ## v45 · 19/11/2026
 - Barra de abajo: «Añadir» sin el «+», y el texto que escribes empieza justo donde ponía «Añadir». Al tocarla ya no cambia de color: es la misma pastilla, con el cursor y la flecha.
 
