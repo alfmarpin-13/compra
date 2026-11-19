@@ -2,6 +2,7 @@
 import { firebaseConfig, isConfigured } from "./config.js";
 import { APP_VERSION, APP_DATE } from "./version.js";
 import * as DB from "./db.js";
+import * as Voz from "./voz.js";
 import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW } from "./data.js";
 import { LUCIDE, OPENMOJI } from "./iconos.js";
 import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
@@ -40,7 +41,6 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem("compra." + k); return v == null ? d : v; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem("compra." + k, v); } catch (e) {} },
 };
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const S = {
   phase: "boot", me: "", meKey: "", loginErr: false, loginBusy: false, remember: true,
@@ -254,17 +254,23 @@ function placeLens() {
   }
   if (changed) box.querySelector(".hlens").setAttribute("style", lensStyle(S.view !== "pantry"));
 }
+function listenText() {
+  if (S.capture === "thinking") return S.vozDl != null ? `Preparando el dictado (solo la primera vez)… ${S.vozDl} %` : "Entendiendo lo que has dicho…";
+  if (!S.voiceReady) return "Un momento…";
+  return "Te escucho…";
+}
 function vListening() {
-  const txt = S.partial || (S.voiceReady ? "Te escucho…" : "Un momento…");
-  return `<div class="listening ${S.partial ? "has" : ""}" data-key="partial" aria-live="polite"><span class="wave ${S.voiceReady ? "on" : ""}" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ltext">${esc(txt)}</span></div>`;
+  const st = S.capture === "thinking" ? "think" : S.voiceReady ? "live" : "";
+  return `<div class="listening ${S.capture === "thinking" ? "has" : ""}" data-key="partial" aria-live="polite"><span class="wave ${st}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="ltext">${esc(listenText())}</span></div>`;
 }
 function renderPartial() {
   const p = root.querySelector(".listening");
   if (!p) return;
-  p.classList.toggle("has", !!S.partial);
-  p.querySelector(".wave").classList.toggle("on", !!S.voiceReady);
-  p.querySelector(".ltext").textContent = S.partial || (S.voiceReady ? "Te escucho…" : "Un momento…");
-  const l = root.querySelector(".list"); if (l) l.scrollTop = l.scrollHeight;
+  p.classList.toggle("has", S.capture === "thinking");
+  const w = p.querySelector(".wave");
+  w.classList.toggle("live", S.capture === "listening" && !!S.voiceReady);
+  w.classList.toggle("think", S.capture === "thinking");
+  p.querySelector(".ltext").textContent = listenText();
 }
 
 // Color de la barra de estado del iPhone (theme-color), el del fondo de la app.
@@ -388,13 +394,13 @@ function vList() {
   const stale = S.bootStuck && !S.live ? `<div class="diag" data-key="diag"><b>Sin conexión con Firebase todavía</b><span>Lo que ves es lo último guardado en este iPhone; lo que hagas se guardará al conectar. Se ha quedado ${esc(bootStep)}.</span><button class="btn out" data-act="repair">Reparar la app</button></div>` : "";
   if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span><button class="btn out" data-act="repair">Reparar la app</button></div>`;
   else if (!S.ready.pending) body = S.slowLoad ? `<div class="diag" data-key="diag"><b>Esperando a Firebase…</b><span>Si tarda mucho, comprueba la conexión. Si sigue igual, mándale a Claude una captura.</span></div>` : "";
-  else if (!pend.length && !done.length && S.capture !== "listening") {
+  else if (!pend.length && !done.length && !voiceOn()) {
     body = S.store
       ? `<p class="storeempty">No hay artículos para ${esc(storeName(S.store))}. Elige Todas para ver el resto.</p>`
       : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o toca el micro y habla.</p></div>`;
   } else {
     body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-flip data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
-    if (S.capture === "listening" && S.view !== "pantry") body += vListening();
+    if (voiceOn() && S.view !== "pantry") body += vListening();
     if (done.length) {
       body += `<button class="chkdiv" data-flip data-key="donediv" data-act="toggleChecked" aria-expanded="${S.checkedOpen}"><i></i><span>Comprado hoy · ${done.length}</span>${ic("chevron-down", 16)}<i></i></button>`;
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
@@ -411,7 +417,7 @@ function vMain() {
   return `<div class="scr" data-key="main">
     ${vHeader()}
     <div class="pager"><div class="track at-${idx}" data-key="track">${vList()}${vPantry()}</div></div>
-    ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
+    ${voiceOn() ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
     ${S.band ? vBand() : ""}
     ${vDock()}
   </div>`;
@@ -440,7 +446,7 @@ function vSug() {
 /** Barra de abajo: una sola pastilla que se convierte en el campo de escribir (sin cambiarse por otra barra)
  *  y el micro, que se queda siempre a la derecha. Escribiendo, dentro del campo solo hay una flecha para añadir. */
 function vDock() {
-  const typing = S.capture === "typing", on = S.capture === "listening";
+  const typing = S.capture === "typing", on = voiceOn();
   const pantry = S.view === "pantry";
   const ph = pantry ? "Productos para la despensa" : "Escribe qué necesitas";
   const field = on
@@ -449,7 +455,8 @@ function vDock() {
     ? `<form class="dk-line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="${ph}" aria-label="${ph}" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done"><button class="dk-send" type="submit" id="draftSubmit" aria-label="Añadir" ${S.draft.trim() ? "" : "disabled"}>${ic("arrow-up", 20)}</button></form>`
     : `<button class="dk-add" data-act="type" aria-label="${pantry ? "Añadir productos a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>`;
   // El texto del micro está siempre (oculto en reposo) para que al ensancharse no salte nada.
-  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para terminar" : "Toca y habla"}">${ic("mic", 22, "mic")}<span class="dk-vt">${on && S.voiceReady ? "Escuchando…" : "Un momento…"}<small>toca para terminar</small></span></button>`;
+  const lbl = S.capture === "thinking" ? "Entendiendo lo que has dicho" : on ? "Escuchando. Toca para terminar" : "Toca y habla";
+  const voiceBtn = `<button class="dk-voice ${on ? "on" : ""} ${S.capture === "thinking" ? "think" : ""}" data-act="voice" aria-label="${lbl}">${ic("mic", 22, "mic")}<span class="dk-vt">${on ? voiceBtnText() : "Escuchando…<small>toca para terminar</small>"}</span></button>`;
   return `<div class="dock ${on ? "voice-on" : ""} ${typing ? "typing" : ""}" data-key="dock">
     ${typing ? `<div id="sug" class="dk-sug" data-key="dk-sug">${vSug()}</div>` : ""}
     <div class="dk-row" data-key="dk-row"><div class="dk-field" data-key="dk-field">${field}</div>${voiceBtn}</div></div>`;
@@ -526,7 +533,7 @@ function vPantry() {
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-flip data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
     ${!list.length && S.pantryQ.trim() ? `<div class="noq" data-key="noq"><p>No está en la despensa.</p><button class="btn fill" data-act="pnewq">Añadir «${esc(cap(S.pantryQ.trim()))}»</button></div>` : ""}
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
-    ${S.capture === "listening" && S.view === "pantry" ? vListening() : ""}
+    ${voiceOn() && S.view === "pantry" ? vListening() : ""}
    </div></div>`;
 }
 
@@ -851,8 +858,8 @@ function addProductToList(p, fresh = true) {
 /* ---------- Escribir ---------- */
 function ctx() { return { products: S.products, stores: S.stores, pending: S.pending, store: currentStore() }; }
 /** Entradas para la despensa: mismo intérprete, pero lo que ya existe en la despensa no se vuelve a crear. */
-function pantryEntries(text) {
-  const entries = parseUtterance(text, { ...ctx(), pending: [] });
+function pantryEntries(text, opts) {
+  const entries = parseUtterance(text, { ...ctx(), pending: [] }, opts);
   for (const e of entries) {
     e.inPantry = !!(e.known && !e.corrected) || !!productByKey(nameKey(e.name));
     e.dup = e.inPantry; e.include = !e.inPantry;
@@ -912,120 +919,114 @@ function openTyping() {
 }
 
 /* ---------- Toca y habla ---------- */
-// Tocar para hablar (el iPhone solo deja arrancar el micro con un toque completo).
-// Un solo reconocedor en modo continuo: sin «continuous», Safari corta tras la primera frase y al rearrancar
-// se pierden palabras. En modo continuo Safari repite frases («leche», «leche y pan»): se colapsan.
-// Se termina tras ~2 s de silencio después de hablar, o al tocar el micro. Tocar fuera cancela.
-const SILENCE_MS = 2200, NOTHING_MS = 9000;
-let rec = null, recOn = false, recStart = 0, recMax = null, recIdle = null, recCommitted = "", recRun = "", recEnding = false, recRuns = 0;
-/** Texto de una tanda: une los resultados quitando las repeticiones que mete Safari. */
-function collapseResults(results) {
-  const kept = [];
-  for (let k = 0; k < results.length; k++) {
-    const p = String(results[k][0]?.transcript || "").trim();
-    if (!p) continue;
-    const prev = kept[kept.length - 1];
-    const s = norm(p), w = prev ? norm(prev) : "";
-    if (prev && w && s.startsWith(w)) kept[kept.length - 1] = p;      // repite la anterior y añade más
-    else if (!(prev && s && w.startsWith(s))) kept.push(p);           // si es un trozo de la anterior, fuera
+// Como una nota de voz: se toca el micro, se graba y, al terminar, se transcribe en el propio iPhone
+// (Whisper, en js/voz.js). Termina solo tras ~2 s de silencio después de hablar, o al volver a tocar.
+// La X o tocar fuera cancelan. La primera vez se descarga el modelo (unos 100 MB) y queda guardado.
+let vozRun = 0, vozLevelRaf = 0, vozLevel = 0;
+function voiceOn() { return S.capture === "listening" || S.capture === "thinking"; }
+const VOZ_COMMON = ["leche", "pan", "huevos", "agua", "aceite de oliva", "tomates", "patatas", "cebollas", "plátanos", "manzanas", "naranjas",
+  "pollo", "yogures", "queso", "jamón", "arroz", "pasta", "café", "papel higiénico", "detergente", "lejía", "pañales", "toallitas", "gel de ducha", "champú"];
+function voiceVocab() {
+  const st = purchaseStats();
+  const prods = [...S.products].sort((a, b) => (st.get(b.id)?.count || 0) - (st.get(a.id)?.count || 0)).map((p) => p.name);
+  const seen = new Set(), out = [];
+  for (const n of [...S.pending.map((i) => i.name), ...prods, ...(prods.length < 40 ? VOZ_COMMON : [])]) {
+    const k = nameKey(n);
+    if (k && !seen.has(k)) { seen.add(k); out.push(n); }
   }
-  return kept.join(" ").replace(/\s+/g, " ").trim();
+  // Las cadenas con mayúscula («Mercadona»); las tiendas de oficio en minúscula («frutería»), como se escriben.
+  const stores = [...S.stores].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((x) => (x.kind === "unique" && !/\s/.test(x.name.trim()) ? x.name.trim().toLowerCase() : x.name.trim()));
+  return { products: out, stores };
 }
-/** Junta lo de una tanda nueva con lo ya dicho, sin duplicar. */
-function mergeSpeech(done, run) {
-  if (!run) return done;
-  if (!done) return run;
-  const d = norm(done), r = norm(run);
-  if (r.startsWith(d)) return run;
-  if (d.endsWith(r) || d.includes(r)) return done;
-  return done + ", " + run;
+function vozProgress(loaded, total) {
+  const pct = total ? Math.min(99, Math.floor((100 * loaded) / total)) : 0;
+  S.vozDl = Voz.modelReady() || pct >= 99 ? null : pct;
+  renderPartial(); updateVoiceBtn();
 }
-const spoken = () => mergeSpeech(recCommitted, recRun);
-function toggleVoice() {
+function vozSetLevel(v) {
+  vozLevel = v;
+  if (vozLevelRaf) return;
+  vozLevelRaf = requestAnimationFrame(() => {
+    vozLevelRaf = 0;
+    const w = root.querySelector(".listening .wave");
+    if (w) w.style.setProperty("--lv", (Math.sqrt(vozLevel)).toFixed(3));
+  });
+}
+async function toggleVoice() {
+  if (S.capture === "thinking") return;
   if (S.capture === "listening") return stopListening();
-  if (!SR) return toast("Este navegador no reconoce la voz.");
+  if (!Voz.supported()) return toast("Este navegador no deja grabar audio.");
   if (S.capture === "typing") { const inp = root.querySelector("#draft"); S.capture = "idle"; S.draft = ""; root.style.height = ""; root.classList.remove("kb", "kb-draft"); vvLast = ""; if (inp) inp.blur(); }
-  recCommitted = ""; recRun = ""; recEnding = false; recRuns = 0; recStart = Date.now();
-  S.voiceReady = false; S.partial = "";
-  try {
-    rec = new SR();
-    rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1;
-  } catch (e) { rec = null; return toast("No se ha podido abrir el micrófono."); }
-  const r = rec;
-  r.onstart = r.onaudiostart = () => { if (rec === r && !S.voiceReady) { S.voiceReady = true; renderPartial(); updateVoiceBtn(); } };
-  r.onresult = (ev) => {
-    if (rec !== r) return;
-    recRun = collapseResults(ev.results);
-    S.partial = spoken();
-    renderPartial();
-    // Silencio después de hablar → se termina solo.
-    clearTimeout(recIdle);
-    recIdle = setTimeout(() => { if (recOn && spoken()) stopListening(); }, SILENCE_MS);
-  };
-  r.onerror = (ev) => {
-    if (rec !== r) return;
-    if (ev.error === "no-speech" || ev.error === "aborted") return; // lo gestiona onend
-    endVoice();
-    render();
-    if (ev.error === "not-allowed") toast("El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono.");
-    else toast(`La voz ha fallado (${ev.error}). Prueba otra vez.`);
-  };
-  r.onend = () => {
-    if (rec !== r) return;
-    recCommitted = spoken(); recRun = "";
-    // Safari ha cortado por su cuenta mientras se escuchaba: se vuelve a abrir el mismo reconocedor.
-    if (recOn && !recEnding && recRuns < 8 && Date.now() - recStart < 45000) {
-      recRuns++;
-      try { r.start(); return; } catch (e) { /* no deja: se procesa lo que haya */ }
-    }
-    finishListening(recCommitted);
-  };
-  S.capture = "listening"; S.band = null; S.sheet = null; S.menu = false;
-  try { r.start(); } catch (e) { rec = null; S.capture = "idle"; return toast("No se ha podido abrir el micrófono."); }
-  recOn = true;
-  clearTimeout(recMax); clearTimeout(recIdle);
-  recMax = setTimeout(stopListening, 45000);
-  // Si en un rato no se ha dicho nada, se para.
-  recIdle = setTimeout(() => { if (recOn && !spoken()) stopListening(); }, NOTHING_MS);
+  const run = ++vozRun;
+  S.capture = "listening"; S.voiceReady = false; S.partial = ""; S.heard = false; S.band = null; S.sheet = null; S.menu = false;
+  S.vozDl = Voz.modelReady() ? null : S.vozDl ?? null;
+  const started = Voz.startRecording({
+    onReady: () => { if (run === vozRun) { S.voiceReady = true; renderPartial(); updateVoiceBtn(); } },
+    onSpeech: () => { if (run === vozRun) { S.heard = true; renderPartial(); } },
+    onLevel: (v) => { if (run === vozRun) vozSetLevel(v); },
+    onAutoStop: (why) => { if (run === vozRun && S.capture === "listening") stopListening(why); },
+  });
   render();
   const l = root.querySelector(".pane:not([aria-hidden='true']) .list, .pane:not([aria-hidden='true']) .pad"); if (l) l.scrollTop = l.scrollHeight;
-}
-function endVoice() {
-  recOn = false; recEnding = true; clearTimeout(recMax); clearTimeout(recIdle);
-  const r = rec; rec = null;
-  if (r) { r.onresult = r.onend = r.onerror = null; try { r.abort(); } catch (e) {} }
-  S.capture = "idle"; S.partial = ""; S.voiceReady = false;
+  // Mientras hablas, el modelo se va preparando (o descargando la primera vez).
+  Voz.preload(vozProgress).catch(() => {});
+  try { await started; }
+  catch (e) {
+    if (run !== vozRun) return;
+    vozRun++; S.capture = "idle"; S.voiceReady = false; render();
+    toast(e.message === "permiso" ? "El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono." : "No se ha podido abrir el micrófono.");
+  }
 }
 function updateVoiceBtn() {
   const b = root.querySelector(".dk-voice .dk-vt");
-  if (b && S.capture === "listening") b.innerHTML = (S.voiceReady ? "Escuchando…" : "Un momento…") + "<small>toca para terminar</small>";
+  if (b && (S.capture === "listening" || S.capture === "thinking")) b.innerHTML = voiceBtnText();
 }
-/** Toca el micro (o silencio tras hablar): para y procesa lo dicho. Espera las últimas palabras de Safari. */
-function stopListening() {
-  if (S.capture !== "listening" || recEnding) return;
-  recOn = false; recEnding = true;
-  clearTimeout(recMax); clearTimeout(recIdle);
-  const r = rec;
-  if (!r) return finishListening(spoken());
-  try { r.stop(); } catch (e) { rec = null; return finishListening(spoken()); }
-  // Si el motor no avisa de que ha terminado, se procesa igualmente.
-  setTimeout(() => { if (rec === r) { const t = spoken(); rec = null; try { r.abort(); } catch (e) {} finishListening(t); } }, 1500);
+function voiceBtnText() {
+  if (S.capture === "thinking") return S.vozDl != null ? `Preparando el dictado… ${S.vozDl} %<small>solo la primera vez</small>` : "Entendiendo…<small>un momento</small>";
+  return (S.voiceReady ? "Escuchando…" : "Un momento…") + "<small>toca para terminar</small>";
 }
-/** Toca fuera: cancela sin apuntar nada. */
-function cancelListening() {
+/** Toca el micro o silencio tras hablar: deja de grabar y transcribe. */
+async function stopListening(why) {
   if (S.capture !== "listening") return;
-  endVoice();
+  const run = vozRun;
+  S.capture = "thinking";
+  render();
+  let rec;
+  try { rec = await Voz.stopRecording(); } catch (e) { rec = { audio: null }; }
+  if (run !== vozRun) return;
+  if (!rec.audio) {
+    vozRun++; S.capture = "idle"; S.voiceReady = false; render();
+    return toast(why === "nothing" ? "No te he oído. Toca el micro y habla." : "No te he oído bien. Prueba otra vez.");
+  }
+  let res;
+  try { res = await Voz.transcribe(rec.audio, voiceVocab()); }
+  catch (e) {
+    if (run !== vozRun) return;
+    vozRun++; S.capture = "idle"; S.voiceReady = false; S.vozDl = null; render();
+    return toast(!Voz.modelReady() ? "No se ha podido preparar el dictado. La primera vez hace falta conexión (se descargan unos 100 MB)." : "No se ha podido entender el audio. Prueba otra vez.");
+  }
+  if (run !== vozRun) return;
+  vozRun++;
+  S.vozDl = null;
+  finishListening(res.text);
+}
+// Si la app se va a segundo plano grabando, el iPhone corta el micro: se cancela sin más.
+document.addEventListener("visibilitychange", () => { if (document.hidden && S.capture === "listening") cancelListening(); });
+/** La X o tocar fuera: cancela sin apuntar nada (también si ya estaba entendiendo). */
+function cancelListening() {
+  if (S.capture !== "listening" && S.capture !== "thinking") return;
+  vozRun++;
+  Voz.cancelRecording();
+  S.capture = "idle"; S.voiceReady = false; S.partial = "";
   render();
 }
 function finishListening(text) {
-  if (S.capture !== "listening") return;
-  clearTimeout(recMax); clearTimeout(recIdle);
-  rec = null; recOn = false;
   S.capture = "idle"; S.partial = ""; S.voiceReady = false;
   text = (text || "").trim();
-  if (!text) { render(); toast("No te he oído. Toca el micro y habla."); return; }
+  if (!text) { render(); toast("No te he oído bien. Prueba otra vez."); return; }
   if (S.view === "pantry") {
-    const entries = pantryEntries(text);
+    const entries = pantryEntries(text, { voice: true });
     if (!entries.length) { render(); toast("No he entendido qué añadir."); return; }
     S.sheet = { type: "review", target: "pantry", said: text, entries, voice: true };
     return render();
@@ -1033,7 +1034,7 @@ function finishListening(text) {
   const cmd = parseCommand(text, ctx());
   if (cmd && cmd.rows.length) S.sheet = { type: "command", ...cmd, voice: true };
   else {
-    const entries = parseUtterance(text, ctx());
+    const entries = parseUtterance(text, ctx(), { voice: true });
     if (!entries.length) { render(); toast("No he entendido qué apuntar."); return; }
     S.sheet = { type: "review", said: text, entries, voice: true };
   }
@@ -1162,6 +1163,7 @@ async function refreshHistory() {
 }
 function openHistory() {
   S.backTo = S.view === "options" ? "options" : null;
+  if (voiceOn()) cancelListening();
   S.menu = false; S.band = null; S.view = "history"; S.histSel = new Set(); S.capture = "idle";
   render();
   refreshHistory();
@@ -1374,7 +1376,7 @@ root.addEventListener("input", (e) => {
   else if (id === "hq") { S.histQ = e.target.value; render(); }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && S.capture === "listening") return cancelListening();
+  if (e.key === "Escape" && voiceOn()) return cancelListening();
   if (e.key === "Escape") {
     if (S.sheet) S.sheet = null; else if (S.menu) S.menu = false; else if (S.capture === "typing") return closeTyping(); else if (S.view === "history" && S.backTo === "options") S.view = "options"; else if (S.view === "history" || S.view === "options") S.view = S.tab || "list";
     render();
