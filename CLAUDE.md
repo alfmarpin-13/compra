@@ -89,6 +89,7 @@ Mismo diseño que el prototipo. Resumen:
 7. **Barra inferior flotante y translúcida:** el contenido se desplaza por detrás de ella.
 
 ### Animaciones
+- Las hojas no oscurecen el fondo (decisión de Alfonso: iOS no deja oscurecer la franja de la hora en la app instalada); se separan con sombra.
 - Fluidas al estilo iOS, con curvas de muelle: hojas que suben y bajan, menú que se despliega desde su botón, pantallas que entran y salen por la derecha, cambio de pestaña deslizado y elementos de la lista que se recolocan. Sin animaciones si el iPhone tiene activado «Reducir movimiento».
 - Avisos: pastilla compacta de una línea con «Deshacer» al lado.
 
