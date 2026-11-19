@@ -22,6 +22,10 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{font-family:var(--fb);background:var(--ground);color:var(--ink);-webkit-font-smoothing:antialiased;font-synthesis:none;overflow:hidden;-webkit-text-size-adjust:100%}
+/* Es una app, no una página: sin selección de texto ni menú de «Copiar/Consultar» al mantener pulsado.
+   Solo se puede seleccionar dentro de los campos donde se escribe. */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 button:disabled{cursor:default}
 input{font:inherit;color:inherit}
