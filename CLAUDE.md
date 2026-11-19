@@ -232,7 +232,7 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
 - **Iconos de producto:** set **OpenMoji** de línea (CC BY-SA 4.0), coloreado con `currentColor` en el color de la categoría.
   - Diccionario de palabras clave → icono, para que un producto nuevo («leche semidesnatada») encuentre su icono («leche») automáticamente.
   - Sin coincidencia, se usa el icono de su categoría.
-  - Atribución en Preferencias: «Iconos de productos: OpenMoji, CC BY-SA 4.0».
+  - Atribución en Opciones, una sola línea bajo la versión: «Iconos de productos: OpenMoji (CC BY-SA 4.0)». Lucide y las tipografías no se citan en la app: sus licencias van en el código y en `fonts/`.
 - **Iconos de interfaz y de categoría:** trazo de 1,8 px en caja de 24, extremos redondeados, al estilo **Lucide** (licencia ISC). No reutilices los trazados del prototipo que vienen de otros proyectos sin comprobar su licencia; usa Lucide o dibújalos.
 - Toques de al menos 44 px, contraste AA y respeto a `prefers-reduced-motion`.
 
