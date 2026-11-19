@@ -12,7 +12,7 @@ App web instalable (PWA) para la lista de la compra de casa, compartida en tiemp
 - **Archivos:** `index.html`, `app.js` (o varios módulos en `js/`), `styles.css`, `manifest.webmanifest`, `sw.js`, `icons/`. Si cabe cómodamente en un único `index.html` como Cartera, también vale.
 - **Hosting:** GitHub Pages en `https://alfmarpin-13.github.io/compra/`. Todas las rutas son relativas, porque la app vive en un subdirectorio.
 - **Backend:** Firebase, en el plan gratuito Spark.
-  - **Firebase Auth**, solo con email y contraseña.
+  - **Firebase Auth**, solo con email y contraseña. Se inicializa con `initializeAuth` (persistencia IndexedDB/local/sesión) y **sin** `popupRedirectResolver`: `getAuth()` carga un iframe de authDomain antes de dar la sesión y en el iPhone tardaba 40-50 s.
   - **Cloud Firestore**, con caché persistente local (`persistentLocalCache`) para que funcione sin conexión y sincronice al volver. Se usa `persistentSingleTabManager({ forceOwnership: true })` y `experimentalForceLongPolling: true` porque en el iPhone con datos móviles el multipestaña y el streaming provocaban arranques de 40-50 s.
   - SDK modular v10 o superior, cargado desde `https://www.gstatic.com/firebasejs/...`.
 - **Repositorio público.** No se sube ningún dato al repo. La configuración web de Firebase (apiKey, projectId…) no es secreta y puede ir en el código. La seguridad la dan las reglas de Firestore (sección 9).

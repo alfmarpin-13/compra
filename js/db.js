@@ -14,7 +14,10 @@ export async function connect(config) {
   const [appMod, authMod, fsMod] = await Promise.all(FIREBASE_URLS.map((u) => import(u)));
   A = authMod; F = fsMod;
   const app = appMod.initializeApp(config);
-  auth = A.getAuth(app);
+  // initializeAuth sin «popupRedirectResolver»: getAuth() carga a escondidas un iframe de authDomain
+  // (solo sirve para entrar con Google/Facebook) y no da la sesión hasta que termina; en el iPhone con
+  // datos móviles eso tardaba 40-50 s. Solo usamos correo y contraseña, así que no hace falta.
+  auth = A.initializeAuth(app, { persistence: [A.indexedDBLocalPersistence, A.browserLocalPersistence, A.browserSessionPersistence] });
   try {
     // En el iPhone con datos móviles, la conexión «en streaming» de Firestore puede quedarse colgada y tardar
     // 30-60 s en pasar a long polling: se usa long polling desde el principio. Y caché de una sola pestaña
