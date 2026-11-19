@@ -69,13 +69,13 @@ Mismo diseño que el prototipo. Resumen:
 
 1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
 2. **Lista (principal).**
-   - **Cabecera compacta:** logo de 32 px, las pestañas «Lista» / «Despensa» y tres botones: cambiar vista (casillas/lista), historial y menú ⋮. Solo iconos, sin fondo (decisión de Alfonso).
+   - **Cabecera compacta:** las pestañas «Lista» / «Despensa» (con el logo como icono de la Lista) y tres botones: cambiar vista (casillas/lista), historial y menú ⋮. Solo iconos, sin fondo (decisión de Alfonso).
    - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
    - **Contenido:** artículos pendientes agrupados por categoría, en el orden fijo de categorías. Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
-     - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
+     - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría y el nombre. La tienda va como logo o icono pequeño en la esquina superior derecha, sin texto (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la izquierda.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
    - **«Comprado hoy · N»:** separador plegable al final. Desplegado, muestra lo tachado hoy, tachado y atenuado, con la nota «Toca uno para devolverlo a la lista. Mañana pasa solo al historial».
-   - **Pestañas «Lista» y «Despensa» en la cabecera,** en el sitio del título «Compra», junto al logo. No son pantallas aparte.
+   - **Pestañas «Lista» y «Despensa» en la cabecera, con icono:** la cesta (logo) es la Lista y la estantería, la Despensa. La activa se abre y muestra su nombre, con una pastilla lima que se desliza de una a otra. Nada de títulos grandes ni subrayados. No son pantallas aparte. Deslizar el dedo a izquierda o derecha cambia de pestaña. Sin zoom (ni doble toque ni dos dedos).
    - **Barra inferior fija:** «+ Añadir» (en la Despensa crea un producto nuevo; mismo sitio en las dos pestañas) y, a la derecha, el botón redondo del micrófono (solo el icono). Al tocarlo se ensancha con «Escuchando… toca para parar».
 3. **Despensa** (pestaña junto a «Lista», misma cabecera).
    - **Buscador.** El producto nuevo se crea con «+ Añadir» de la barra de abajo.
@@ -87,6 +87,10 @@ Mismo diseño que el prototipo. Resumen:
 5. **Tiendas** (hoja inferior): lista de todas las tiendas con su tipo, lo pendiente y un lápiz. Tocar una abre la lista filtrada por esa tienda. Abajo, «Añadir tienda».
 6. **Preferencias** (menú ⋮): modo Como el iPhone / Claro / Oscuro, cuenta y cerrar sesión.
 7. **Menú ⋮:** Tiendas, Despensa, Repasar la despensa, Historial, Compartida con…, Preferencias, Cerrar sesión.
+
+### Animaciones
+- Fluidas al estilo iOS, con curvas de muelle: hojas que suben y bajan, menú que se despliega desde su botón, pantallas que entran y salen por la derecha, cambio de pestaña deslizado y elementos de la lista que se recolocan. Sin animaciones si el iPhone tiene activado «Reducir movimiento».
+- Avisos: pastilla compacta de una línea con «Deshacer» al lado.
 
 ## 5. Reglas de funcionamiento
 

@@ -124,6 +124,6 @@ export const STORES_SEED = [
 // Icono para las tiendas únicas, deducido del nombre.
 export const STORE_ICON_KW = {
   fruter: "apple", verdul: "carrot", carnic: "beef", polleri: "drumstick", pescader: "fish", panader: "croissant",
-  horno: "croissant", pasteler: "cake-slice", farmac: "pill", drogue: "spray-can", charcut: "ham", queser: "cheese",
+  horno: "croissant", pasteler: "cake-slice", farmac: "cross", drogue: "spray-can", charcut: "ham", queser: "cheese",
   bodega: "wine", vino: "wine", cafe: "coffee", ferreter: "house", herbolar: "leaf", mercado: "store",
 };

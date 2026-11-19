@@ -126,7 +126,57 @@ function morphChildren(from, to) {
     morphNode(x, y);
   }
   while (cur) { const n = cur.nextSibling; if (!(cur.nodeType === 1 && cur.dataset.key)) cur.remove(); cur = n; }
-  for (const n of keyed.values()) n.remove();
+  for (const n of keyed.values()) leave(n);
+}
+/* ---------- Animaciones (curvas tipo iOS) ---------- */
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)");
+const SPRING = "cubic-bezier(.32,.72,0,1)";
+// Capas que salen con animación en vez de desaparecer de golpe.
+const LEAVE = /^(sheet-|scrim$|menu$|mscrim$|band-|partial$|main$|history$|login$)/;
+function leave(n) {
+  if (n.classList.contains("leaving")) return;
+  const k = n.dataset.key || "";
+  if (REDUCE.matches || !LEAVE.test(k)) { n.remove(); return; }
+  n.classList.add("leaving");
+  n.dataset.leave = k;
+  n.dataset.key = "x-" + k + "-" + Math.random().toString(36).slice(2);
+  n.setAttribute("aria-hidden", "true");
+  n.style.pointerEvents = "none";
+  setTimeout(() => n.remove(), 450);
+}
+/** Posiciones antes de redibujar, para que lo que se mueve se deslice (FLIP). */
+function flipSnapshot() {
+  const m = new Map();
+  if (REDUCE.matches) return m;
+  for (const el of root.querySelectorAll("[data-flip]")) if (!m.has(el.dataset.key)) m.set(el.dataset.key, { r: el.getBoundingClientRect(), el });
+  return m;
+}
+function flipPlay(before, sameView) {
+  if (REDUCE.matches || !before.size) return;
+  const seen = new Set();
+  for (const el of root.querySelectorAll("[data-flip]")) {
+    const k = el.dataset.key;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const prev = before.get(k);
+    if (prev) {
+      const r = el.getBoundingClientRect();
+      const dx = prev.r.left - r.left, dy = prev.r.top - r.top;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 420, easing: SPRING });
+    } else if (sameView) {
+      el.animate([{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: SPRING });
+    }
+  }
+  if (!sameView) return;
+  // Lo que ya no está se desvanece en su sitio.
+  for (const [k, prev] of before) {
+    if (seen.has(k) || !prev.r.width) continue;
+    const g = prev.el.cloneNode(true);
+    g.removeAttribute("data-key"); g.removeAttribute("data-flip"); g.setAttribute("aria-hidden", "true");
+    Object.assign(g.style, { position: "fixed", left: prev.r.left + "px", top: prev.r.top + "px", width: prev.r.width + "px", height: prev.r.height + "px", margin: "0", zIndex: "4", pointerEvents: "none" });
+    root.appendChild(g);
+    g.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.88)" }], { duration: 260, easing: "ease-in", fill: "forwards" }).onfinish = () => g.remove();
+  }
 }
 const tpl = document.createElement("template");
 function render() {
@@ -134,7 +184,7 @@ function render() {
   applyTheme();
   let h = "";
   // Al arrancar se pinta ya la cabecera en su sitio, para que el logo no salte al cargar.
-  if (S.phase === "boot") h = `<div class="scr" data-key="list"><div class="hb"><div class="hb-t"><span class="hb-brand">${LOGO(32)}<span class="hb-name">Compra</span></span></div></div></div>`;
+  if (S.phase === "boot") h = `<div class="scr" data-key="main">${vHeader()}</div>`;
   else if (S.phase === "setup") h = vSetup();
   else if (S.phase === "login") h = vLogin();
   else if (S.view === "pantry") h = vPantry();
@@ -145,7 +195,36 @@ function render() {
     if (S.sheet) h += vSheet();
   }
   tpl.innerHTML = h;
+  const viewKey = S.phase + ":" + S.view + ":" + S.layout;
+  const sameView = viewKey === render.view;
+  const before = sameView ? flipSnapshot() : new Map();
   morphChildren(root, tpl.content);
+  flipPlay(before, sameView);
+  if (!sameView) render.prevView = render.view;
+  render.view = viewKey;
+  placeLens();
+  if (S.phase === "app") requestAnimationFrame(() => document.documentElement.classList.add("ready"));
+}
+/** Tamaño y posición de la pastilla lima bajo la pestaña activa (se desliza con transición CSS). */
+const labelW = {};
+const LENS = { PAD: 8, ICON: 30, LGAP: 8, PADR: 14, GAP: 4 };
+function lensStyle(list) {
+  const coll = LENS.PAD + LENS.ICON + LENS.PAD;
+  const k = list ? "tabList" : "pantry";
+  const w = LENS.PAD + LENS.ICON + LENS.LGAP + (labelW[k] || (list ? 36 : 75)) + LENS.PADR;
+  return `transform:translateX(${list ? 0 : coll + LENS.GAP}px);width:${w}px`;
+}
+/** Mide una vez el ancho real de los nombres y corrige la pastilla si hacía falta. */
+function placeLens() {
+  const box = root.querySelector(".htabs");
+  if (!box) return;
+  let changed = false;
+  for (const t of box.querySelectorAll(".htab")) {
+    const sp = t.querySelector(".htl span"), k = t.dataset.act;
+    const w = sp.scrollWidth - (parseFloat(getComputedStyle(sp).paddingLeft) || 0);
+    if (w && labelW[k] !== w) { labelW[k] = w; changed = true; }
+  }
+  if (changed) box.querySelector(".hlens").setAttribute("style", lensStyle(S.view !== "pantry"));
 }
 function vListening() {
   const txt = S.partial || (S.voiceReady ? "Te escucho…" : "Un momento…");
@@ -200,13 +279,16 @@ function vLogin() {
   </div></div>`;
 }
 
+// Estilo de las pestañas (opciones A, B y C para elegir).
+let TAB_STYLE = "tabs-a"; // elegida por Alfonso: la activa se abre y enseña su nombre
 function vHeader() {
   const list = S.view !== "pantry";
-  // Las dos pestañas van en el sitio del título «Compra».
-  return `<div class="hb"><div class="hb-t"><span class="hb-brand">${LOGO(32)}<span class="htabs" role="tablist">
-      <button class="htab ${list ? "on" : ""}" role="tab" aria-selected="${list}" data-act="tabList">Lista</button>
-      <button class="htab ${!list ? "on" : ""}" role="tab" aria-selected="${!list}" data-act="pantry">Despensa</button>
-    </span></span></div>
+  // Pestañas con icono: la cesta (logo) es la Lista y la estantería, la Despensa. La activa se abre y muestra su nombre.
+  return `<div class="hb"><div class="hb-t"><span class="htabs ${TAB_STYLE} ${render.view ? "lens-ready" : ""}" role="tablist" data-on="${list ? "list" : "pantry"}">
+      <span class="hlens" aria-hidden="true" style="${lensStyle(list)}"></span>
+      <button class="htab ${list ? "on" : ""}" role="tab" aria-selected="${list}" aria-label="Lista" data-act="tabList"><span class="hti logo">${LOGO(28)}</span><span class="htl"><span>Lista</span></span></button>
+      <button class="htab ${!list ? "on" : ""}" role="tab" aria-selected="${!list}" aria-label="Despensa" data-act="pantry"><span class="hti">${ic("shelving-unit", 22)}</span><span class="htl"><span>Despensa</span></span></button>
+    </span></div>
     <div class="hb-r">
       <button class="ib sm" data-act="layout" aria-label="${S.layout === "grid" ? "Ver como lista" : "Ver como casillas"}">${ic(S.layout === "grid" ? "list" : "layout-grid", 20)}</button>
       <button class="ib sm" data-act="history" aria-label="Historial">${ic("history", 20)}</button>
@@ -214,7 +296,7 @@ function vHeader() {
     </div></div>`;
 }
 // Iconos que se pueden elegir para una tienda.
-const STORE_ICONS = ["store", "shopping-basket", "croissant", "wheat", "cake-slice", "apple", "carrot", "beef", "drumstick", "fish", "ham", "cheese", "milk", "coffee", "wine", "pill", "spray-can", "baby", "leaf", "house"];
+const STORE_ICONS = ["store", "shopping-basket", "croissant", "wheat", "cake-slice", "apple", "carrot", "beef", "drumstick", "fish", "ham", "cheese", "milk", "coffee", "wine", "cross", "pill", "spray-can", "baby", "leaf", "house"];
 const autoStoreIcon = (name, kind) => (kind === "generic" ? "store" : bestKeyword(name, STORE_ICON_LIST) || "store");
 // Logos de tienda en una sola tinta (se pintan con el color del texto mediante una máscara).
 const LOGOS = {
@@ -252,7 +334,7 @@ const byOther = (i) => i.addedBy && S.me && i.addedBy !== S.me;
 function vRow(i) {
   const st = i.storeId && storeById(i.storeId) ? `${slot(i.storeId)}${esc(storeName(i.storeId))}` : esc(GENERIC);
   const by = byOther(i) ? `<span class="by">· ${esc(i.addedBy)}</span>` : "";
-  return `<div class="row ${i.checked ? "done" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-key="${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
+  return `<div class="row ${i.checked ? "done" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
     <span class="ck">${i.checked ? ic("check", 16) : ""}</span>
     <div class="rinfo"><div class="nm">${esc(i.name)}</div><div class="st">${st}${by}</div></div>
     <button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button></div>`;
@@ -260,10 +342,10 @@ function vRow(i) {
 function vTile(i) {
   const st = storeById(i.storeId);
   const p = productOf(i);
-  return `<div class="tile ${i.checked ? "done" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-key="${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
-    ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(i.addedBy)}">${esc(i.addedBy.charAt(0))}</span>` : ""}<button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
+  return `<div class="tile ${i.checked ? "done" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="t-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
+    ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(i.addedBy)}">${esc(i.addedBy.charAt(0))}</span>` : ""}${st ? `<span class="tstore" title="${esc(st.name)}">${slot(st.id)}</span>` : ""}<button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
     <span class="tic">${pic(i.name, i.category, p?.icon)}</span>
-    <span class="tnm">${esc(i.name)}</span>${st ? `<span class="tsub">${esc(st.name)}</span>` : ""}</div>`;
+    <span class="tnm">${esc(i.name)}</span></div>`;
 }
 const block = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vTile).join("")}</div>` : `<div class="group" data-key="${key}">${rows.map(vRow).join("")}</div>`);
 
@@ -277,20 +359,20 @@ function vList() {
       ? `<p class="storeempty">No hay artículos para ${esc(storeName(S.store))}. Elige Todas para ver el resto.</p>`
       : `<div class="empty"><h2>Añade tu primer artículo</h2><p>Escribe abajo o toca el micro y habla.</p></div>`;
   } else {
-    body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
+    body = groupRows(pend).map(([c, rows]) => `<div class="cath" data-flip data-key="h-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${block(rows, "g-" + c.k)}`).join("");
     if (S.capture === "listening") body += vListening();
     if (done.length) {
-      body += `<button class="chkdiv" data-key="donediv" data-act="toggleChecked" aria-expanded="${S.checkedOpen}"><i></i><span>Comprado hoy · ${done.length}</span>${ic("chevron-down", 16)}<i></i></button>`;
+      body += `<button class="chkdiv" data-flip data-key="donediv" data-act="toggleChecked" aria-expanded="${S.checkedOpen}"><i></i><span>Comprado hoy · ${done.length}</span>${ic("chevron-down", 16)}<i></i></button>`;
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
     }
   }
-  return `<div class="scr" data-key="main">
+  return `<div class="scr ${render.view && render.view.startsWith("app:history") ? "pop" : ""}" data-key="main">
     ${vHeader()}
-    <div class="folder" data-key="folder-list">
+    <div class="folder from-l" data-key="folder-list">
       ${vChips()}
       <div class="list">${body}</div>
     </div>
-    ${S.capture === "typing" ? `<div class="catcher" data-act="closeDraft"></div>` : ""}
+    
     ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
     ${S.band ? vBand() : ""}
     ${vDock()}
@@ -298,8 +380,7 @@ function vList() {
 }
 function vBand() {
   const b = S.band;
-  return `<div class="band" data-key="band-${b.n}" role="status"><div class="top"><div class="msg">${esc(b.msg)}</div><button class="x" data-act="closeBand" aria-label="Cerrar aviso">${ic("x", 22)}</button></div>
-    ${b.undo ? `<div class="acts"><button class="tbtn" data-act="undo">Deshacer</button></div>` : `<div style="height:8px"></div>`}</div>`;
+  return `<div class="band" data-key="band-${b.n}" role="status"><span class="msg" data-act="closeBand">${esc(b.msg)}</span>${b.undo ? `<button class="undo" data-act="undo">Deshacer</button>` : ""}</div>`;
 }
 function sugChoices() {
   const q = singAll(norm(S.draft));
@@ -349,7 +430,7 @@ function vMenu() {
 /* --- Despensa --- */
 function vPantryRow(p) {
   const on = !!pendingFor(p), due = isDue(p), st = statsFor(p);
-  return `<div class="prow tap" data-key="pr-${p.id}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
+  return `<div class="prow tap" data-flip data-key="pr-${p.id}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
     <span class="mini-ck ${on ? "on" : ""}" style="margin-top:4px">${on ? ic("check", 14) : ""}</span>
     <div class="pmain"><div class="pname">${esc(p.name)}</div>
       <div class="st" style="margin-top:2px">${p.storeId && storeById(p.storeId) ? slot(p.storeId) + esc(storeName(p.storeId)) : esc(GENERIC)}${st?.every ? `<span class="by">· cada ${plural(st.every, "día", "días")}</span>` : ""}</div></div>
@@ -357,10 +438,10 @@ function vPantryRow(p) {
 }
 function vPTile(p) {
   const on = !!pendingFor(p), due = isDue(p);
-  return `<div class="tile ptile ${on ? "on" : ""}" style="${catStyle(p.category)}" data-key="pt-${p.id}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" aria-label="${esc(p.name)}" tabindex="0">
-    ${on ? `<span class="tok">${ic("check", 12)}</span>` : ""}${due && !on ? `<span class="tdue">Toca</span>` : ""}<button class="edb" data-act="pedit" data-k="${esc(p.id)}" aria-label="Editar ${esc(p.name)}">${ic("pencil", 15)}</button>
+  return `<div class="tile ptile ${on ? "on" : ""}" style="${catStyle(p.category)}" data-flip data-key="pt-${p.id}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" aria-label="${esc(p.name)}" tabindex="0">
+    ${on ? `<span class="tok">${ic("check", 12)}</span>` : ""}${due && !on ? `<span class="tdue">Toca</span>` : ""}${storeById(p.storeId) ? `<span class="tstore" title="${esc(storeName(p.storeId))}">${slot(p.storeId)}</span>` : ""}<button class="edb" data-act="pedit" data-k="${esc(p.id)}" aria-label="Editar ${esc(p.name)}">${ic("pencil", 15)}</button>
     <span class="tic">${pic(p.name, p.category, p.icon)}</span>
-    <span class="tnm">${esc(p.name)}</span><span class="tsub">${esc(p.storeId && storeById(p.storeId) ? storeName(p.storeId) : GENERIC)}</span></div>`;
+    <span class="tnm">${esc(p.name)}</span></div>`;
 }
 const pblock = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vPTile).join("")}</div>` : `<div class="card" data-key="${key}">${rows.map(vPantryRow).join("")}</div>`);
 function vPantry() {
@@ -368,17 +449,17 @@ function vPantry() {
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
   const list = all.filter((p) => !q || singAll(p.nameKey).includes(q) || (q.length >= 4 && matchProduct(q, [p])));
   const due = q ? [] : dueList();
-  return `<div class="scr" data-key="main">
+  return `<div class="scr ${render.view && render.view.startsWith("app:history") ? "pop" : ""}" data-key="main">
    ${vHeader()}
-   <div class="folder" data-key="folder-pantry">
+   <div class="folder from-r" data-key="folder-pantry">
    <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
-    ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
+    ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-flip data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
     ${!list.length && S.pantryQ.trim() ? `<div class="noq" data-key="noq"><p>No está en la despensa.</p><button class="btn fill" data-act="pnewq">Añadir «${esc(cap(S.pantryQ.trim()))}»</button></div>` : ""}
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
    </div></div>
-   ${S.capture === "typing" ? `<div class="catcher" data-act="closeDraft"></div>` : ""}
+   
    ${S.capture === "listening" ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
    ${S.band ? vBand() : ""}
    ${vDock()}</div>`;
@@ -406,9 +487,9 @@ function vHistory() {
    <div class="pad">
     ${!S.historyLoaded && !days.length ? `<p class="histempty">Cargando…</p>` : ""}
     ${S.historyLoaded && !days.length ? `<p class="histempty">${S.histQ ? "No aparece en el historial." : "Aquí irá lo que tachéis, agrupado por día."}</p>` : ""}
-    ${days.map((d) => `<div class="trip" data-key="d-${d.k}"><h3>${esc(dayLabel(d.k))}</h3><p class="tsub2">${plural(d.items.length, "artículo tachado", "artículos tachados")}</p>
+    ${days.map((d) => `<div class="trip" data-flip data-key="d-${d.k}"><h3>${esc(dayLabel(d.k))}</h3><p class="tsub2">${plural(d.items.length, "artículo tachado", "artículos tachados")}</p>
       <button class="tbtn" style="margin:8px 0 4px -12px" data-act="selDay" data-k="${d.k}">Seleccionar todo el día</button>
-      ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<button class="titem" data-key="${i.id}" data-act="selItem" data-k="${i.id}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button>`; }).join("")}
+      ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<button class="titem" data-flip data-key="${i.id}" data-act="selItem" data-k="${i.id}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button>`; }).join("")}
     </div>`).join("")}
    </div>
    ${sel ? `<div class="bottombtn" data-key="rebuy"><button class="btn out delbtn" data-act="histDel" aria-label="Borrar del historial (${sel})">${ic("trash-2", 20)}</button><button class="btn fill" data-act="rebuy">Volver a añadir (${sel})</button></div>` : ""}
@@ -686,13 +767,20 @@ function submitDraft() {
     render();
   }
 }
+/** Pone el cursor en un campo al momento (en el mismo toque, para que iOS abra el teclado). */
+function focusField(sel) {
+  const el = root.querySelector(sel);
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {}
+}
 function focusDraft() {
   const inp = root.querySelector("#draft");
   if (inp && document.activeElement !== inp) { inp.focus({ preventScroll: true }); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {} }
 }
 /** Cierra el campo de escribir sin saltos: la app vuelve ya a su altura completa y el teclado baja por encima. */
 function closeTyping() {
-  root.style.top = ""; root.style.height = ""; root.classList.remove("kb");
+  root.style.top = ""; root.style.height = ""; root.classList.remove("kb"); vvLast = "";
   const inp = root.querySelector("#draft");
   if (inp) inp.blur();
   S.capture = "idle"; S.draft = "";
@@ -843,6 +931,7 @@ function openPEdit(id, name) {
   const p = id ? productById(id) : null;
   S.sheet = { type: "pedit", id: p ? p.id : null, draft: p ? { name: p.name, storeId: p.storeId ?? null, category: p.category } : { name: name || "", storeId: null, category: name ? guessCat(name) : "otros" } };
   render();
+  if (!p) focusField("#pn");
 }
 function savePEdit(sh) {
   const name = cap(clean(root.querySelector("#pn").value));
@@ -989,6 +1078,7 @@ root.addEventListener("pointermove", (e) => { if (lpXY && Math.hypot(e.clientX -
 ["pointerup", "pointercancel"].forEach((t) => window.addEventListener(t, () => clearTimeout(lp)));
 root.addEventListener("pointerleave", () => clearTimeout(lp));
 root.addEventListener("scroll", () => clearTimeout(lp), true);
+root.addEventListener("touchmove", (e) => { if (e.target.closest(".catcher")) e.preventDefault(); }, { passive: false });
 root.addEventListener("contextmenu", (e) => {
   const t = e.target.closest("[data-act='ptoggle'], .row[data-id], .tile[data-id]");
   if (!t) return;
@@ -1004,6 +1094,8 @@ root.addEventListener("wheel", (e) => {
 function itemById(id) { return S.pending.find((x) => x.id === id) || S.today.find((x) => x.id === id); }
 
 root.addEventListener("click", (e) => {
+  // Escribiendo: tocar fuera de la barra cierra el campo (y no hace nada más).
+  if (S.capture === "typing" && !e.target.closest(".dock, .sheet, .band")) { closeTyping(); return; }
   const row = e.target.closest(".row[data-id], .tile[data-id]");
   if (row && !e.target.closest("[data-act]")) {
     if (lpFired) { lpFired = false; return; }
@@ -1037,7 +1129,7 @@ function act(a, el, e) {
     case "stores": S.menu = false; S.sheet = { type: "stores" }; return render();
     case "shopAt": if (lpFired) { lpFired = false; return; } S.store = k || null; S.sheet = null; S.view = "list"; return render();
     case "sedit": { e.stopPropagation(); const st = storeById(k); S.sheet = { type: "sedit", k, draft: { name: st.name, kind: st.kind, icon: st.icon || null } }; return render(); }
-    case "snew": S.sheet = { type: "sedit", k: null, draft: { name: "", kind: "unique", icon: null } }; return render();
+    case "snew": S.sheet = { type: "sedit", k: null, draft: { name: "", kind: "unique", icon: null } }; render(); return focusField("#sn");
     case "sdIcon": sh.draft.name = root.querySelector("#sn").value; sh.draft.icon = k || null; return render();
     case "sdKind": sh.draft.name = root.querySelector("#sn").value; sh.draft.kind = k; return render();
     case "sdMove": sh.draft.name = root.querySelector("#sn").value; return moveStore(sh, +k);
@@ -1141,6 +1233,44 @@ document.addEventListener("keydown", (e) => {
   }
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render());
+// La app no se mueve como una página web (sobre todo con el teclado abierto):
+// solo se desplazan las listas, las hojas y las filas horizontales, y sin «arrastrar» el resto.
+let t0 = null;
+const SCROLLERS = ".list, .pad, .sbody, .chips, .sug, .login, .setup";
+document.addEventListener("touchstart", (e) => { const t = e.touches[0]; t0 = t ? { x: t.clientX, y: t.clientY } : null; }, { passive: true });
+document.addEventListener("touchmove", (e) => {
+  if (!t0 || e.touches.length !== 1) return;
+  const t = e.touches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+  const sc = e.target.closest && e.target.closest(SCROLLERS);
+  const horizontal = Math.abs(dx) > Math.abs(dy);
+  if (!sc) { if (!(horizontal && e.target.closest("input"))) e.preventDefault(); return; }
+  const horizScroller = sc.matches(".chips, .sug");
+  if (horizontal) { if (!horizScroller) e.preventDefault(); return; }
+  if (horizScroller) { e.preventDefault(); return; }
+  const atTop = sc.scrollTop <= 0, atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 1;
+  if ((dy > 0 && atTop) || (dy < 0 && atBottom)) e.preventDefault();
+}, { passive: false });
+
+// Deslizar a izquierda/derecha cambia entre Lista y Despensa.
+let sw = null;
+root.addEventListener("touchstart", (e) => {
+  sw = null;
+  if (S.phase !== "app" || S.view === "history" || S.sheet || S.menu || S.capture !== "idle" || e.touches.length !== 1) return;
+  if (e.target.closest(".chips, .sug, .dock, .band, input, .hb")) return;
+  const t = e.touches[0];
+  sw = { x: t.clientX, y: t.clientY, t: Date.now() };
+}, { passive: true });
+root.addEventListener("touchend", (e) => {
+  if (!sw) return;
+  const t = e.changedTouches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y, dt = Date.now() - sw.t;
+  sw = null;
+  if (dt > 700 || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+  clearTimeout(lp);
+  if (dx < 0 && S.view !== "pantry") { S.band = null; S.view = "pantry"; render(); }
+  else if (dx > 0 && S.view === "pantry") { S.band = null; S.view = "list"; render(); }
+}, { passive: true });
+// Es una app: sin zoom con dos dedos ni con doble toque.
+["gesturestart", "gesturechange"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 
 /* ===================================================================
    Sesión y arranque
@@ -1203,13 +1333,20 @@ function startData() {
   refreshHistory();
 }
 const vv = window.visualViewport;
+let vvRaf = 0, vvLast = "";
 function fitViewport() {
-  if (!vv) return;
-  // Teclado abierto y escribiendo. Mientras el teclado se cierra no se reajusta, para que la barra no dé saltos.
-  const kb = window.innerHeight - vv.height > 80 && document.activeElement && document.activeElement.tagName === "INPUT";
-  root.style.top = kb ? vv.offsetTop + "px" : "";
-  root.style.height = kb ? vv.height + "px" : "";
-  root.classList.toggle("kb", kb);
+  if (!vv || vvRaf) return;
+  vvRaf = requestAnimationFrame(() => {
+    vvRaf = 0;
+    // Teclado abierto y escribiendo. Mientras el teclado se cierra no se reajusta, para que la barra no dé saltos.
+    const kb = window.innerHeight - vv.height > 80 && document.activeElement && document.activeElement.tagName === "INPUT";
+    const key = kb ? Math.round(vv.offsetTop) + "/" + Math.round(vv.height) : "";
+    if (key === vvLast) return;
+    vvLast = key;
+    root.style.top = kb ? Math.round(vv.offsetTop) + "px" : "";
+    root.style.height = kb ? Math.round(vv.height) + "px" : "";
+    root.classList.toggle("kb", kb);
+  });
 }
 if (vv) { vv.addEventListener("resize", fitViewport); vv.addEventListener("scroll", fitViewport); }
 
