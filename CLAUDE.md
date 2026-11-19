@@ -102,7 +102,7 @@ Mismo diseño que el prototipo. Resumen:
 
 ### 5.2 Tachar
 - Tocar un artículo pendiente lo tacha: `checked = true`, `checkedAt = ahora`, `checkedBy = yo`.
-- Sale un aviso abajo, «Se ha tachado Huevos», con **Deshacer** durante unos 6 s.
+- **Se tacha en el sitio** (decisión de Alfonso): la casilla o fila se queda donde está, tachada, con una marca, **«Deshacer» dentro** y una barrita de tiempo; a los ~4,5 s se recoge hacia «Comprado hoy». Tocarla otra vez también deshace. Sin aviso abajo.
 - Tocar un artículo en «Comprado hoy» lo devuelve a pendiente, sin aviso.
 - Mantener pulsado (500 ms) abre su edición. En el ordenador, también con clic derecho o con un lápiz que aparece al pasar el ratón (solo en dispositivos con `hover`).
 
@@ -298,7 +298,7 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 - [ ] Una tienda sin artículos propios pendientes no sale en la barra, pero sí en Tiendas.
 - [ ] «platnos, pan de la panadería y pañales para la niña» → hoja con Plátanos (corregido), Pan en Panadería y Pañales en Lucía.
 - [ ] «dos pimientos» → «Pimientos», sin cantidad en ningún sitio.
-- [ ] Tachar → aviso con Deshacer, y Deshacer lo devuelve.
+- [ ] Tachar → la casilla se tacha en su sitio con «Deshacer», y Deshacer lo devuelve.
 - [ ] Lo tachado hoy está en «Comprado hoy». Mañana está en el Historial bajo «Ayer».
 - [ ] «He comprado todo lo de Mercadona menos los huevos» → hoja con todo menos huevos marcado; al confirmar, aviso con Deshacer.
 - [ ] Sin reconocimiento de voz disponible, al tocar el micro sale un aviso; sin botón «Dictar» y sin abrir el campo de escribir.

@@ -161,7 +161,7 @@ function flipSnapshot() {
 }
 function flipPlay(before, sameView) {
   if (REDUCE.matches || !before.size) return;
-  const seen = new Set();
+  const seen = new Set(), fresh = [];
   for (const el of root.querySelectorAll("[data-flip]")) {
     const k = el.dataset.key;
     if (seen.has(k)) continue;
@@ -171,10 +171,11 @@ function flipPlay(before, sameView) {
       const r = el.getBoundingClientRect();
       const dx = prev.r.left - r.left, dy = prev.r.top - r.top;
       if (Math.abs(dx) > 1 || Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 420, easing: SPRING });
-    } else if (sameView) {
-      el.animate([{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: SPRING });
+    } else if (sameView && before.size) {
+      fresh.push(el);
     }
   }
+  if (fresh.length && fresh.length <= 3) for (const el of fresh) el.animate([{ opacity: 0, transform: "scale(.9)" }, { opacity: 1, transform: "none" }], { duration: 320, easing: SPRING });
   if (!sameView) return;
   // Lo que ya no está se desvanece en su sitio.
   for (const [k, prev] of before) {
@@ -348,24 +349,28 @@ const byOther = (i) => i.addedBy && S.me && i.addedBy !== S.me;
 function vRow(i) {
   const st = i.storeId && storeById(i.storeId) ? `${slot(i.storeId)}${esc(storeName(i.storeId))}` : esc(GENERIC);
   const by = byOther(i) ? `<span class="by">· ${esc(i.addedBy)}</span>` : "";
-  return `<div class="row ${i.checked ? "done" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
+  const tk = ticking.has(i.id);
+  return `<div class="row ${i.checked ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
     <span class="ck">${i.checked ? ic("check", 16) : ""}</span>
     <div class="rinfo"><div class="nm">${esc(i.name)}</div><div class="st">${st}${by}</div></div>
-    <button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button></div>`;
+    ${tk ? `<button class="tundo" data-act="untick" data-id="${i.id}">Deshacer</button>` : `<button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>`}</div>`;
 }
 function vTile(i) {
   const st = storeById(i.storeId);
   const p = productOf(i);
-  return `<div class="tile ${i.checked ? "done" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="t-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
+  const tk = ticking.has(i.id);
+  return `<div class="tile ${i.checked && !tk ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="t-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
     ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(i.addedBy)}">${esc(i.addedBy.charAt(0))}</span>` : ""}${st ? `<span class="tstore" title="${esc(st.name)}">${slot(st.id)}</span>` : ""}<button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
     <span class="tic">${pic(i.name, i.category, p?.icon)}</span>
-    <span class="tnm">${esc(i.name)}</span></div>`;
+    <span class="tnm">${esc(i.name)}</span>${tk ? `<span class="tchk" aria-hidden="true">${ic("check", 22)}</span><button class="tundo" data-act="untick" data-id="${i.id}">Deshacer</button>` : ""}</div>`;
 }
 const block = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vTile).join("")}</div>` : `<div class="group" data-key="${key}">${rows.map(vRow).join("")}</div>`);
 
 function vList() {
-  const pend = visible(S.pending).sort(sortAdded);
-  const done = visible(S.today).sort((a, b) => b.checkedAt - a.checkedAt);
+  // Lo recién tachado sigue en su sitio unos segundos (con «Deshacer»).
+  const justTicked = S.today.filter((i) => ticking.has(i.id));
+  const pend = visible([...S.pending.filter((i) => !ticking.has(i.id)), ...justTicked]).sort(sortAdded);
+  const done = visible(S.today.filter((i) => !ticking.has(i.id))).sort((a, b) => b.checkedAt - a.checkedAt);
   let body = "";
   if (!S.ready.pending) body = "";
   else if (!pend.length && !done.length && S.capture !== "listening") {
@@ -775,9 +780,22 @@ function addedToast(added) {
   if (!added.length) { toast("Ya estaba todo en la lista."); return; }
   toast(added.length === 1 ? `Añadido: ${added[0].name} · ${storeName(added[0].storeId)}` : `Añadidos ${added.length} artículos`, undoAdd(added));
 }
+// Tachar en el sitio: la casilla se queda donde está, tachada y con «Deshacer», y a los pocos segundos
+// se recoge hacia «Comprado hoy». Se guarda al momento, así que no se pierde aunque se cierre la app.
+const TICK_MS = 4500;
+const ticking = new Map();
 function tick(i) {
   DB.batch([{ op: "update", col: "items", id: i.id, data: DB.checkData(S.me) }]);
-  toast(`Se ha tachado ${i.name}`, () => DB.batch([{ op: "update", col: "items", id: i.id, data: DB.uncheckData() }]));
+  clearTimeout(ticking.get(i.id));
+  ticking.set(i.id, setTimeout(() => { ticking.delete(i.id); render(); }, TICK_MS));
+  if (S.band) S.band = null;
+  render();
+}
+function undoTick(id) {
+  clearTimeout(ticking.get(id));
+  ticking.delete(id);
+  DB.batch([{ op: "update", col: "items", id, data: DB.uncheckData() }]);
+  render();
 }
 function untick(i) {
   DB.batch([{ op: "update", col: "items", id: i.id, data: DB.uncheckData() }]);
@@ -1142,7 +1160,7 @@ root.addEventListener("click", (e) => {
   if (row && !e.target.closest("[data-act]")) {
     if (lpFired) { lpFired = false; return; }
     const i = itemById(row.dataset.id);
-    if (i) { if (i.checked) untick(i); else tick(i); }
+    if (i) { if (ticking.has(i.id)) undoTick(i.id); else if (i.checked) untick(i); else tick(i); }
     return;
   }
   const el = e.target.closest("[data-act]");
@@ -1207,6 +1225,7 @@ function act(a, el, e) {
       return render();
     }
     case "undo": return runUndo();
+    case "untick": return undoTick(el.dataset.id);
     case "closeBand": S.band = null; return render();
     case "type": return openTyping();
     case "closeDraft": return closeTyping();
@@ -1385,15 +1404,17 @@ function fixSpaces(col, list) {
   if (ops.length) DB.batch(ops);
   return list;
 }
-let initialPending = true;
+let initialPending = true, serverSynced = false;
 function startData() {
-  initialPending = true;
+  initialPending = true; serverSynced = false;
   sub = DB.subscribe({
     stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; if (S.store && !storeById(S.store)) S.store = null; render(); },
     products(list) { S.products = fixSpaces("products", list); S.ready.products = true; render(); },
-    pending(list, added) {
-      // Lo que apunta la otra persona se resalta igual, sin avisos.
-      if (!initialPending) markFresh(added.filter((a) => !a.local).map((a) => a.id));
+    pending(list, added, fromCache) {
+      // Lo que apunta la otra persona se resalta igual, sin avisos. Pero solo lo que llega después de la
+      // primera carga del servidor: lo que ya estaba no es «nuevo» (si no, todo salía gris al abrir).
+      if (!initialPending && serverSynced) markFresh(added.filter((a) => !a.local).map((a) => a.id));
+      if (fromCache === false) serverSynced = true;
       initialPending = false;
       S.pending = fixSpaces("items", list); S.ready.pending = true; render();
     },

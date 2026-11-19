@@ -67,7 +67,7 @@ export function subscribe(h) {
   }, h.error));
   unsubs.push(F.onSnapshot(col("products"), (s) => h.products(s.docs.map(productFrom)), h.error));
   unsubs.push(F.onSnapshot(F.query(col("items"), F.where("checked", "==", false)), (s) => {
-    h.pending(s.docs.map(itemFrom), s.docChanges().filter((c) => c.type === "added").map((c) => ({ id: c.doc.id, local: c.doc.metadata.hasPendingWrites })));
+    h.pending(s.docs.map(itemFrom), s.docChanges().filter((c) => c.type === "added").map((c) => ({ id: c.doc.id, local: c.doc.metadata.hasPendingWrites })), s.metadata.fromCache);
   }, h.error));
 
   // Tachados de hoy: se rehace la consulta al cambiar de día.

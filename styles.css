@@ -186,6 +186,22 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 /* Logo o icono de la tienda en la esquina superior derecha de la casilla */
 .tile .tstore{position:absolute;top:8px;right:8px;display:flex;opacity:.9}
 .tile .tstore .slot{--sw:22px;--sh:16px}
+/* Recién tachado: se queda en su sitio con «Deshacer» y una barrita de tiempo */
+.tile.ticking .tstore,.tile.ticking .tby,.tile.ticking .edb{opacity:0!important}
+.tile.ticking .tic{opacity:0;transform:scale(.6)}
+.tile.ticking .tnm{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px;-webkit-line-clamp:1;transform:translateY(-18px)}
+.tile .tic,.tile .tnm{transition:transform .35s var(--spring),opacity .3s,color .3s}
+.tchk{position:absolute;top:12px;left:50%;width:32px;height:32px;margin-left:-16px;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:var(--on-primary);animation:tchkIn .45s var(--spring)}
+@keyframes tchkIn{from{transform:scale(.3);opacity:0}}
+.tundo{position:relative;flex:none;border-radius:999px;background:var(--accent);color:var(--on-accent);font:700 12px/1 var(--fb);padding:7px 12px;animation:tchkIn .45s var(--spring)}
+.tundo::after{content:"";position:absolute;inset:-8px}
+.tile .tundo{position:absolute;bottom:8px;left:50%;padding:6px 12px;transform:translateX(-50%);animation:tundoIn .45s var(--spring)}
+@keyframes tundoIn{from{opacity:0;transform:translate(-50%,8px)}}
+.tile.ticking::after,.row.ticking::after{content:"";position:absolute;left:16px;right:16px;bottom:3px;height:3px;border-radius:2px;background:var(--primary);opacity:.35;transform-origin:left;animation:tickbar 4.5s linear forwards}
+@keyframes tickbar{to{transform:scaleX(0)}}
+.row.ticking .nm{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px}
+.row.ticking .ck{background:var(--primary);border-color:var(--primary)}
+.row .tundo{margin-left:8px}
 .tile.done{opacity:.5}
 .tile.done .tnm{text-decoration:line-through;color:var(--muted)}
 .ptile.on{background:color-mix(in srgb,var(--accent) 40%,var(--paper));box-shadow:inset 0 0 0 1.5px var(--primary)}

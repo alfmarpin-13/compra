@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v26 · 19/11/2026
+- Al abrir la app, las casillas salen ya con su recuadro blanco (antes aparecían en gris y con un fundido).
+- Tachar en el sitio: la casilla se queda donde está, tachada, con una marca, «Deshacer» dentro y una barrita de tiempo; a los pocos segundos se recoge hacia «Comprado hoy». Sin aviso abajo.
+
 ## v25 · 19/11/2026
 - Categorías en orden alfabético al añadir o editar (Otros al final).
 - Icono de pañal de verdad para los pañales (antes salía un imperdible).
