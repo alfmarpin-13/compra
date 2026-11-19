@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v40 · 19/11/2026
+- Barra de abajo única: al tocar «Añadir», la misma pastilla se convierte en el campo de escribir (sin cambiarse por otra barra) y sube pegada al teclado. El micro se queda a la derecha. Dentro del campo, solo una flecha para añadir; se cierra tocando fuera o bajando el teclado.
+
 ## v39 · 19/11/2026
 - Lista y Despensa van una al lado de la otra, como páginas: al arrastrar se ve llegar la otra pestaña y al soltar se coloca con el muelle (o vuelve). Al tocar las pestañas se desliza igual. Cada una conserva dónde estabas.
 

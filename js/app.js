@@ -437,21 +437,19 @@ function vSug() {
   const allDue = xs.every(isDue);
   return `<p class="from">${!S.draft || allDue ? "Os toca reponer" : "De la despensa"}</p><div class="sug">${xs.map((p) => `<button class="chip sm" data-act="quick" data-k="${esc(p.id)}">${p.storeId ? slot(p.storeId) : ""}${esc(p.name)}</button>`).join("")}</div>`;
 }
+/** Barra de abajo: una sola pastilla que se convierte en el campo de escribir (sin cambiarse por otra barra)
+ *  y el micro, que se queda siempre a la derecha. Escribiendo, dentro del campo solo hay una flecha para añadir. */
 function vDock() {
-  if (S.capture === "typing") {
-    const side = ""; // escribiendo no hay micro: solo el campo, «Añadir» y la X
-    return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
-      <form class="line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="${S.view === "pantry" ? "Productos para la despensa" : "Escribe qué necesitas"}" aria-label="${S.view === "pantry" ? "Productos para la despensa" : "Escribe qué necesitas"}" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
-      <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button>
-      <button class="dclose" type="button" data-act="closeDraft" aria-label="Cerrar">${ic("x", 20)}</button></form></div>
-      ${side}</div>`;
-  }
-  const on = S.capture === "listening";
-  // Micro a la derecha: botón redondo solo con el icono; al escuchar se ensancha y pide tocar para parar.
+  const typing = S.capture === "typing", on = S.capture === "listening";
+  const pantry = S.view === "pantry";
+  const ph = pantry ? "Productos para la despensa" : "Escribe qué necesitas";
+  const field = typing
+    ? `<form class="dk-line" id="draftForm"><input id="draft" type="search" inputmode="text" autocapitalize="sentences" value="${esc(S.draft)}" placeholder="${ph}" aria-label="${ph}" name="que-necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done"><button class="dk-send" type="submit" id="draftSubmit" aria-label="Añadir" ${S.draft.trim() ? "" : "disabled"}>${ic("arrow-up", 20)}</button></form>`
+    : `<button class="dk-add" data-act="type" aria-label="${pantry ? "Añadir productos a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>`;
   const voiceBtn = `<button class="dk-voice ${on ? "on" : ""}" data-act="voice" aria-label="${on ? "Escuchando. Toca para parar" : "Toca y habla"}">${ic("mic", 22, "mic")}${on ? `<span>${S.voiceReady ? "Escuchando…" : "Un momento…"}<small>toca para parar</small></span>` : ""}</button>`;
-  return `<div class="dock ${on ? "listening" : ""}" data-key="dock">
-    <button class="dk-add" data-act="type" aria-label="${S.view === "pantry" ? "Añadir productos a la despensa" : "Añadir"}">${ic("plus", 20)}<span>Añadir</span></button>
-    ${voiceBtn}</div>`;
+  return `<div class="dock ${on ? "listening" : ""} ${typing ? "typing" : ""}" data-key="dock">
+    ${typing ? `<div id="sug" class="dk-sug" data-key="dk-sug">${vSug()}</div>` : ""}
+    <div class="dk-row" data-key="dk-row"><div class="dk-field" data-key="dk-field">${field}</div>${voiceBtn}</div></div>`;
 }
 /** Opciones a pantalla completa (como los Ajustes del iPhone). */
 function vOptions() {
@@ -920,7 +918,7 @@ let rec = null, recText = "", recOn = false, recStart = 0, recMax = null, recSes
 function toggleVoice() {
   if (S.capture === "listening") return stopListening();
   if (!SR) return toast("Este navegador no reconoce la voz.");
-  if (S.capture === "typing") { const inp = root.querySelector("#draft"); if (inp) inp.blur(); }
+  if (S.capture === "typing") { const inp = root.querySelector("#draft"); S.capture = "idle"; S.draft = ""; root.style.height = ""; root.classList.remove("kb", "kb-draft"); vvLast = ""; if (inp) inp.blur(); }
   recText = ""; recEmptyRuns = 0; recStart = Date.now();
   S.voiceReady = false; S.partial = "";
   S.capture = "listening"; S.band = null; S.sheet = null; S.menu = false;
@@ -1338,6 +1336,7 @@ function act(a, el, e) {
   }
 }
 
+root.addEventListener("touchend", (e) => { if (e.target.closest(".dk-send") && !e.target.closest(".dk-send").disabled) { e.preventDefault(); submitDraft(); } });
 root.addEventListener("submit", (e) => {
   e.preventDefault();
   if (e.target.id === "loginForm") doLogin();
@@ -1501,10 +1500,17 @@ function fitViewport() {
     root.style.top = "";
     root.style.height = kb ? Math.round(vv.height) + "px" : "";
     root.classList.toggle("kb", kb);
-    root.classList.toggle("kb-draft", kb && document.activeElement.id === "draft");
+    root.classList.toggle("kb-draft", kb && S.capture === "typing");
   });
 }
 document.addEventListener("focusin", (e) => { if (e.target.tagName === "INPUT") setTimeout(fitViewport, 50); });
+document.addEventListener("focusout", (e) => {
+  if (e.target.id !== "draft") return;
+  setTimeout(() => { if (S.capture === "typing" && document.activeElement?.id !== "draft") closeTyping(); }, 180);
+});
+// La flecha y el micro no le quitan el foco al campo al tocarlos (así no se cierra el teclado al añadir).
+root.addEventListener("mousedown", (e) => { if (e.target.closest(".dk-send")) e.preventDefault(); });
+root.addEventListener("touchstart", (e) => { if (e.target.closest(".dk-send")) e.preventDefault(); }, { passive: false });
 if (vv) { vv.addEventListener("resize", fitViewport); vv.addEventListener("scroll", fitViewport); }
 
 let lastDay = dayKey(Date.now());
