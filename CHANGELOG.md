@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v16 · 19/11/2026
+- Botones de la cabecera: solo iconos, sin fondo.
+- Micrófono: ya no se abre el campo de escribir por su cuenta; el aviso dice la causa exacta si falla, para poder arreglarlo.
+
 ## v15 · 19/11/2026
 - Versión visible también en el menú ⋮, debajo de «Cerrar sesión».
 - El campo de escribir tiene una X para cerrarlo, y al cerrarlo ya no aparece la barra de abajo flotando sobre el teclado.
