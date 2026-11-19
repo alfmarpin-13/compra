@@ -306,7 +306,8 @@ function vDock() {
     const side = `<button class="dk-side dk-voice-mini" data-act="voice" aria-label="Toca y habla">${ic("mic", 22)}</button>`;
     return `<div class="dock" data-key="dock-typing"><div class="draft"><div id="sug">${vSug()}</div>
       <form class="line" id="draftForm"><input id="draft" value="${esc(S.draft)}" placeholder="Escribe qué necesitas" aria-label="Escribe qué necesitas" autocomplete="off" autocorrect="on" enterkeyhint="done">
-      <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button></form></div>
+      <button class="tbtn" type="submit" id="draftSubmit" ${S.draft.trim() ? "" : "disabled"}>Añadir</button>
+      <button class="dclose" type="button" data-act="closeDraft" aria-label="Cerrar">${ic("x", 20)}</button></form></div>
       ${side}</div>`;
   }
   const on = S.capture === "listening";
@@ -325,7 +326,8 @@ function vMenu() {
    <hr>
    <button role="menuitem" data-act="share">${ic("users", 20)}Compartida con ${esc(otherName())}</button>
    <button role="menuitem" data-act="prefs">${ic("sliders-horizontal", 20)}Preferencias</button>
-   <button role="menuitem" data-act="logout">${ic("log-out", 20)}Cerrar sesión</button></div>`;
+   <button role="menuitem" data-act="logout">${ic("log-out", 20)}Cerrar sesión</button>
+   <p class="mver">Versión ${APP_VERSION}</p></div>`;
 }
 
 /* --- Despensa --- */
@@ -666,6 +668,14 @@ function submitDraft() {
 function focusDraft() {
   const inp = root.querySelector("#draft");
   if (inp && document.activeElement !== inp) { inp.focus({ preventScroll: true }); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {} }
+}
+/** Cierra el campo de escribir sin saltos: la app vuelve ya a su altura completa y el teclado baja por encima. */
+function closeTyping() {
+  root.style.top = ""; root.style.height = ""; root.classList.remove("kb");
+  const inp = root.querySelector("#draft");
+  if (inp) inp.blur();
+  S.capture = "idle"; S.draft = "";
+  render();
 }
 function openTyping() {
   S.capture = "typing"; S.band = null; S.menu = false;
@@ -1014,7 +1024,7 @@ function act(a, el, e) {
     case "undo": return runUndo();
     case "closeBand": S.band = null; return render();
     case "type": return openTyping();
-    case "closeDraft": S.capture = "idle"; S.draft = ""; return render();
+    case "closeDraft": return closeTyping();
     case "quick": {
       const p = productById(k); if (!p) return;
       const added = addProductToList(p);
@@ -1072,7 +1082,7 @@ root.addEventListener("input", (e) => {
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (S.sheet) S.sheet = null; else if (S.menu) S.menu = false; else if (S.capture === "typing") S.capture = "idle"; else if (S.view !== "list") S.view = "list";
+    if (S.sheet) S.sheet = null; else if (S.menu) S.menu = false; else if (S.capture === "typing") return closeTyping(); else if (S.view !== "list") S.view = "list";
     render();
   }
 });
@@ -1124,7 +1134,8 @@ function startData() {
 const vv = window.visualViewport;
 function fitViewport() {
   if (!vv) return;
-  const kb = window.innerHeight - vv.height > 80; // teclado abierto
+  // Teclado abierto y escribiendo. Mientras el teclado se cierra no se reajusta, para que la barra no dé saltos.
+  const kb = window.innerHeight - vv.height > 80 && document.activeElement && document.activeElement.tagName === "INPUT";
   root.style.top = kb ? vv.offsetTop + "px" : "";
   root.style.height = kb ? vv.height + "px" : "";
   root.classList.toggle("kb", kb);
