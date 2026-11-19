@@ -687,10 +687,10 @@ function openTyping() {
 // Tocar para hablar: el micro se arranca en el «click» (el iPhone solo lo permite con un toque completo,
 // no al apoyar el dedo). Termina solo al callarse o al volver a tocar. En iOS, una frase por vez.
 const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-let rec = null, recText = "", recOn = false, recStart = 0, recGotResult = false, recError = false, recMax = null, voiceFails = 0;
+let rec = null, recText = "", recOn = false, recStart = 0, recGotResult = false, recError = false, recMax = null;
 function toggleVoice() {
   if (S.capture === "listening") return stopListening();
-  if (!SR) return voiceFallback("Este navegador no reconoce la voz. Usa el micro del teclado.");
+  if (!SR) return toast("Este navegador no reconoce la voz.");
   if (S.capture === "typing") { const inp = root.querySelector("#draft"); if (inp) inp.blur(); }
   startListening();
 }
@@ -699,7 +699,7 @@ function startListening(prefix = "") {
   try {
     rec = new SR();
     rec.lang = "es-ES"; rec.interimResults = true; rec.continuous = !IOS; rec.maxAlternatives = 1;
-  } catch (e) { rec = null; return voiceFallback("No se ha podido abrir el micrófono. Usa el micro del teclado."); }
+  } catch (e) { rec = null; return toast("No se ha podido abrir el micrófono."); }
   recText = prefix; recOn = true;
   if (!prefix) { recStart = Date.now(); recGotResult = false; recError = false; }
   let finals = prefix ? prefix + " " : "";
@@ -717,8 +717,9 @@ function startListening(prefix = "") {
   rec.onerror = (ev) => {
     if (ev.error === "no-speech" || ev.error === "aborted") return; // lo gestiona onend
     recError = true; rec = null; recOn = false; clearTimeout(recMax); S.capture = "idle"; S.partial = "";
-    if (ev.error === "not-allowed") voiceFallback("El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono, o usa el micro del teclado.");
-    else voiceFallback("El reconocimiento de voz no responde ahora. Usa el micro del teclado.");
+    render();
+    if (ev.error === "not-allowed") toast("El micrófono no tiene permiso. Actívalo en Ajustes › Safari › Micrófono.");
+    else toast(`La voz ha fallado (${ev.error}). Prueba otra vez.`);
   };
   rec.onend = () => {
     const r = rec; rec = null;
@@ -729,7 +730,7 @@ function startListening(prefix = "") {
     finishListening(recText);
   };
   S.capture = "listening"; S.partial = ""; S.band = null; S.sheet = null;
-  try { rec.start(); } catch (e) { rec = null; recOn = false; S.capture = "idle"; return voiceFallback("No se ha podido abrir el micrófono. Usa el micro del teclado."); }
+  try { rec.start(); } catch (e) { rec = null; recOn = false; S.capture = "idle"; return toast("No se ha podido abrir el micrófono."); }
   clearTimeout(recMax);
   recMax = setTimeout(stopListening, 30000);
   render();
@@ -749,18 +750,13 @@ function stopListening() {
 function finishListening(text) {
   if (S.capture !== "listening") return;
   clearTimeout(recMax);
-  const listened = Date.now() - recStart;
   S.capture = "idle"; S.partial = "";
   text = (text || "").trim();
   if (!text) {
     render();
-    voiceFails++;
-    // Escuchó un buen rato y no llegó nada dos veces seguidas: el iPhone no está devolviendo la voz.
-    if (!recGotResult && listened > 1500 && voiceFails >= 2) { voiceFails = 0; return voiceFallback("No me llega lo que dices. Prueba con el micro del teclado."); }
-    toast("No te he oído. Toca el micro y habla.");
+    toast(recGotResult ? "No te he oído. Toca el micro y habla." : "El micro no ha devuelto nada. Toca y habla otra vez.");
     return;
   }
-  voiceFails = 0;
   const cmd = parseCommand(text, ctx());
   if (cmd && cmd.rows.length) S.sheet = { type: "command", ...cmd, voice: true };
   else {
@@ -770,14 +766,6 @@ function finishListening(text) {
   }
   render();
 }
-/** Si la voz no va, se abre el campo de escribir para usar el micro del teclado. El botón sigue siendo el micro. */
-function voiceFallback(msg) {
-  S.capture = "typing";
-  render();
-  focusDraft();
-  toast(msg);
-}
-
 /* ---------- Edición ---------- */
 function openEdit(id) {
   const i = S.pending.find((x) => x.id === id) || S.today.find((x) => x.id === id);

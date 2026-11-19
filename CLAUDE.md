@@ -69,7 +69,7 @@ Mismo diseño que el prototipo. Resumen:
 
 1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
 2. **Lista (principal).**
-   - **Cabecera compacta:** logo de 32 px, «Compra» y tres botones redondos pequeños: cambiar vista (casillas/lista), historial y menú ⋮.
+   - **Cabecera compacta:** logo de 32 px, «Compra» y tres botones: cambiar vista (casillas/lista), historial y menú ⋮. Solo iconos, sin fondo (decisión de Alfonso).
    - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
    - **Contenido:** artículos pendientes agrupados por categoría, en el orden fijo de categorías. Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría, el nombre y la tienda debajo (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la derecha.
@@ -128,7 +128,7 @@ Mismo diseño que el prototipo. Resumen:
 - La transcripción va apareciendo al final de la lista mientras hablas.
 - El texto dictado pasa por el mismo intérprete de 5.3 y siempre termina en la hoja de confirmación.
 - **Orden de tachado por voz:** «He comprado todo lo de Mercadona menos los huevos», y variantes como «ya tengo», «hemos cogido» o «excepto», abre la hoja **«Marcar como comprado»**. Lista los artículos que verías en esa tienda con casillas; las excepciones salen desmarcadas con «lo dejo pendiente». Al confirmar: «Se han tachado N artículos» con Deshacer, que los devuelve todos.
-- **Comprobación de disponibilidad:** el botón es siempre el del micrófono; **no hay botón «Dictar»** (decisión de Alfonso). Si el navegador no tiene reconocimiento de voz, no da permiso o no devuelve nada, al tocarlo se abre el campo de texto con el foco puesto y un aviso para usar el micro del teclado. Nunca debe quedar un botón que no haga nada.
+- **Comprobación de disponibilidad:** el botón es siempre el del micrófono; **no hay botón «Dictar»** y **nunca se abre el campo de escribir por su cuenta** (decisiones de Alfonso). Si no hay permiso, no hay soporte o no llega nada, solo sale un aviso corto.
 
 ### 5.5 Editar un artículo de la lista
 - Hoja «Editar artículo» con: nombre, dónde se compra (chips: Cualquier súper y cada tienda), «Mover a…» (categorías) y Eliminar (con Deshacer).
@@ -295,7 +295,7 @@ Añade validaciones básicas de forma en `items`, `products` y `stores` (campos 
 - [ ] Tachar → aviso con Deshacer, y Deshacer lo devuelve.
 - [ ] Lo tachado hoy está en «Comprado hoy». Mañana está en el Historial bajo «Ayer».
 - [ ] «He comprado todo lo de Mercadona menos los huevos» → hoja con todo menos huevos marcado; al confirmar, aviso con Deshacer.
-- [ ] Sin reconocimiento de voz disponible, al tocar el micro se abre el campo de escribir para usar el dictado del teclado (sin botón «Dictar»).
+- [ ] Sin reconocimiento de voz disponible, al tocar el micro sale un aviso; sin botón «Dictar» y sin abrir el campo de escribir.
 - [ ] Editar en la despensa cambia también el artículo pendiente. Borrar una tienda pasa sus cosas a «Cualquier súper».
 - [ ] Modo claro y oscuro idénticos al prototipo; casillas y lista. En el ordenador: lápiz al pasar el ratón y rueda en la barra de tiendas.
 - [ ] Se instala en el iPhone con el icono de la cesta y abre a pantalla completa.

@@ -63,6 +63,9 @@ body:has(.scrim) .topband{background:color-mix(in srgb,var(--ink) 32%,var(--grou
 .hb-r{display:flex;gap:4px}
 .ib{width:48px;height:48px;border-radius:50%;background:var(--paper);color:var(--primary);display:grid;place-items:center;flex:none}
 .ib.sm{width:44px;height:44px}
+/* Botones de la cabecera: solo iconos, sin fondo (diseño B elegido por Alfonso). */
+.hb .hb-r{gap:0}
+.hb .ib{background:transparent;color:var(--ink)}
 .hb.back{padding-left:8px;gap:4px}
 .hb.back .ib{background:transparent}
 
