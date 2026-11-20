@@ -2,7 +2,7 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
-## v48 · 19/11/2026
+## v48 · 20/11/2026
 - Seguridad: Firebase va dentro de la app (ya no se carga de servidores de Google al abrir) y una política de seguridad (CSP) impide ejecutar código de fuera o conectar con sitios que no sean Firebase y el modelo de voz.
 - La app no se deja abrir dentro de otra página web.
 - Cerrar sesión borra también los datos que Firestore guarda en el iPhone.
