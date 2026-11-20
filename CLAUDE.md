@@ -105,11 +105,13 @@ Mismo diseño que el prototipo. Resumen:
 ## 5. Reglas de funcionamiento
 
 ### 5.1 Tiendas genéricas, de especialidad y únicas
-- **Genérica** (Mercadona, Hipercor, Lidl): su vista muestra los artículos asignados a ella, todos los de «Cualquier súper» (`storeId == null`) y también lo asignado a las tiendas de especialidad (lo de la Frutería sale en el Mercadona; decisión de Alfonso, v56).
-- **De especialidad** (tienda única cuyo nombre indica qué vende; `ESPECIALIDAD` y `especialidad()` en `js/parser.js`): Frutería/Verdulería → Fruta y Verdura; Carnicería/Pollería → Carne y Charcutería; Pescadería/Marisquería → Pescado; Panadería/Horno → Pan y Bollería; Pastelería → Bollería; Charcutería; Quesería. Su vista muestra lo asignado a ella y lo de «Cualquier súper» de sus categorías. No es excluyente.
-- **Única sin especialidad** (Farmacia): su vista muestra solo lo asignado a ella, y eso no sale en ninguna otra.
+- **Genérica** (Mercadona, Hipercor, Lidl): su vista muestra lo asignado a ella, todo lo de «Cualquier súper» (`storeId == null`) menos los Medicamentos, y lo asignado a las tiendas de especialidad que no sean la farmacia.
+- **De especialidad** (tienda única cuyo nombre dice qué vende; `ESPECIALIDAD` y `especialidad()` en `js/parser.js`): Frutería/Verdulería → Fruta y Verdura; Carnicería/Pollería → Carne y Charcutería; Pescadería/Marisquería → Pescado; Panadería/Horno → Pan y Bollería; Pastelería → Bollería; Charcutería; Quesería; **Farmacia → Medicamentos y Parafarmacia**. Su vista muestra lo asignado a ella y lo de «Cualquier súper» de sus categorías.
+- **Lo de sus categorías nunca se guarda «en» ellas** (decisión de Alfonso, v58): la fruta va en «Cualquier súper» y la Frutería sale sola en la barra cuando hay fruta apuntada. `tiendaPara()` lo aplica en toda escritura (`guardar()` en `js/app.js`), en el intérprete y en las hojas, que no ofrecen esa tienda para esas categorías. Al abrir, `limpiarEspecialidad()` pasa a «Cualquier súper» lo antiguo que estuviera así y, una vez por usuario y dispositivo, lleva a Medicamentos/Parafarmacia lo de Higiene que lo sea.
+- Los **Medicamentos** solo salen en la Farmacia (y en «Todas»), nunca en los súper; la Parafarmacia sale en la Farmacia y en los súper. Lo asignado expresamente a la Farmacia no sale en los súper.
+- **Única sin especialidad** (por ejemplo, una droguería): solo lo asignado a ella.
 - En la barra, una tienda sale si tiene algo pendiente «suyo»: asignado a ella o, si es de especialidad, de «Cualquier súper» en sus categorías (`propios()`).
-- La tienda dominante de una categoría (5.3) no cuenta si es de especialidad: lo nuevo de fruta se queda en «Cualquier súper», que ya sale en la Frutería.
+- La tienda dominante de una categoría (5.3) no cuenta si es de especialidad.
 - «Todas» lo muestra todo.
 - El contador de cada tienda en la barra es lo que verías al abrirla.
 
@@ -229,9 +231,11 @@ Al primer arranque, si `stores` está vacía, crea:
 18. Bebidas
 19. Lucía (cosas de la niña; color = el primario de la app)
 20. Higiene
-21. Limpieza
-22. Hogar
-23. Otros
+21. Medicamentos (solo salen en la Farmacia)
+22. Parafarmacia (tiritas, termómetro, vitaminas…)
+23. Limpieza
+24. Hogar
+25. Otros
 
 **Despensa:** empieza vacía y se va llenando sola con lo que se apunta.
 
@@ -315,7 +319,7 @@ Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes si
 - [ ] Alfonso apunta algo en el iPhone y aparece en menos de 2 s en el de Mariluz, y al revés.
 - [ ] Sin conexión: se puede apuntar y tachar, y al recuperar la conexión se sincroniza sin perder nada.
 - [ ] «huevos» sin tienda → aparece en Mercadona, Hipercor y Lidl, y NO en Farmacia ni en Frutería.
-- [ ] «plátanos» sin tienda → aparece en Frutería y en los súper; algo apuntado en Frutería sale también en Mercadona; lo de Farmacia solo en Farmacia.
+- [ ] «plátanos» → se guarda en «Cualquier súper» (aunque se diga «de la frutería») y aparece en Frutería y en los súper. «ibuprofeno» → Medicamentos, sale en Farmacia y no en Mercadona.
 - [ ] Una tienda sin artículos propios pendientes no sale en la barra, pero sí en Tiendas.
 - [ ] «platnos, pan de la panadería y pañales para la niña» → hoja con Plátanos (corregido), Pan en Panadería y Pañales en Lucía.
 - [ ] «dos pimientos» → «Pimientos», sin cantidad en ningún sitio.

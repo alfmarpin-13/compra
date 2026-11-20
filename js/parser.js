@@ -11,8 +11,10 @@ export function guessCategory(text) {
 }
 
 /** Tiendas de especialidad: una tienda única cuyo nombre dice qué se compra allí (frutería → fruta y verdura).
- *  No son excluyentes: ven también lo de «Cualquier súper» de sus categorías, y los súper ven lo suyo. */
-const ESPECIALIDAD = [
+ *  Lo de sus categorías no se apunta «en» ellas: va en «Cualquier súper» y sale solo en la tienda (tiendaPara).
+ *  La farmacia es especial: los medicamentos no salen en los súper, ni lo apuntado en ella. */
+const SOLO_FARMACIA = new Set(["medicamentos"]);
+const ESPECIALIDAD = [["farmac", ["medicamentos", "parafarmacia"]],
   ["fruter", ["fruta", "verdura"]], ["verdul", ["verdura", "fruta"]], ["carnic", ["carne", "charcuteria"]], ["polleri", ["carne"]],
   ["pescader", ["pescado"]], ["marisquer", ["pescado"]], ["panader", ["pan", "bolleria"]], ["horno", ["pan", "bolleria"]],
   ["pasteler", ["bolleria"]], ["charcut", ["charcuteria"]], ["queser", ["quesos"]],
@@ -27,12 +29,21 @@ export function especialidad(st) {
  *  - súper (genérica): lo suyo, lo de «Cualquier súper» y lo de las tiendas de especialidad (también se puede comprar allí);
  *  - de especialidad: lo suyo y lo de «Cualquier súper» de sus categorías (la frutería, toda la fruta y verdura);
  *  - única sin especialidad (farmacia): solo lo suyo. */
+const esFarmacia = (st) => !!st && st.kind === "unique" && nameKey(st.name).includes("farmac");
+/** La tienda con la que se guarda algo: lo que una tienda de especialidad ya ve por su categoría se queda
+ *  en «Cualquier súper» (la fruta no se apunta en la Frutería; sale allí sola). */
+export function tiendaPara(storeId, category, stores = []) {
+  if (!storeId) return null;
+  const cats = especialidad(stores.find((s) => s.id === storeId));
+  return cats && cats.includes(category) ? null : storeId;
+}
 export function inStore(item, store, stores = []) {
   if (!store) return true;
   if (item.storeId === store.id) return true;
   if (store.kind === "generic") {
-    if (item.storeId == null) return true;
-    return !!especialidad(stores.find((s) => s.id === item.storeId));
+    if (item.storeId == null) return !SOLO_FARMACIA.has(item.category);
+    const st = stores.find((s) => s.id === item.storeId);
+    return !!especialidad(st) && !esFarmacia(st);
   }
   const cats = especialidad(store);
   return !!(cats && item.storeId == null && cats.includes(item.category));
@@ -174,13 +185,14 @@ export function parseOne(raw, ctx) {
     const p = hit.product;
     e.productId = p.id; e.name = p.name; e.category = lucia ? "lucia" : p.category; e.known = true;
     e.corrected = !hit.exact && !hit.partial ? shown : null;
-    e.storeId = explicit ? (generic ? null : storeId) : p.storeId ?? null;
-    e.habitual = p.storeId ?? null;
-    e.ask = !explicit && p.storeId ? { storeId: p.storeId, kind: "habit" } : null;
+    const hab = tiendaPara(p.storeId, e.category, stores);
+    e.storeId = tiendaPara(explicit ? (generic ? null : storeId) : hab, e.category, stores);
+    e.habitual = hab;
+    e.ask = !explicit && hab ? { storeId: hab, kind: "habit" } : null;
   } else {
     e.productId = null; e.name = cap(shown); e.category = lucia ? "lucia" : guessCategory(t); e.known = false; e.corrected = null;
     const h = explicit ? null : categoryHabit(e.category, products, stores);
-    e.storeId = explicit ? (generic ? null : storeId) : h;
+    e.storeId = tiendaPara(explicit ? (generic ? null : storeId) : h, e.category, stores);
     e.habitual = null;
     e.ask = h ? { storeId: h, kind: "new" } : null;
   }
