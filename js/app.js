@@ -4,7 +4,8 @@ import { APP_VERSION, APP_DATE } from "./version.js";
 import * as DB from "./db.js";
 import * as Voz from "./voz.js";
 import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW } from "./data.js";
-import { LUCIDE, OPENMOJI } from "./iconos.js";
+import { LUCIDE } from "./iconos.js";
+import { PRODUCTOS } from "./productos.js";
 import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
 import { parseUtterance, parseCommand, isClear, inStore, matchProduct, guessCategory as guessCat } from "./parser.js";
 
@@ -18,17 +19,14 @@ function ic(name, size = 24, cls = "") {
   return `<svg class="icon ${cls}" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
 }
 const LOGO = (px, label) => `<svg width="${px}" height="${px}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'} viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#D9F56E"/><path d="M27 50C27 21 73 21 73 50" fill="none" stroke="#1C3A2D" stroke-width="7" stroke-linecap="round"/><path d="M21 57H79L72.5 82.5Q71.4 87 66.8 87H33.2Q28.6 87 27.5 82.5Z" fill="#1C3A2D"/><g stroke="#D9F56E" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M24 66.5H76M26.3 76.5H73.7"/><path d="M33 59.5 34.6 84.5M44.3 59.5 45 84.5M55.7 59.5 55 84.5M67 59.5 65.4 84.5"/></g><rect x="15" y="46" width="70" height="11" rx="5.5" fill="#1C3A2D"/></svg>`;
-// Iconos de producto propios, dibujados con el mismo estilo de línea que OpenMoji.
-const PICS = {
-  ...OPENMOJI,
-  PANAL: '<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h46v6c0 7-5 12-11 14-3.5 1.2-6 4.6-6 9v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-5c0-4.4-2.5-7.8-6-9-6-2-11-7-11-14z"/><path d="M13 27h46"/><path d="M19 24h7M46 24h7"/><path d="M24 43c3 1.5 5 4 5.5 7M48 43c-3 1.5-5 4-5.5 7" opacity=".7"/></g>',
-};
+// Iconos de producto: dibujos propios (js/productos.js), de línea en el color de la categoría.
+const PICS = PRODUCTOS;
 export const iconKeyFor = (name) => bestKeyword(name, ICON_LIST);
 function pic(name, category, iconKey) {
   // Manda el diccionario de palabras clave (así los iconos mejorados llegan también a productos ya guardados).
   const auto = iconKeyFor(name);
   const k = auto && PICS[auto] ? auto : iconKey && PICS[iconKey] ? iconKey : null;
-  if (k) return `<svg viewBox="4 4 64 64" aria-hidden="true">${PICS[k]}</svg>`;
+  if (k) return `<svg class="pp" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PICS[k]}</svg>`;
   return ic((CAT[category] || CAT.otros).g, 30);
 }
 const catStyle = (c) => { const C = CAT[c] || CAT.otros; return `--cl:${C.cl};--cd:${C.cd}`; };
@@ -490,7 +488,6 @@ function vOptions() {
      </div>
      <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
      ${(() => { const b = Object.keys(bootT).length ? bootT : lastBoot; if (!b) return ""; const f = (k) => (b[k] != null ? (b[k] / 1000).toFixed(1).replace(".", ",") + " s" : "—"); return `<p class="credits">Arranque: Firebase ${f("firebase")} · sesión ${f("sesion")} · datos ${f("datos")} · servidor ${f("servidor")}</p>`; })()}
-     <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0)</p>
    </div>
    ${S.band ? vBand() : ""}
   </div>`;
@@ -710,7 +707,6 @@ function shPrefs() {
      <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
    <div class="btns"><button class="btn out" data-act="logout">${ic("log-out", 18)}Cerrar sesión</button></div>
    <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
-   <p class="credits">Iconos de productos: <a href="https://openmoji.org" target="_blank" rel="noopener">OpenMoji</a> (CC BY-SA 4.0)</p>
    </div>`;
 }
 function shPEdit(s) {

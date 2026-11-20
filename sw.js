@@ -1,9 +1,9 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v48"; // mismo número que js/version.js
+const VERSION = "compra-v49"; // mismo número que js/version.js
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
-  "js/tema.js", "js/app.js", "js/config.js", "js/version.js", "js/data.js", "js/db.js", "js/iconos.js", "js/parser.js", "js/util.js",
+  "js/tema.js", "js/app.js", "js/config.js", "js/version.js", "js/data.js", "js/db.js", "js/iconos.js", "js/parser.js", "js/util.js", "js/productos.js",
   "js/voz.js", "js/voz-worker.js", "js/voz-rec.js", "vendor/transformers.min.js", "vendor/firebase/firebase-app.js", "vendor/firebase/firebase-auth.js", "vendor/firebase/firebase-firestore.js", "vendor/ort-wasm-simd-threaded.asyncify.mjs",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/icon-maskable-512.png",
   "fonts/figtree-400.woff2", "fonts/figtree-500.woff2", "fonts/figtree-600.woff2", "fonts/figtree-700.woff2", "fonts/bricolage-grotesque-800.woff2",

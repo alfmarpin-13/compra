@@ -237,10 +237,10 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
   - la pantalla de entrada;
   - el favicon;
   - los iconos PWA. Genera PNG de 180 (apple-touch-icon), 192 y 512, más una versión *maskable* con margen de seguridad. No pongas texto en el icono.
-- **Iconos de producto:** set **OpenMoji** de línea (CC BY-SA 4.0), coloreado con `currentColor` en el color de la categoría.
-  - Diccionario de palabras clave → icono, para que un producto nuevo («leche semidesnatada») encuentre su icono («leche») automáticamente.
+- **Iconos de producto: dibujos propios** (`js/productos.js`, decisión de Alfonso: nada de iconos de otros). Línea monocroma en cuadrícula de 48, trazo 2,2 con extremos redondeados (a 38 px en la casilla se ven con el mismo peso que los iconos de interfaz), coloreados con `currentColor` en el color de la categoría; solo puntos pequeños rellenos y detalles secundarios con opacidad. Las claves son códigos de emoji, solo como nombre interno (las usan `ICON_KW` y el campo `icon` guardado).
+  - Diccionario de palabras clave → icono (`ICON_KW` en `js/data.js`), para que un producto nuevo («leche semidesnatada») encuentre su icono («leche») automáticamente.
   - Sin coincidencia, se usa el icono de su categoría.
-  - Atribución en Opciones, una sola línea bajo la versión: «Iconos de productos: OpenMoji (CC BY-SA 4.0)». Lucide y las tipografías no se citan en la app: sus licencias van en el código y en `fonts/`.
+  - Un icono nuevo se dibuja a mano con ese estilo; no se copian trazados de otros sets. En Opciones no hay atribución de iconos (Lucide y las tipografías llevan su licencia en el código y en `fonts/`).
 - **Iconos de interfaz y de categoría:** trazo de 1,8 px en caja de 24, extremos redondeados, al estilo **Lucide** (licencia ISC). No reutilices los trazados del prototipo que vienen de otros proyectos sin comprobar su licencia; usa Lucide o dibújalos.
 - Toques de al menos 44 px, contraste AA y respeto a `prefers-reduced-motion`.
 
