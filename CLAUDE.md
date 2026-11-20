@@ -261,8 +261,7 @@ Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes si
 - **Sin marcos:** `js/tema.js` no deja abrir la app dentro de otra web (GitHub Pages no permite la cabecera `frame-ancestors`).
 - **Todo texto que venga de los datos pasa por `esc()`** antes de ir al HTML, también los identificadores en atributos.
 - **Cerrar sesión** borra la copia local de Firestore (IndexedDB) y `compra.snap`, y recarga.
-- **Copia de seguridad cifrada:** el repo es público; `scripts/copia.mjs` cifra con AES-256-GCM (clave del secreto `COPIA_CLAVE`) y no escribe nada si falta la clave. Las acciones del workflow van fijadas por commit.
-- **Fuera del código (lo hace Alfonso en las consolas):** clave de API restringida al dominio y a las tres APIs, alta de cuentas desactivada, protección contra enumeración de correos, contraseñas largas, verificación en dos pasos en Google y GitHub, cuenta de servicio de solo lectura.
+- **Fuera del código (lo hace Alfonso en las consolas):** clave de API restringida al dominio y a las tres APIs, alta de cuentas desactivada, protección contra enumeración de correos, contraseñas largas, verificación en dos pasos en Google y GitHub. **No hay copia de seguridad** (decisión de Alfonso): nada de workflows ni cuentas de servicio.
 
 ## 10. Lo que NO hay que copiar del prototipo
 
