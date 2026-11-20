@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v62 · 20/11/2026
+- Iconos nuevos para lo de la despensa que salía con el icono de su categoría: albahaca (y perejil, hierbabuena…), orégano y tomillo (ramita), albóndigas, alcachofas, calabaza, ciruelas, espárragos, estrellitas, Fairy (lavavajillas), pistachos, bote de especias (pimentón, comino, ajo y cebolla en polvo…), molinillo de pimienta y embutido curado (lomito, caña de lomo, chorizo, salchichón, fuet).
+- Con dibujo que ya existía: cherry (tomate), feta (queso), tila (infusión), fregasuelos y «papel de culo».
+- Categorías deducidas para esos productos cuando se apuntan nuevos (cherry → Verdura, feta → Quesos, Fairy → Limpieza, lomito → Charcutería…).
+
 ## v61 · 20/11/2026
 - Tipos de tienda que se eligen a mano al crearla o editarla: **Supermercado** (sale todo lo de «Cualquier súper»), **Especialidad** (eliges qué vende y sale sola cuando hay algo de eso apuntado, como la fruta en la frutería) y **Única** (solo lo que apuntéis en ella). Antes la especialidad se adivinaba por el nombre.
 - Las tiendas que ya funcionaban como especialidad (Frutería, Farmacia…) pasan solas a ese tipo. Hay que pegar las reglas nuevas de Firestore.
