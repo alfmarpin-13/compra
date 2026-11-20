@@ -255,4 +255,6 @@ export const PRODUCTOS = {
   "E324": "<path d=\"M19 29V10a5 5 0 0 1 10 0v19a9 9 0 1 1-10 0z\"/><path d=\"M24 14v20\" opacity=\".55\"/><circle cx=\"24\" cy=\"36\" r=\"3.2\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M33 13h3M33 18h3M33 23h3\" opacity=\".55\"/>",
   // pañal
   "PANAL": "<path d=\"M7 14h34v4c0 6-4 10-9 11.5-2.5.8-4 3.5-4 7V40a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3v-3.5c0-3.5-1.5-6.2-4-7C11 28 7 24 7 18z\"/><path d=\"M7 18h34\"/><path d=\"M12 16h5M31 16h5\"/><path d=\"M17 31c2 1 3.5 3 4 5M31 31c-2 1-3.5 3-4 5\" opacity=\".55\"/>",
+  // papel culo (papel higiénico húmedo): rollo con una gota de agua
+  "PAPELHUM": "<path d=\"M8 15c0-3 2.3-5 5.5-5h13c3.2 0 5.5 2 5.5 5v22c0 3-2.3 5-5.5 5h-13C10.3 42 8 40 8 37z\"/><path d=\"M8 15c0 3 2.3 5 5.5 5h13c3.2 0 5.5-2 5.5-5\"/><ellipse cx=\"20\" cy=\"14.8\" rx=\"3.6\" ry=\"1.5\"/><path d=\"M38 20c-2.6 3.3-4 5.8-4 7.6a4 4 0 0 0 8 0c0-1.8-1.4-4.3-4-7.6z\"/><path d=\"M8 30c4 2.5 8 2.5 12 0s8-2.5 12 0\" opacity=\".55\"/>",
 };

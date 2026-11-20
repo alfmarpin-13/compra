@@ -55,7 +55,7 @@ export const KW = {
   bebidas: ["agua", "cerveza", "vino", "cava", "champan", "sidra", "refresco", "cola", "coca cola", "fanta", "tonica", "gaseosa", "zumo", "nectar", "bebida isotonica", "aquarius", "ginebra", "ron", "whisky", "vermut", "tinto de verano", "horchata"],
   lucia: ["panal", "toallita", "potito", "biberon", "tetina", "chupete", "bebe", "papilla", "leche de continuacion", "leche de crecimiento", "leche infantil", "crema del culito", "crema de panal", "suero fisiologico"],
   higiene: ["gel", "champu", "acondicionador", "mascarilla", "desodorante", "cepillo de dientes", "pasta de dientes", "dentifrico", "enjuague", "colutorio", "hilo dental", "compresa", "tampon", "protege slip", "salvaslip", "crema", "colonia", "perfume", "maquinilla", "cuchilla", "espuma de afeitar", "jabon de manos", "jabon", "bastoncillo", "algodon", "pasta dental", "protector solar", "crema solar", "tirita", "ibuprofeno", "paracetamol", "medicina", "pastilla", "termometro", "panuelo"],
-  limpieza: ["lejia", "detergente", "suavizante", "friegasuelos", "friega", "limpiador", "limpia", "limpiacristales", "quitagrasa", "desengrasante", "lavavajillas", "pastilla lavavajillas", "abrillantador", "fregona", "estropajo", "bayeta", "esponja", "guante", "basura", "bolsa de basura", "amoniaco", "papel higienico", "servilleta", "papel de cocina", "rollo de cocina", "papel de aluminio", "papel film", "papel de horno", "ambientador", "insecticida", "quitamanchas", "escoba", "recogedor", "cubo"],
+  limpieza: ["lejia", "detergente", "suavizante", "friegasuelos", "friega", "limpiador", "limpia", "limpiacristales", "quitagrasa", "desengrasante", "lavavajillas", "pastilla lavavajillas", "abrillantador", "fregona", "estropajo", "bayeta", "esponja", "guante", "basura", "bolsa de basura", "amoniaco", "papel higienico", "papel culo", "papel humedo", "servilleta", "papel de cocina", "rollo de cocina", "papel de aluminio", "papel film", "papel de horno", "ambientador", "insecticida", "quitamanchas", "escoba", "recogedor", "cubo"],
   hogar: ["bombilla", "pila", "vela", "enchufe", "alargador", "pegamento", "cinta", "celo", "tupper", "taper", "mechero", "cerilla", "planta", "flor", "maceta", "abono", "tornillo", "cargador", "cable", "sarten", "olla", "vaso", "plato", "cubierto", "toalla", "sabana", "percha"],
 };
 
@@ -102,7 +102,7 @@ export const ICON_KW = {
   gel: "1F6BF", champu: "1F9FC", acondicionador: "1F9F4", jabon: "1F9FC", "pasta de dientes": "1F9B7",
   dentifrico: "1F9B7", "pasta dental": "1F9B7", "cepillo de dientes": "1FAA5", maquinilla: "1FA92", cuchilla: "1FA92",
   crema: "1F9F4", desodorante: "1F9F4", colonia: "1F9F4", protector: "1F9F4",
-  "papel higienico": "1F9FB", "papel de cocina": "1F9FB", "rollo de cocina": "1F9FB", servilleta: "1F9FB",
+  "papel higienico": "1F9FB", "papel culo": "PAPELHUM", "papel humedo": "PAPELHUM", "papel higienico humedo": "PAPELHUM", "papel de cocina": "1F9FB", "rollo de cocina": "1F9FB", servilleta: "1F9FB",
   cubo: "1FAA3", detergente: "1FAA3", suavizante: "1FAA3", friegasuelos: "E0B1", lejia: "E0B1", limpia: "E0B1",
   limpiador: "E0B1", amoniaco: "E0B1", lavavajillas: "E0CB", estropajo: "1F9FD", esponja: "1F9FD", bayeta: "1F9FD",
   escoba: "1F9F9", fregona: "1F9F9", basura: "1F5D1", "bolsa de basura": "1F5D1", bombilla: "1F4A1", pila: "1F50B",
