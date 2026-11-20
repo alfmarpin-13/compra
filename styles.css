@@ -195,6 +195,10 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 /* ---------- Casillas ---------- */
 .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 20px}
 .tile{contain:layout style;position:relative;aspect-ratio:1/.88;background:var(--paper);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform .12s;min-height:88px}
+/* Cada ficha lleva el color de su categoría, más claro (decisión de Alfonso, v70): casillas y filas. */
+.tile,.row,.prow.pcat{--cat:var(--cl);--mix:20%;background:color-mix(in srgb,var(--cat) var(--mix),var(--paper))}
+:root[data-theme="dark"] :is(.tile,.row,.prow.pcat){--cat:var(--cd);--mix:22%}
+.pcard{overflow:hidden}
 .tile.fresh,.tile.unfresh{transition:background .6s ease,transform .12s}
 .tile:active{transform:scale(.96)}
 .tile.fresh{background:color-mix(in srgb,var(--primary) 12%,var(--paper))}

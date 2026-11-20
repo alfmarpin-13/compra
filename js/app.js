@@ -466,7 +466,7 @@ function vRow(i) {
   const st = i.storeId && storeById(i.storeId) ? `${slot(i.storeId)}${esc(storeName(i.storeId))}` : esc(GENERIC);
   const by = byOther(i) ? `<span class="by">· ${esc(nombre(i.addedBy))}</span>` : "";
   const tk = ticking.has(i.id);
-  return `<div class="row ${i.checked ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${esc(i.id)}" data-id="${esc(i.id)}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
+  return `<div class="row ${i.checked ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="r-${esc(i.id)}" data-id="${esc(i.id)}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
     <span class="ck">${i.checked ? ic("check", 16) : ""}</span>
     <div class="rinfo"><div class="nm">${esc(i.name)}</div><div class="st">${st}${by}</div></div>
     ${tk ? `<button class="tundo" data-act="untick" data-id="${esc(i.id)}">Deshacer</button>` : `<button class="edb" data-act="edit" data-id="${esc(i.id)}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>`}</div>`;
@@ -606,7 +606,7 @@ function vMenu() {
 const borrarBusqueda = (id, q) => (q ? `<button type="button" class="sclear" data-act="qClear" data-k="${id}" aria-label="Borrar la búsqueda">${ic("x", 14)}</button>` : "");
 function vPantryRow(p) {
   const on = !!pendingFor(p), due = isDue(p), st = statsFor(p);
-  return `<div class="prow tap" data-flip data-key="pr-${esc(p.id)}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
+  return `<div class="prow tap pcat" style="${catStyle(p.category)}" data-flip data-key="pr-${esc(p.id)}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
     <span class="mini-ck ${on ? "on" : ""}" style="margin-top:4px">${on ? ic("check", 14) : ""}</span>
     <div class="pmain"><div class="pname">${esc(p.name)}</div>
       <div class="st" style="margin-top:2px">${p.storeId && storeById(p.storeId) ? slot(p.storeId) + esc(storeName(p.storeId)) : esc(GENERIC)}${st?.every ? `<span class="by">· cada ${plural(st.every, "día", "días")}</span>` : ""}</div></div>
@@ -619,7 +619,7 @@ function vPTile(p) {
     <span class="tic">${pic(p.name, p.category, p.icon)}</span>
     <span class="tnm">${esc(p.name)}</span></div>`;
 }
-const pblock = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vPTile).join("")}</div>` : `<div class="card" data-key="${key}">${rows.map(vPantryRow).join("")}</div>`);
+const pblock = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vPTile).join("")}</div>` : `<div class="card pcard" data-key="${key}">${rows.map(vPantryRow).join("")}</div>`);
 function vPantry() {
   const q = singAll(norm(S.pantryQ));
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
