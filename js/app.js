@@ -698,9 +698,11 @@ function entryChips(e, ix) {
   return keys.map((k) => storeChip(k, e.storeId, "eStore", `data-i="${ix}"`)).join("") + (e.showAll ? "" : `<button class="chip sm" data-act="eMore" data-i="${ix}">Otra…</button>`);
 }
 /** Categoría sugerida, con la opción de cambiarla (y lo elegido se recuerda en la despensa). */
+/** Rótulo de cada bloque de la hoja, para que se vea que la tienda y la categoría son dos cosas distintas. */
+const rotulo = (t) => `<p class="labelsm erot">${t}</p>`;
 function entryCat(e) {
-  if (!e.showCats) return `<div class="opts"><button class="chip sm" data-act="eCats" data-i="${e._ix}">${cico(e.category, 14, "width:18px;height:18px;border-radius:5px;margin-left:-4px")}${esc(CAT[e.category].l)} · Cambiar</button></div>`;
-  return `<p class="labelsm" style="margin:10px 0 6px">Categoría</p><div class="opts">${CATS_AZ.map((c) => `<button class="chip sm ${e.category === c.k ? "on" : ""}" data-act="eCat" data-i="${e._ix}" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div>`;
+  if (!e.showCats) return `${rotulo("Categoría")}<div class="opts"><button class="chip sm" data-act="eCats" data-i="${e._ix}">${cico(e.category, 14, "width:18px;height:18px;border-radius:5px;margin-left:-4px")}${esc(CAT[e.category].l)} · Cambiar</button></div>`;
+  return `${rotulo("Categoría")}<div class="opts">${CATS_AZ.map((c) => `<button class="chip sm ${e.category === c.k ? "on" : ""}" data-act="eCat" data-i="${e._ix}" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div>`;
 }
 function entryNote(e) {
   if (e.inPantry) return `<p class="note">Ya está en la despensa.</p>`;
@@ -714,14 +716,14 @@ function entryNoteStore(e) {
   if (e.explicit) {
     const p = e.productId ? productById(e.productId) : null;
     h += `<p class="pmeta" style="margin-top:4px">${p && (p.storeId ?? null) !== (e.storeId ?? null) ? `Normalmente en ${esc(storeName(p.storeId))}; esta vez en ${esc(storeName(e.storeId))}.` : e.known ? "Como has dicho." : "Es nuevo. Lo guardo en la despensa."}</p>`;
-    if (e.showAll) h += `<div class="opts">${entryChips(e, e._ix)}</div>`;
-    else h += `<div class="opts"><button class="chip sm" data-act="eMore" data-i="${e._ix}">Cambiar tienda</button></div>`;
+    if (e.showAll) h += `${rotulo("Tienda")}<div class="opts">${entryChips(e, e._ix)}</div>`;
+    else h += `${rotulo("Tienda")}<div class="opts"><button class="chip sm" data-act="eMore" data-i="${e._ix}">${e.storeId ? slot(e.storeId) : ""}${esc(storeName(e.storeId))} · Cambiar</button></div>`;
     return h;
   }
   if (e.ask && e.ask.kind === "habit") h += `<p class="note">Normalmente lo apuntáis en ${esc(storeName(e.ask.storeId))}. ¿Lo dejo ahí o en cualquier súper?</p>`;
   else if (e.ask && e.ask.kind === "new") h += `<p class="note">Es nuevo. Lo de ${esc(CAT[e.category].l.toLowerCase())} soléis comprarlo en ${esc(storeName(e.ask.storeId))}.</p>`;
   else h += `<p class="note">${e.known ? "Lo soléis comprar en cualquier súper." : "Es nuevo. Lo guardo en la despensa."}</p>`;
-  return h + `<div class="opts">${entryChips(e, e._ix)}</div>`;
+  return h + `${rotulo("Tienda")}<div class="opts">${entryChips(e, e._ix)}</div>`;
 }
 function shReview(s) {
   const n = s.entries.filter((e) => e.include).length;
