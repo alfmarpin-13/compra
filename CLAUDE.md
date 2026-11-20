@@ -104,9 +104,12 @@ Mismo diseño que el prototipo. Resumen:
 
 ## 5. Reglas de funcionamiento
 
-### 5.1 Tiendas genéricas y únicas
-- **Genérica** (Mercadona, Hipercor, Lidl): su vista muestra los artículos asignados a ella y también todos los de «Cualquier súper» (`storeId == null`).
-- **Única** (Frutería, Carnicería, Panadería, Farmacia): su vista muestra solo lo asignado a ella.
+### 5.1 Tiendas genéricas, de especialidad y únicas
+- **Genérica** (Mercadona, Hipercor, Lidl): su vista muestra los artículos asignados a ella, todos los de «Cualquier súper» (`storeId == null`) y también lo asignado a las tiendas de especialidad (lo de la Frutería sale en el Mercadona; decisión de Alfonso, v56).
+- **De especialidad** (tienda única cuyo nombre indica qué vende; `ESPECIALIDAD` y `especialidad()` en `js/parser.js`): Frutería/Verdulería → Fruta y Verdura; Carnicería/Pollería → Carne y Charcutería; Pescadería/Marisquería → Pescado; Panadería/Horno → Pan y Bollería; Pastelería → Bollería; Charcutería; Quesería. Su vista muestra lo asignado a ella y lo de «Cualquier súper» de sus categorías. No es excluyente.
+- **Única sin especialidad** (Farmacia): su vista muestra solo lo asignado a ella, y eso no sale en ninguna otra.
+- En la barra, una tienda sale si tiene algo pendiente «suyo»: asignado a ella o, si es de especialidad, de «Cualquier súper» en sus categorías (`propios()`).
+- La tienda dominante de una categoría (5.3) no cuenta si es de especialidad: lo nuevo de fruta se queda en «Cualquier súper», que ya sale en la Frutería.
 - «Todas» lo muestra todo.
 - El contador de cada tienda en la barra es lo que verías al abrirla.
 
@@ -259,12 +262,13 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
   - Sin coincidencia, se usa el icono de su categoría.
   - Un icono nuevo se dibuja a mano con ese estilo; no se copian trazados de otros sets. En Opciones no hay atribución de iconos (Lucide y las tipografías llevan su licencia en el código y en `fonts/`).
 - **Iconos de interfaz y de categoría:** trazo de 1,8 px en caja de 24, extremos redondeados, al estilo **Lucide** (licencia ISC). No reutilices los trazados del prototipo que vienen de otros proyectos sin comprobar su licencia; usa Lucide o dibújalos.
+- El icono de la farmacia (la cruz) va relleno, no hueco (`RELLENOS` en `js/app.js`).
 - Toques de al menos 44 px, contraste AA y respeto a `prefers-reduced-motion`.
 
 ## 8. PWA
 
 - `manifest.webmanifest`: `name` «Compra», `short_name` «Compra», `display: standalone`, `start_url` y `scope` `./`, `background_color` = ground y `theme_color` = ground. Si el manifiesto no permite variar por tema, usa los colores del modo claro.
-- `<meta name="theme-color">` actualizado según el tema, con `apple-mobile-web-app-capable` y la barra de estado acorde.
+- `<meta name="theme-color">` actualizado según el tema (se sustituye el elemento entero, porque Safari no siempre repinta la franja de la hora si solo cambia el atributo). El cambio de tema es de una vez, sin transiciones sueltas (`cambiarTema()`: View Transition si hay, y `sin-trans` mientras se aplica), con `apple-mobile-web-app-capable` y la barra de estado acorde.
 - `viewport-fit=cover` y márgenes con `env(safe-area-inset-*)` para la isla dinámica y el indicador de inicio.
 - **Service worker:** precache de la carcasa (HTML, CSS, JS, tipografías de `fonts/` e iconos) con versión en el nombre de la caché. Los datos los gestiona la caché de Firestore. Al haber versión nueva, se aplica en la siguiente apertura, sin avisos.
 
@@ -311,6 +315,7 @@ Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes si
 - [ ] Alfonso apunta algo en el iPhone y aparece en menos de 2 s en el de Mariluz, y al revés.
 - [ ] Sin conexión: se puede apuntar y tachar, y al recuperar la conexión se sincroniza sin perder nada.
 - [ ] «huevos» sin tienda → aparece en Mercadona, Hipercor y Lidl, y NO en Farmacia ni en Frutería.
+- [ ] «plátanos» sin tienda → aparece en Frutería y en los súper; algo apuntado en Frutería sale también en Mercadona; lo de Farmacia solo en Farmacia.
 - [ ] Una tienda sin artículos propios pendientes no sale en la barra, pero sí en Tiendas.
 - [ ] «platnos, pan de la panadería y pañales para la niña» → hoja con Plátanos (corregido), Pan en Panadería y Pañales en Lucía.
 - [ ] «dos pimientos» → «Pimientos», sin cantidad en ningún sitio.

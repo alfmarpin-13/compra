@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v56 · 20/11/2026
+- Frutería, Carnicería, Panadería y demás tiendas de especialidad ya no son excluyentes: al abrir la Frutería salen también la fruta y la verdura de «Cualquier súper», y lo apuntado en la Frutería sale también en el Mercadona, Hipercor y Lidl. La Farmacia sigue mostrando solo lo suyo.
+- La cruz de la farmacia va rellena.
+- Cambiar entre claro y oscuro es de una vez, sin que cada parte cambie a su ritmo, y la franja de la hora se pinta del color del tema.
+
 ## v55 · 20/11/2026
 - Al añadir, la categoría sugerida se puede cambiar en la misma hoja (como la tienda) y se recuerda en la despensa. Lo nuevo siempre pasa por la hoja para poder revisarlo.
 - «Vino blanco» ya no se da por «Vino blanco cocinar»: si el nombre está dentro de otro producto, la hoja pregunta si es ese o es otro (por defecto, otro).

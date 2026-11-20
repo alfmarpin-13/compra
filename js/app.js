@@ -7,7 +7,7 @@ import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW, nombre, ALIAS_LOGIN 
 import { LUCIDE } from "./iconos.js";
 import { PRODUCTOS } from "./productos.js";
 import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
-import { parseUtterance, parseCommand, isClear, inStore, matchProduct, guessCategory as guessCat } from "./parser.js";
+import { parseUtterance, parseCommand, isClear, inStore, especialidad, matchProduct, guessCategory as guessCat } from "./parser.js";
 
 /* ===================================================================
    Iconos
@@ -62,7 +62,12 @@ const productByKey = (k) => S.products.find((p) => p.nameKey === k) || null;
 const productOf = (i) => productById(i.productId) || productByKey(nameKey(i.name));
 const pendingFor = (p) => pendVista().find((i) => i.productId === p.id || nameKey(i.name) === p.nameKey);
 const currentStore = () => storeById(S.store);
-const visible = (rows) => rows.filter((i) => inStore(i, currentStore()));
+/** Lo que es «de» una tienda para su filtro: lo asignado a ella y, si es de especialidad, lo de sus categorías. */
+function propios(st, pv) {
+  const cats = especialidad(st);
+  return pv.filter((i) => i.storeId === st.id || (cats && i.storeId == null && cats.includes(i.category)));
+}
+const visible = (rows) => rows.filter((i) => inStore(i, currentStore(), S.stores));
 const sortAdded = (a, b) => (a.addedAt || 0) - (b.addedAt || 0) || a.name.localeCompare(b.name, "es");
 
 /* ---------- Os toca reponer (5.8) ---------- */
@@ -251,7 +256,7 @@ function renderInner() {
   // su filtro desaparece y se vuelve a «Todas» sola. Si se abrió ya vacía (desde Tiendas), se respeta.
   if (S.phase === "app" && S.store) {
     const st = currentStore();
-    const n = st ? pendVista().filter((i) => i.storeId === st.id).length : 0;
+    const n = st ? propios(st, pendVista()).length : 0;
     if (!st || (renderInner.tienda === S.store && renderInner.n > 0 && n === 0)) { S.store = null; renderInner.tienda = null; }
     else { renderInner.tienda = S.store; renderInner.n = n; }
   } else renderInner.tienda = null;
@@ -358,7 +363,23 @@ function applyTheme() {
   if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
   const color = BAR[t];
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m && m.content !== color) m.content = color;
+  // Se cambia el elemento entero (no solo su valor): así el iPhone repinta también la franja de la hora.
+  if (!m || m.content !== color) {
+    const n = document.createElement("meta");
+    n.name = "theme-color"; n.content = color;
+    if (m) m.replaceWith(n); else document.head.appendChild(n);
+  }
+}
+/** Cambiar de tema con un solo fundido de toda la pantalla (antes cada cosa cambiaba a su ritmo y daba saltos). */
+function cambiarTema(fn) {
+  const go = () => {
+    document.documentElement.classList.add("sin-trans");
+    fn();
+    render();
+    void document.body.offsetHeight;
+    requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove("sin-trans")));
+  };
+  if (document.startViewTransition && !REDUCE.matches) document.startViewTransition(go); else go();
 }
 
 /* ===================================================================
@@ -416,6 +437,7 @@ const LOGOS = {
 const autoLogo = (name) => Object.keys(LOGOS).find((k) => (" " + nameKey(name) + " ").includes(" " + LOGOS[k].match + " ")) || null;
 const logoSpan = (key, big) => `<span class="slot logo${big ? " lg" : ""}" style="--logo:url('${LOGOS[key].file}');--r:${LOGOS[key].r}" aria-hidden="true"></span>`;
 const storeIcon = (st) => (st.icon && LUCIDE[st.icon] ? st.icon : autoStoreIcon(st.name, st.kind));
+const RELLENOS = new Set(["cross"]);
 function slot(id, big) {
   const st = storeById(id);
   if (!st) return "";
@@ -423,12 +445,14 @@ function slot(id, big) {
   if (logo) return logoSpan(logo, big);
   const g = storeIcon(st);
   // Sin logo: el icono a una tinta, del mismo tamaño que los logos y sin recuadro.
-  return `<span class="slot${big ? " lg" : ""}" aria-hidden="true">${ic(g, big ? 26 : 17)}</span>`;
+  // Iconos de silueta (la cruz de la farmacia) van rellenos, para que pesen como los logos de los supermercados.
+  const icon = RELLENOS.has(g) ? ic(g, big ? 26 : 17).replace('fill="none"', 'fill="currentColor"') : ic(g, big ? 26 : 17);
+  return `<span class="slot${big ? " lg" : ""}" aria-hidden="true">${icon}</span>`;
 }
 function vChips() {
   const pv = pendVista();
-  const count = (st) => pv.filter((i) => inStore(i, st)).length;
-  const shown = S.stores.filter((s) => s.id === S.store || pv.some((i) => i.storeId === s.id));
+  const count = (st) => pv.filter((i) => inStore(i, st, S.stores)).length;
+  const shown = S.stores.filter((s) => s.id === S.store || propios(s, pv).length);
   return `<div class="chips" role="tablist" aria-label="Tiendas">
     <button class="chip ${!S.store ? "on" : ""}" role="tab" aria-selected="${!S.store}" data-act="store" data-k="">Todas<span class="n">${count(null)}</span></button>
     ${shown.map((s) => `<button class="chip ${S.store === s.id ? "on" : ""}" role="tab" aria-selected="${S.store === s.id}" data-act="store" data-k="${esc(s.id)}" data-key="chip-${esc(s.id)}">${slot(s.id)}${esc(s.name)}<span class="n">${count(s)}</span></button>`).join("")}
@@ -729,17 +753,18 @@ function shEdit(s) {
 }
 function shStores() {
   const pv = pendVista();
-  const rows = S.stores.map((st) => { const all = pv.filter((i) => inStore(i, st)); const own = all.filter((i) => i.storeId === st.id).length; return { st, all: all.length, own }; });
+  const rows = S.stores.map((st) => { const all = pv.filter((i) => inStore(i, st, S.stores)); const own = all.filter((i) => i.storeId === st.id).length; return { st, all: all.length, own }; });
   const meta = ({ st, all, own }) => {
     if (!all) return "nada pendiente";
-    if (st.kind === "generic") return [own ? `${own} solo de aquí` : "", all - own ? `${all - own} de cualquier súper` : ""].filter(Boolean).join(" + ");
+    if (st.kind === "generic") return [own ? `${own} solo de aquí` : "", all - own ? `${all - own} de cualquier sitio` : ""].filter(Boolean).join(" + ");
+    if (especialidad(st)) return [own ? `${own} de aquí` : "", all - own ? `${all - own} de ${especialidad(st).map((c) => CAT[c].l.toLowerCase()).join(" y ")}` : ""].filter(Boolean).join(" + ");
     return plural(all, "artículo", "artículos");
   };
   return `<div class="sbody">
    <div class="shead"><h2>Tiendas</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
-   <p class="help">Una tienda <b>genérica</b> (Mercadona, Lidl…) muestra lo suyo y todo lo apuntado como «Cualquier súper», como los huevos. Una tienda <b>única</b> (farmacia, frutería…) solo muestra lo suyo. Toca una para ver su lista.</p>
+   <p class="help">Una tienda <b>genérica</b> (Mercadona, Lidl…) muestra lo suyo, todo lo de «Cualquier súper» y lo de las tiendas de especialidad. Una de <b>especialidad</b> (frutería, carnicería, panadería…) muestra lo suyo y lo de «Cualquier súper» de lo que vende. Una <b>única</b> (farmacia) solo muestra lo suyo. Toca una para ver su lista.</p>
    <div class="card">${rows.map((r) => `<div class="prow tap" data-key="s-${esc(r.st.id)}" data-act="shopAt" data-k="${esc(r.st.id)}" style="align-items:center" tabindex="0">${slot(r.st.id, true)}
-      <div class="pmain"><div class="pname">${esc(r.st.name)}</div><div class="pmeta">${r.st.kind === "generic" ? "Genérica" : "Única"} · ${meta(r)}</div></div>
+      <div class="pmain"><div class="pname">${esc(r.st.name)}</div><div class="pmeta">${r.st.kind === "generic" ? "Genérica" : especialidad(r.st) ? "Especialidad" : "Única"} · ${meta(r)}</div></div>
       <button class="ib" style="width:44px;height:44px;color:var(--muted);background:transparent" data-act="sedit" data-k="${esc(r.st.id)}" aria-label="Editar ${esc(r.st.name)}">${ic("pencil", 18)}</button></div>`).join("")}
    </div>
    <button class="btn out" data-act="snew">${ic("plus", 18)}Añadir tienda</button>
@@ -755,6 +780,7 @@ function shSEdit(s) {
    <div class="field"><label for="sn">Tienda</label><input id="sn" type="search" inputmode="text" autocapitalize="sentences" name="tienda-compra" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
+   ${(() => { const cats = especialidad({ name: d.name, kind: d.kind }); return cats ? `<p class="hint-ph" style="margin-top:-6px">Tienda de especialidad: también le salen ${esc(cats.map((c) => CAT[c].l.toLowerCase()).join(" y "))} de «Cualquier súper», y lo que apuntéis aquí sale también en los supermercados.</p>` : ""; })()}
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
      <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${autoLogo(d.name) ? logoSpan(autoLogo(d.name)) : ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
      ${Object.keys(LOGOS).map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Logo ${LOGOS[g].match}">${logoSpan(g)}</button>`).join("")}
@@ -1469,7 +1495,7 @@ function act(a, el, e) {
     case "histDel": return deleteHistory();
     case "share": S.menu = false; S.sheet = { type: "share" }; return render();
     case "prefs": S.menu = false; S.sheet = { type: "prefs" }; return render();
-    case "theme": S.theme = k; LS.set("theme", k); return render();
+    case "theme": return cambiarTema(() => { S.theme = k; LS.set("theme", k); });
     case "logout": return doLogout();
     case "repair": el.disabled = true; el.textContent = "Reparando…"; return repairApp();
     case "voice": return toggleVoice();
@@ -1502,7 +1528,7 @@ document.addEventListener("keydown", (e) => {
     render();
   }
 });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render());
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => cambiarTema(() => {}));
 // La app no se mueve como una página web (sobre todo con el teclado abierto):
 // solo se desplazan las listas, las hojas y las filas horizontales, y sin «arrastrar» el resto.
 let t0 = null;
