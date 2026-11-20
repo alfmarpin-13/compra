@@ -15,7 +15,7 @@ App web instalable (PWA) para la lista de la compra de casa, compartida en tiemp
 - **Backend:** Firebase, en el plan gratuito Spark.
   - **Firebase Auth**, solo con email y contraseña. Se inicializa con `initializeAuth` (persistencia IndexedDB/local/sesión) y **sin** `popupRedirectResolver`: `getAuth()` carga un iframe de authDomain antes de dar la sesión y en el iPhone tardaba 40-50 s.
   - **Cloud Firestore**, con caché persistente local (`persistentLocalCache`) para que funcione sin conexión y sincronice al volver. Se usa `persistentSingleTabManager({ forceOwnership: true })` y `experimentalForceLongPolling: true` porque en el iPhone con datos móviles el multipestaña y el streaming provocaban arranques de 40-50 s.
-  - SDK modular v10 o superior, cargado desde `https://www.gstatic.com/firebasejs/...`.
+  - SDK modular 10.14.1 **dentro de la app** (`vendor/firebase/`, copiado del paquete npm oficial; solo se cambia la importación interna de gstatic por `./firebase-app.js`). Decisión de seguridad de Alfonso: la app no ejecuta código de servidores externos.
 - **Repositorio público.** No se sube ningún dato al repo. La configuración web de Firebase (apiKey, projectId…) no es secreta y puede ir en el código. La seguridad la dan las reglas de Firestore (sección 9).
 - **Idioma:** toda la interfaz en español de España.
 - **Rendimiento:** debe abrir al instante desde la pantalla de inicio. El service worker cachea la carcasa de la app. Además se guarda en `localStorage` una copia de lo último mostrado (`compra.snap`) solo para pintar al abrir mientras Firebase arranca; la fuente de verdad sigue siendo Firestore y la copia se sustituye en cuanto llegan sus datos.
@@ -251,26 +251,18 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
 - `viewport-fit=cover` y márgenes con `env(safe-area-inset-*)` para la isla dinámica y el indicador de inicio.
 - **Service worker:** precache de la carcasa (HTML, CSS, JS, tipografías de `fonts/` e iconos) con versión en el nombre de la caché. Los datos los gestiona la caché de Firestore. Al haber versión nueva, se aplica en la siguiente apertura, sin avisos.
 
-## 9. Seguridad: reglas de Firestore
+## 9. Seguridad
 
-Alfonso pegará los dos UID tras crear los usuarios.
+Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes sin decírselo:
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{db}/documents {
-    function esDeCasa() {
-      return request.auth != null &&
-        request.auth.uid in ['UID_ALFONSO', 'UID_MARILUZ'];
-    }
-    match /{document=**} {
-      allow read, write: if esDeCasa();
-    }
-  }
-}
-```
-
-Añade validaciones básicas de forma en `items`, `products` y `stores` (campos y tipos esperados) si no complican el código.
+- **Reglas de Firestore** (`firestore.rules`, pegadas a mano en la consola con los dos UID; Alfonso las pega, el repo lleva `UID_ALFONSO`/`UID_MARILUZ`): solo los dos UID leen y escriben; solo `stores`, `products` e `items`; campos cerrados con tipo y tamaño máximo (nombres ≤ 80, ids `^[A-Za-z0-9_-]{1,70}$`, `addedBy`/`checkedBy` solo «Alfonso»/«Mariluz», etc.); en una modificación, los campos que no cambian no se recomprueban (un dato antiguo no bloquea tachar). Se prueban en el emulador de Firestore con todas las escrituras de la app y una batería de ataques antes de cambiarlas.
+- **Sin código de fuera:** Firebase y la librería de voz van en `vendor/`. El modelo de voz se descarga de Hugging Face, pero es solo datos que corren en el sandbox de WebAssembly del worker.
+- **CSP en `<meta>`** (`index.html`): `script-src 'self' 'wasm-unsafe-eval'`, sin scripts en línea (el tema va en `js/tema.js`), `connect-src` solo a Firestore, Identity Toolkit, Secure Token y Hugging Face, `img-src` admite `www.google.com` (Firestore lo usa para comprobar la conexión), `object-src`/`frame-src`/`base-uri` cerrados. `style-src` necesita `'unsafe-inline'` por los `style=""` de las plantillas. Si se añade un servicio nuevo, hay que añadirlo aquí.
+- **Sin marcos:** `js/tema.js` no deja abrir la app dentro de otra web (GitHub Pages no permite la cabecera `frame-ancestors`).
+- **Todo texto que venga de los datos pasa por `esc()`** antes de ir al HTML, también los identificadores en atributos.
+- **Cerrar sesión** borra la copia local de Firestore (IndexedDB) y `compra.snap`, y recarga.
+- **Copia de seguridad cifrada:** el repo es público; `scripts/copia.mjs` cifra con AES-256-GCM (clave del secreto `COPIA_CLAVE`) y no escribe nada si falta la clave. Las acciones del workflow van fijadas por commit.
+- **Fuera del código (lo hace Alfonso en las consolas):** clave de API restringida al dominio y a las tres APIs, alta de cuentas desactivada, protección contra enumeración de correos, contraseñas largas, verificación en dos pasos en Google y GitHub, cuenta de servicio de solo lectura.
 
 ## 10. Lo que NO hay que copiar del prototipo
 

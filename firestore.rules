@@ -1,52 +1,77 @@
 rules_version = '2';
+// Reglas de seguridad de Compra. Pégalas en Firebase → Firestore Database → Reglas → Publicar.
+// Sustituye UID_ALFONSO y UID_MARILUZ por los UID de Authentication → Usuarios.
+//
+// Qué garantizan:
+// - Solo vosotros dos (por UID, no por email) podéis leer o escribir. Sin sesión, nada.
+// - Solo existen tres colecciones: stores, products e items. Cualquier otra ruta está cerrada.
+// - Cada documento solo puede tener sus campos, con su tipo y un tamaño máximo (nadie puede
+//   meter textos enormes ni campos raros, ni aunque robara la sesión desde fuera de la app).
+// - Los identificadores de documento solo pueden tener letras, números, «-» y «_».
+// - En una modificación, los campos que no cambian no se vuelven a comprobar: así un dato antiguo
+//   que no cumpliera alguna regla nueva no bloquea tachar ni editar.
 service cloud.firestore {
   match /databases/{db}/documents {
-    // Sustituye los dos UID por los de Authentication → Usuarios.
+
     function esDeCasa() {
-      return request.auth != null &&
-        request.auth.uid in ['UID_ALFONSO', 'UID_MARILUZ'];
+      return request.auth != null
+        && request.auth.uid in ['UID_ALFONSO', 'UID_MARILUZ'];
     }
-    function nulableString(v) { return v == null || v is string; }
-    function nulableTime(v) { return v == null || v is timestamp; }
+    function d() { return request.resource.data; }
+    // En una modificación, el campo no ha cambiado.
+    function igual(f) {
+      return request.method == 'update'
+        && !(f in request.resource.data.diff(resource.data).affectedKeys());
+    }
+    function texto(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
+    function textoONulo(v, max) { return v == null || (v is string && v.size() <= max); }
+    function fechaONula(v) { return v == null || v is timestamp; }
+    function persona(v) { return v in ['Alfonso', 'Mariluz']; }
+    function idValido(id) { return id.size() <= 70 && id.matches('^[A-Za-z0-9_-]+$'); }
 
     match /stores/{id} {
       allow read, delete: if esDeCasa();
-      allow create, update: if esDeCasa()
-        && request.resource.data.keys().hasOnly(['name', 'kind', 'order', 'aliases', 'icon'])
-        && request.resource.data.name is string && request.resource.data.name.size() > 0
-        && request.resource.data.kind in ['generic', 'unique']
-        && request.resource.data.order is number
-        && request.resource.data.aliases is list
-        && nulableString(request.resource.data.get('icon', null));
+      allow create, update: if esDeCasa() && idValido(id)
+        && d().keys().hasOnly(['name', 'kind', 'order', 'aliases', 'icon'])
+        && d().keys().hasAll(['name', 'kind', 'order', 'aliases'])
+        && (igual('name') || texto(d().name, 40))
+        && (igual('kind') || d().kind in ['generic', 'unique'])
+        && (igual('order') || (d().order is int && d().order >= 0 && d().order < 1000))
+        && (igual('aliases') || (d().aliases is list && d().aliases.size() <= 30))
+        && (igual('icon') || textoONulo(d().get('icon', null), 40));
     }
 
     match /products/{id} {
       allow read, delete: if esDeCasa();
-      allow create, update: if esDeCasa()
-        && request.resource.data.keys().hasOnly(['name', 'nameKey', 'category', 'storeId', 'icon', 'createdAt', 'updatedAt'])
-        && request.resource.data.name is string && request.resource.data.name.size() > 0
-        && request.resource.data.nameKey is string
-        && request.resource.data.category is string
-        && nulableString(request.resource.data.storeId)
-        && nulableString(request.resource.data.get('icon', null));
+      allow create, update: if esDeCasa() && idValido(id)
+        && d().keys().hasOnly(['name', 'nameKey', 'category', 'storeId', 'icon', 'createdAt', 'updatedAt'])
+        && d().keys().hasAll(['name', 'nameKey', 'category'])
+        && (igual('name') || texto(d().name, 80))
+        && (igual('nameKey') || texto(d().nameKey, 80))
+        && (igual('category') || texto(d().category, 30))
+        && (igual('storeId') || textoONulo(d().get('storeId', null), 70))
+        && (igual('icon') || textoONulo(d().get('icon', null), 40))
+        && (igual('createdAt') || fechaONula(d().get('createdAt', null)))
+        && (igual('updatedAt') || fechaONula(d().get('updatedAt', null)));
     }
 
     match /items/{id} {
       allow read, delete: if esDeCasa();
-      allow create, update: if esDeCasa()
-        && request.resource.data.keys().hasOnly(['productId', 'name', 'category', 'storeId', 'addedBy', 'addedAt', 'checked', 'checkedAt', 'checkedBy'])
-        && request.resource.data.productId is string
-        && request.resource.data.name is string && request.resource.data.name.size() > 0
-        && request.resource.data.category is string
-        && nulableString(request.resource.data.storeId)
-        && request.resource.data.addedBy is string
-        && request.resource.data.addedAt is timestamp
-        && request.resource.data.checked is bool
-        && nulableTime(request.resource.data.checkedAt)
-        && nulableString(request.resource.data.checkedBy);
+      allow create, update: if esDeCasa() && idValido(id)
+        && d().keys().hasOnly(['productId', 'name', 'category', 'storeId', 'addedBy', 'addedAt', 'checked', 'checkedAt', 'checkedBy'])
+        && d().keys().hasAll(['name', 'category', 'addedBy', 'addedAt', 'checked'])
+        && (igual('productId') || textoONulo(d().get('productId', null), 70))
+        && (igual('name') || texto(d().name, 80))
+        && (igual('category') || texto(d().category, 30))
+        && (igual('storeId') || textoONulo(d().get('storeId', null), 70))
+        && (igual('addedBy') || persona(d().addedBy))
+        && (igual('addedAt') || d().addedAt is timestamp)
+        && (igual('checked') || d().checked is bool)
+        && (igual('checkedAt') || fechaONula(d().get('checkedAt', null)))
+        && (igual('checkedBy') || d().get('checkedBy', null) == null || persona(d().get('checkedBy', null)));
     }
 
-    // Cualquier otra ruta: solo la casa (y en la práctica la app no usa más).
+    // Cualquier otra ruta: cerrada para todo el mundo.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -373,19 +373,19 @@ function vRow(i) {
   const st = i.storeId && storeById(i.storeId) ? `${slot(i.storeId)}${esc(storeName(i.storeId))}` : esc(GENERIC);
   const by = byOther(i) ? `<span class="by">· ${esc(i.addedBy)}</span>` : "";
   const tk = ticking.has(i.id);
-  return `<div class="row ${i.checked ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
+  return `<div class="row ${i.checked ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${esc(i.id)}" data-id="${esc(i.id)}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
     <span class="ck">${i.checked ? ic("check", 16) : ""}</span>
     <div class="rinfo"><div class="nm">${esc(i.name)}</div><div class="st">${st}${by}</div></div>
-    ${tk ? `<button class="tundo" data-act="untick" data-id="${i.id}">Deshacer</button>` : `<button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>`}</div>`;
+    ${tk ? `<button class="tundo" data-act="untick" data-id="${esc(i.id)}">Deshacer</button>` : `<button class="edb" data-act="edit" data-id="${esc(i.id)}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>`}</div>`;
 }
 function vTile(i) {
   const st = storeById(i.storeId);
   const p = productOf(i);
   const tk = ticking.has(i.id);
-  return `<div class="tile ${i.checked && !tk ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="t-${i.id}" data-id="${i.id}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
-    ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(i.addedBy)}">${esc(i.addedBy.charAt(0))}</span>` : ""}${st ? `<span class="tstore" title="${esc(st.name)}">${slot(st.id)}</span>` : ""}<button class="edb" data-act="edit" data-id="${i.id}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
+  return `<div class="tile ${i.checked && !tk ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="t-${esc(i.id)}" data-id="${esc(i.id)}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
+    ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(i.addedBy)}">${esc(i.addedBy.charAt(0))}</span>` : ""}${st ? `<span class="tstore" title="${esc(st.name)}">${slot(st.id)}</span>` : ""}<button class="edb" data-act="edit" data-id="${esc(i.id)}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
     <span class="tic">${pic(i.name, i.category, p?.icon)}</span>
-    <span class="tnm">${esc(i.name)}</span>${tk ? `<span class="tchk" aria-hidden="true">${ic("check", 22)}</span><button class="tundo" data-act="untick" data-id="${i.id}">Deshacer</button>` : ""}</div>`;
+    <span class="tnm">${esc(i.name)}</span>${tk ? `<span class="tchk" aria-hidden="true">${ic("check", 22)}</span><button class="tundo" data-act="untick" data-id="${esc(i.id)}">Deshacer</button>` : ""}</div>`;
 }
 const block = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vTile).join("")}</div>` : `<div class="group" data-key="${key}">${rows.map(vRow).join("")}</div>`);
 
@@ -511,7 +511,7 @@ function vMenu() {
 /* --- Despensa --- */
 function vPantryRow(p) {
   const on = !!pendingFor(p), due = isDue(p), st = statsFor(p);
-  return `<div class="prow tap" data-flip data-key="pr-${p.id}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
+  return `<div class="prow tap" data-flip data-key="pr-${esc(p.id)}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
     <span class="mini-ck ${on ? "on" : ""}" style="margin-top:4px">${on ? ic("check", 14) : ""}</span>
     <div class="pmain"><div class="pname">${esc(p.name)}</div>
       <div class="st" style="margin-top:2px">${p.storeId && storeById(p.storeId) ? slot(p.storeId) + esc(storeName(p.storeId)) : esc(GENERIC)}${st?.every ? `<span class="by">· cada ${plural(st.every, "día", "días")}</span>` : ""}</div></div>
@@ -519,7 +519,7 @@ function vPantryRow(p) {
 }
 function vPTile(p) {
   const on = !!pendingFor(p), due = isDue(p);
-  return `<div class="tile ptile ${on ? "on" : ""}" style="${catStyle(p.category)}" data-flip data-key="pt-${p.id}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" aria-label="${esc(p.name)}" tabindex="0">
+  return `<div class="tile ptile ${on ? "on" : ""}" style="${catStyle(p.category)}" data-flip data-key="pt-${esc(p.id)}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" aria-label="${esc(p.name)}" tabindex="0">
     ${on ? `<span class="tok">${ic("check", 12)}</span>` : ""}${due && !on ? `<span class="tdue">Toca</span>` : ""}${storeById(p.storeId) ? `<span class="tstore" title="${esc(storeName(p.storeId))}">${slot(p.storeId)}</span>` : ""}<button class="edb" data-act="pedit" data-k="${esc(p.id)}" aria-label="Editar ${esc(p.name)}">${ic("pencil", 15)}</button>
     <span class="tic">${pic(p.name, p.category, p.icon)}</span>
     <span class="tnm">${esc(p.name)}</span></div>`;
@@ -564,7 +564,7 @@ function vHistory() {
     ${S.historyLoaded && !days.length ? `<p class="histempty">${S.histQ ? "No aparece en el historial." : "Aquí irá lo que tachéis, agrupado por día."}</p>` : ""}
     ${days.map((d) => `<div class="trip" data-flip data-key="d-${d.k}"><h3>${esc(dayLabel(d.k))}</h3><p class="tsub2">${plural(d.items.length, "artículo tachado", "artículos tachados")}</p>
       <button class="tbtn" style="margin:8px 0 4px -12px" data-act="selDay" data-k="${d.k}">Seleccionar todo el día</button>
-      ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<button class="titem" data-flip data-key="${i.id}" data-act="selItem" data-k="${i.id}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button>`; }).join("")}
+      ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<button class="titem" data-flip data-key="${esc(i.id)}" data-act="selItem" data-k="${esc(i.id)}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button>`; }).join("")}
     </div>`).join("")}
    </div>
    ${sel ? `<div class="bottombtn" data-key="rebuy"><button class="btn out delbtn" data-act="histDel" aria-label="Borrar del historial (${sel})">${ic("trash-2", 20)}</button><button class="btn fill" data-act="rebuy">Volver a añadir (${sel})</button></div>` : ""}
@@ -654,7 +654,7 @@ function shStores() {
   return `<div class="sbody">
    <div class="shead"><h2>Tiendas</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
    <p class="help">Una tienda <b>genérica</b> (Mercadona, Lidl…) muestra lo suyo y todo lo apuntado como «Cualquier súper», como los huevos. Una tienda <b>única</b> (farmacia, frutería…) solo muestra lo suyo. Toca una para ver su lista.</p>
-   <div class="card">${rows.map((r) => `<div class="prow tap" data-key="s-${r.st.id}" data-act="shopAt" data-k="${esc(r.st.id)}" style="align-items:center" tabindex="0">${slot(r.st.id, true)}
+   <div class="card">${rows.map((r) => `<div class="prow tap" data-key="s-${esc(r.st.id)}" data-act="shopAt" data-k="${esc(r.st.id)}" style="align-items:center" tabindex="0">${slot(r.st.id, true)}
       <div class="pmain"><div class="pname">${esc(r.st.name)}</div><div class="pmeta">${r.st.kind === "generic" ? "Genérica" : "Única"} · ${meta(r)}</div></div>
       <button class="ib" style="width:44px;height:44px;color:var(--muted);background:transparent" data-act="sedit" data-k="${esc(r.st.id)}" aria-label="Editar ${esc(r.st.name)}">${ic("pencil", 18)}</button></div>`).join("")}
    </div>
@@ -1548,10 +1548,13 @@ async function doLogin() {
   S.loginBusy = false;
   render();
 }
-function doLogout() {
+async function doLogout() {
   S.menu = false; S.sheet = null; S.live = false; clearSnap();
   stopData();
-  DB.logout();
+  S.phase = "login"; render();
+  // Se borra también la copia local de Firestore y se recarga limpia.
+  await DB.logout();
+  location.reload();
 }
 function stopData() {
   if (sub) { sub.stop(); sub = null; }
