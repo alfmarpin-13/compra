@@ -2,6 +2,10 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v68 · 20/11/2026
+- «Pasta de dientes» ya no se toma por «Pasta de lentejas»: al corregir faltas, cada palabra tiene que parecerse a la suya (una falta cambia letras, no palabras).
+- Cuando se corrige una falta, la hoja lo dice y deja elegir: «Es «Plátanos»» o «Es otro producto» (que lo crea con lo escrito). También en la Despensa, donde antes solo decía «Ya está en la despensa».
+
 ## v67 · 20/11/2026
 - La franja de la hora la pinta ahora la propia app, así que cambia al instante con el modo, sin recargar: en oscuro, del fondo oscuro; en claro, verde bosque (la hora y la batería salen en blanco). Se quita la recarga al cambiar de modo de la v66.
 

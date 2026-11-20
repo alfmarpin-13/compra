@@ -690,14 +690,18 @@ function entryCat(e) {
   return `${rotulo("Categoría")}<div class="opts">${CATS_AZ.map((c) => `<button class="chip sm ${e.category === c.k ? "on" : ""}" data-act="eCat" data-i="${e._ix}" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div>`;
 }
 function entryNote(e) {
-  if (e.inPantry) return `<p class="note">Ya está en la despensa.</p>`;
+  if (e.inPantry) return e.corrected ? notaCorregido(e, "Ya está en la despensa.") : `<p class="note">Ya está en la despensa.</p>`;
   if (e.dup) return `<p class="note">Ya está en la lista. No lo duplico.</p>`;
   return entryNoteStore(e) + entryCat(e);
+}
+/** Al corregir una falta se dice qué se ha entendido y se deja decir que es otra cosa (se crea con lo escrito). */
+function notaCorregido(e, extra) {
+  return `<p class="note">Entiendo «${esc(e.name)}» (escribiste «${esc(e.corrected)}»).${extra ? " " + esc(extra) : ""}</p><div class="opts"><button class="chip sm on" data-act="eSiMismo" data-i="${e._ix}">Es «${esc(e.name)}»</button><button class="chip sm" data-act="eNuevo" data-i="${e._ix}">Es otro producto</button></div>`;
 }
 function entryNoteStore(e) {
   let h = "";
   if (e.maybe) h += `<p class="note">Ya tenéis «${esc(e.maybe.name)}». ¿Es lo mismo o es otro producto?</p><div class="opts"><button class="chip sm" data-act="eSame" data-i="${e._ix}">Es «${esc(e.maybe.name)}»</button><button class="chip sm on" data-act="eOtro" data-i="${e._ix}">Es otro</button></div>`;
-  if (e.corrected) h += `<p class="note">Entiendo «${esc(e.name)}» (escribiste «${esc(e.corrected)}»).</p>`;
+  if (e.corrected) h += notaCorregido(e, "");
   if (e.explicit) {
     const p = e.productId ? productById(e.productId) : null;
     h += `<p class="pmeta" style="margin-top:4px">${p && (p.storeId ?? null) !== (e.storeId ?? null) ? `Normalmente en ${esc(storeName(p.storeId))}; esta vez en ${esc(storeName(e.storeId))}.` : e.known ? "Como has dicho." : "Es nuevo. Lo guardo en la despensa."}</p>`;
@@ -1516,6 +1520,17 @@ function act(a, el, e) {
     case "eCats": { const en = sh.entries[+el.dataset.i]; en.showCats = !en.showCats; return render(); }
     case "eCat": { const en = sh.entries[+el.dataset.i]; en.category = k; en.catChanged = true; en.showCats = false; return render(); }
     case "eOtro": { const en = sh.entries[+el.dataset.i]; en.maybe = null; return render(); }
+    case "eSiMismo": { const en = sh.entries[+el.dataset.i]; en.corrected = null; return render(); }
+    case "eNuevo": {
+      // No era el producto que se había entendido: se crea uno nuevo con lo que se escribió.
+      const en = sh.entries[+el.dataset.i], name = cap(en.corrected || en.name);
+      Object.assign(en, { productId: null, name, category: en.lucia ? "lucia" : guessCat(name), known: false, corrected: null, habitual: null, ask: null, catChanged: false });
+      if (!en.explicit) en.storeId = null;
+      const k = nameKey(name);
+      if (sh.target === "pantry") { en.inPantry = !!productByKey(k); en.dup = en.inPantry; en.include = !en.inPantry; }
+      else { en.dup = S.pending.some((i) => nameKey(i.name) === k); en.include = !en.dup; }
+      return render();
+    }
     case "eSame": {
       // Era el producto que ya teníais: se usa ese (con su nombre, categoría y tienda habitual).
       const en = sh.entries[+el.dataset.i], p = en.maybe && productById(en.maybe.id);
