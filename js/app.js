@@ -7,7 +7,7 @@ import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW, nombre, ALIAS_LOGIN 
 import { LUCIDE } from "./iconos.js";
 import { PRODUCTOS } from "./productos.js";
 import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
-import { parseUtterance, parseCommand, isClear, inStore, especialidad, matchProduct, guessCategory as guessCat } from "./parser.js";
+import { parseUtterance, parseCommand, isClear, inStore, especialidad, tiendaPara, matchProduct, guessCategory as guessCat } from "./parser.js";
 
 /* ===================================================================
    Iconos
@@ -679,8 +679,11 @@ function vSheet() {
 function storeChip(id, selected, act, attrs = "") {
   return `<button class="chip sm ${selected === id ? "on" : ""}" data-act="${act}" data-k="${esc(id || "")}" ${attrs}>${id ? slot(id) : ""}${esc(id ? storeName(id) : GENERIC)}</button>`;
 }
+/** Tiendas que se pueden elegir para algo de esa categoría: la Frutería no sale para la fruta (ya la ve sola). */
+const tiendasPara = (category) => S.stores.map((s) => s.id).filter((id) => tiendaPara(id, category, S.stores));
 function entryChips(e, ix) {
-  const all = S.stores.map((s) => s.id);
+  e.storeId = tiendaPara(e.storeId, e.category, S.stores);
+  const all = tiendasPara(e.category);
   const keys = e.showAll ? [null, ...all] : [...new Set([e.ask ? e.ask.storeId : e.storeId, null])];
   return keys.map((k) => storeChip(k, e.storeId, "eStore", `data-i="${ix}"`)).join("") + (e.showAll ? "" : `<button class="chip sm" data-act="eMore" data-i="${ix}">Otra…</button>`);
 }
@@ -712,7 +715,13 @@ function entryNoteStore(e) {
 }
 function shReview(s) {
   const n = s.entries.filter((e) => e.include).length;
-  s.entries.forEach((e, ix) => (e._ix = ix));
+  s.entries.forEach((e, ix) => {
+    e._ix = ix;
+    // Si al cambiar la categoría la tienda pasa a ser una de especialidad que ya la ve, se queda en «Cualquier súper».
+    e.storeId = tiendaPara(e.storeId, e.category, S.stores);
+    if (e.habitual) e.habitual = tiendaPara(e.habitual, e.category, S.stores);
+    if (e.ask && !tiendaPara(e.ask.storeId, e.category, S.stores)) e.ask = null;
+  });
   return `<div class="sbody">
    <div class="shead"><h2>${s.entries.length > 1 ? "Esto es lo que he entendido" : s.target === "pantry" ? "¿Dónde se compra?" : "¿Dónde lo apunto?"}</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
    <p class="said">${s.voice ? "Has dicho" : "Has escrito"} <q>${esc(s.said)}</q></p>
@@ -743,7 +752,7 @@ function shEdit(s) {
    <h2 class="stitle">Editar artículo</h2>
    <div class="field"><label for="en">Artículo</label><input id="en" type="search" inputmode="text" autocapitalize="sentences" name="articulo-compra" value="${esc(d.name)}" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
-     ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "edStore")).join("")}</div>
+     ${(d.storeId = tiendaPara(d.storeId, d.category, S.stores), [null, ...tiendasPara(d.category)]).map((k) => storeChip(k, d.storeId, "edStore")).join("")}</div>
      <p class="hint-ph" style="margin-top:8px">Se recordará para la próxima vez que lo apuntéis.</p></div>
    <div><p class="labelsm" style="margin-bottom:8px">Mover a…</p><div class="wrap">
      ${CATS_AZ.map((c) => `<button class="chip sm ${d.category === c.k ? "on" : ""}" data-act="edCat" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div></div>
@@ -762,7 +771,7 @@ function shStores() {
   };
   return `<div class="sbody">
    <div class="shead"><h2>Tiendas</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
-   <p class="help">Una tienda <b>genérica</b> (Mercadona, Lidl…) muestra lo suyo, todo lo de «Cualquier súper» y lo de las tiendas de especialidad. Una de <b>especialidad</b> (frutería, carnicería, panadería…) muestra lo suyo y lo de «Cualquier súper» de lo que vende. Una <b>única</b> (farmacia) solo muestra lo suyo. Toca una para ver su lista.</p>
+   <p class="help">Una tienda <b>genérica</b> (Mercadona, Lidl…) muestra lo suyo y todo lo de «Cualquier súper». Una de <b>especialidad</b> (frutería, carnicería, farmacia…) sale sola cuando hay algo de lo suyo apuntado: la fruta no hace falta apuntarla en la frutería. Los medicamentos solo salen en la farmacia. Toca una para ver su lista.</p>
    <div class="card">${rows.map((r) => `<div class="prow tap" data-key="s-${esc(r.st.id)}" data-act="shopAt" data-k="${esc(r.st.id)}" style="align-items:center" tabindex="0">${slot(r.st.id, true)}
       <div class="pmain"><div class="pname">${esc(r.st.name)}</div><div class="pmeta">${r.st.kind === "generic" ? "Genérica" : especialidad(r.st) ? "Especialidad" : "Única"} · ${meta(r)}</div></div>
       <button class="ib" style="width:44px;height:44px;color:var(--muted);background:transparent" data-act="sedit" data-k="${esc(r.st.id)}" aria-label="Editar ${esc(r.st.name)}">${ic("pencil", 18)}</button></div>`).join("")}
@@ -780,7 +789,7 @@ function shSEdit(s) {
    <div class="field"><label for="sn">Tienda</label><input id="sn" type="search" inputmode="text" autocapitalize="sentences" name="tienda-compra" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
    <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
-   ${(() => { const cats = especialidad({ name: d.name, kind: d.kind }); return cats ? `<p class="hint-ph" style="margin-top:-6px">Tienda de especialidad: también le salen ${esc(cats.map((c) => CAT[c].l.toLowerCase()).join(" y "))} de «Cualquier súper», y lo que apuntéis aquí sale también en los supermercados.</p>` : ""; })()}
+   ${(() => { const cats = especialidad({ name: d.name, kind: d.kind }); return cats ? `<p class="hint-ph" style="margin-top:-6px">Tienda de especialidad: le sale sola ${esc(cats.map((c) => CAT[c].l.toLowerCase()).join(" y "))}, sin apuntarla aquí.</p>` : ""; })()}
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
      <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${autoLogo(d.name) ? logoSpan(autoLogo(d.name)) : ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
      ${Object.keys(LOGOS).map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Logo ${LOGOS[g].match}">${logoSpan(g)}</button>`).join("")}
@@ -832,7 +841,7 @@ function shPEdit(s) {
    <div class="field"><label for="pn">Producto</label><input id="pn" type="search" inputmode="text" autocapitalize="sentences" name="producto-compra" value="${esc(d.name)}" placeholder="p. ej. Queso de cabra" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger);margin-top:-8px">${esc(s.err)}</p>` : ""}
    <div><p class="labelsm" style="margin-bottom:8px">Dónde se compra</p><div class="wrap">
-     ${[null, ...S.stores.map((x) => x.id)].map((k) => storeChip(k, d.storeId, "pdStore")).join("")}</div></div>
+     ${(d.storeId = tiendaPara(d.storeId, d.category, S.stores), [null, ...tiendasPara(d.category)]).map((k) => storeChip(k, d.storeId, "pdStore")).join("")}</div></div>
    <div><p class="labelsm" style="margin-bottom:8px">Categoría</p><div class="wrap">
      ${CATS_AZ.map((c) => `<button class="chip sm ${d.category === c.k ? "on" : ""}" data-act="pdCat" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div></div>
    ${s.id ? `<button class="tbtn danger" style="align-self:flex-start;margin-left:-12px" data-act="pdDel">Borrar de la despensa</button>` : ""}
@@ -881,6 +890,37 @@ function markFresh(ids) {
   setTimeout(() => { ids.forEach((id) => S.fresh.delete(id)); render(); }, 1800);
 }
 
+/** Toda escritura pasa por aquí: lo que una tienda de especialidad ya ve por su categoría (la fruta en la
+ *  Frutería, los medicamentos en la Farmacia) se guarda en «Cualquier súper» y sale allí solo. */
+function guardar(ops) {
+  DB.batch(ops.map((o) => {
+    if ((o.op !== "set" && o.op !== "update") || !o.data || (o.col !== "items" && o.col !== "products")) return o;
+    const cur = (o.col === "items" ? [...S.pending, ...S.today] : S.products).find((x) => x.id === o.id);
+    const storeId = "storeId" in o.data ? o.data.storeId ?? null : cur ? cur.storeId ?? null : null;
+    const n = tiendaPara(storeId, o.data.category ?? cur?.category, S.stores);
+    return n === storeId ? o : { ...o, data: { ...o.data, storeId: n } };
+  }));
+}
+/** Una vez por sesión, con los datos del servidor: lo de la fruta que estaba «en la Frutería» (y demás) pasa a
+ *  «Cualquier súper», y lo de Higiene que es de farmacia, a Medicamentos o Parafarmacia (solo la primera vez). */
+let limpiado = false;
+function limpiarEspecialidad() {
+  if (limpiado || !S.live || !S.me || !serverSynced || !productsSynced || !S.ready.stores) return;
+  limpiado = true;
+  const migKey = "mig58." + (S.me || "").toLowerCase();
+  const recat = !LS.get(migKey);
+  const ops = [];
+  for (const [col, rows] of [["products", S.products], ["items", S.pending]]) for (const x of rows) {
+    const data = {};
+    if (recat && x.category === "higiene") { const c = guessCat(x.name); if (c === "medicamentos" || c === "parafarmacia") data.category = c; }
+    const cat = data.category || x.category;
+    const n = tiendaPara(x.storeId ?? null, cat, S.stores);
+    if (n !== (x.storeId ?? null)) data.storeId = n;
+    if (Object.keys(data).length) ops.push({ op: "update", col, id: x.id, data: col === "products" ? { ...data, ...DB.touch() } : data });
+  }
+  if (recat) LS.set(migKey, "1");
+  if (ops.length) guardar(ops);
+}
 /** Apunta artículos. entries: [{name, category, storeId, productId?, include}] */
 function addEntries(entries) {
   const ops = [], added = [], seen = new Set();
@@ -911,7 +951,7 @@ function addEntries(entries) {
     ops.push({ op: "set", col: "items", id, data: DB.itemData(item) });
     added.push({ id, ...item });
   }
-  if (ops.length) DB.batch(ops);
+  if (ops.length) guardar(ops);
   markFresh(added.map((a) => a.id));
   return added;
 }
@@ -929,16 +969,16 @@ function addProducts(entries) {
     S.products.push(p);
     made.push(p);
   }
-  if (ops.length) DB.batch(ops);
+  if (ops.length) guardar(ops);
   return made;
 }
 function pantryAddedToast(made) {
   if (!made.length) return toast("Ya estaba todo en la despensa.");
   toast(made.length === 1 ? `${made[0].name} añadido a la despensa` : `${made.length} productos añadidos a la despensa`,
-    () => DB.batch(made.map((p) => ({ op: "delete", col: "products", id: p.id }))));
+    () => guardar(made.map((p) => ({ op: "delete", col: "products", id: p.id }))));
 }
 function undoAdd(added) {
-  return () => DB.batch(added.map((a) => ({ op: "delete", col: "items", id: a.id })));
+  return () => guardar(added.map((a) => ({ op: "delete", col: "items", id: a.id })));
 }
 function addedToast(added) {
   if (!added.length) { toast("Ya estaba todo en la lista."); return; }
@@ -964,7 +1004,7 @@ function pendVista() {
 }
 const doneVista = () => S.today.filter((i) => !ticking.has(i.id) && !unticking.has(i.id));
 function tick(i) {
-  DB.batch([{ op: "update", col: "items", id: i.id, data: DB.checkData(S.me) }]);
+  guardar([{ op: "update", col: "items", id: i.id, data: DB.checkData(S.me) }]);
   clearTimeout(ticking.get(i.id));
   ticking.set(i.id, setTimeout(() => { ticking.delete(i.id); render(); }, TICK_MS));
   if (S.band) S.band = null;
@@ -974,12 +1014,12 @@ function undoTick(id) {
   clearTimeout(ticking.get(id));
   ticking.delete(id);
   marcarDevuelto(id);
-  DB.batch([{ op: "update", col: "items", id, data: DB.uncheckData() }]);
+  guardar([{ op: "update", col: "items", id, data: DB.uncheckData() }]);
   render();
 }
 function untick(i) {
   marcarDevuelto(i.id);
-  DB.batch([{ op: "update", col: "items", id: i.id, data: DB.uncheckData() }]);
+  guardar([{ op: "update", col: "items", id: i.id, data: DB.uncheckData() }]);
 }
 function addProductToList(p, fresh = true) {
   const added = addEntries([{ productId: p.id, name: p.name, category: p.category, storeId: p.storeId ?? null }]);
@@ -1196,7 +1236,7 @@ function saveEdit(sh) {
     ops.push({ op: "update", col: "products", id: p.id, data: { storeId, category, ...DB.touch() } });
   }
   ops.push({ op: "update", col: "items", id: i.id, data: { name: p.name === name ? p.name : name, storeId, category, productId: p.id } });
-  DB.batch(ops);
+  guardar(ops);
   S.sheet = null;
   render();
 }
@@ -1224,12 +1264,12 @@ function savePEdit(sh) {
       if ((i.storeId ?? null) === oldStore) d.storeId = storeId;
       ops.push({ op: "update", col: "items", id: i.id, data: d });
     }
-    DB.batch(ops);
+    guardar(ops);
     S.sheet = null;
     toast(`Guardado: ${name}`);
   } else {
     const id = newProductId(k);
-    DB.batch([{ op: "set", col: "products", id, data: DB.productData({ name, category, storeId, icon: iconKeyFor(name) }, true) }]);
+    guardar([{ op: "set", col: "products", id, data: DB.productData({ name, category, storeId, icon: iconKeyFor(name) }, true) }]);
     S.sheet = null;
     S.pantryQ = "";
     toast(`${name} añadido a la despensa`);
@@ -1238,10 +1278,10 @@ function savePEdit(sh) {
 function deleteProduct(sh) {
   const p = productById(sh.id);
   if (!p) return;
-  DB.batch([{ op: "delete", col: "products", id: p.id }]);
+  guardar([{ op: "delete", col: "products", id: p.id }]);
   S.sheet = null;
   const copy = { ...p };
-  toast(`Borrado de la despensa: ${p.name}`, () => DB.batch([{ op: "set", col: "products", id: copy.id, data: DB.productData(copy, true) }]));
+  toast(`Borrado de la despensa: ${p.name}`, () => guardar([{ op: "set", col: "products", id: copy.id, data: DB.productData(copy, true) }]));
 }
 
 /* ---------- Tiendas ---------- */
@@ -1253,12 +1293,12 @@ function saveStore(sh) {
   if (sh.k) {
     const st = storeById(sh.k);
     const aliases = [...new Set([...(st.aliases || []), k])];
-    DB.batch([{ op: "update", col: "stores", id: st.id, data: { name, kind: sh.draft.kind, aliases, icon: sh.draft.icon || null } }]);
+    guardar([{ op: "update", col: "stores", id: st.id, data: { name, kind: sh.draft.kind, aliases, icon: sh.draft.icon || null } }]);
   } else {
     let id = slugId(k), n = 2;
     while (S.stores.some((s) => s.id === id)) id = slugId(k) + "-" + n++;
     const order = S.stores.reduce((m, s) => Math.max(m, s.order), -1) + 1;
-    DB.batch([{ op: "set", col: "stores", id, data: { name, kind: sh.draft.kind, order, aliases: [k], icon: sh.draft.icon || null } }]);
+    guardar([{ op: "set", col: "stores", id, data: { name, kind: sh.draft.kind, order, aliases: [k], icon: sh.draft.icon || null } }]);
   }
   S.sheet = { type: "stores" };
   render();
@@ -1268,7 +1308,7 @@ function moveStore(sh, dir) {
   const i = list.findIndex((s) => s.id === sh.k), j = i + dir;
   if (i < 0 || j < 0 || j >= list.length) return;
   [list[i], list[j]] = [list[j], list[i]];
-  DB.batch(list.map((s, ix) => ({ op: "update", col: "stores", id: s.id, data: { order: ix } })));
+  guardar(list.map((s, ix) => ({ op: "update", col: "stores", id: s.id, data: { order: ix } })));
   list.forEach((s, ix) => (s.order = ix));
   S.stores = list;
   render();
@@ -1279,7 +1319,7 @@ function deleteStore(sh) {
   S.pending.filter((i) => i.storeId === id).forEach((i) => ops.push({ op: "update", col: "items", id: i.id, data: { storeId: null } }));
   S.products.filter((p) => p.storeId === id).forEach((p) => ops.push({ op: "update", col: "products", id: p.id, data: { storeId: null, ...DB.touch() } }));
   ops.push({ op: "delete", col: "stores", id });
-  DB.batch(ops);
+  guardar(ops);
   if (S.store === id) S.store = null;
   S.sheet = { type: "stores" };
   render();
@@ -1320,12 +1360,12 @@ function deleteHistory(only) {
   const all = new Map([...S.today, ...S.history].map((i) => [i.id, i]));
   const gone = [...(only || S.histSel)].map((id) => all.get(id)).filter(Boolean);
   if (!gone.length) return;
-  DB.batch(gone.map((i) => ({ op: "delete", col: "items", id: i.id })));
+  guardar(gone.map((i) => ({ op: "delete", col: "items", id: i.id })));
   const ids = new Set(gone.map((i) => i.id));
   S.history = S.history.filter((i) => !ids.has(i.id));
   S.histSel = new Set([...S.histSel].filter((id) => !ids.has(id)));
   toast(gone.length === 1 ? `Borrado del historial: ${gone[0].name}` : `Borrados ${gone.length} artículos del historial`, () => {
-    DB.batch(gone.map((i) => ({ op: "set", col: "items", id: i.id, data: DB.itemData(i) })));
+    guardar(gone.map((i) => ({ op: "set", col: "items", id: i.id, data: DB.itemData(i) })));
     // Lo de hoy vuelve solo por el listener; lo de días anteriores se repone en memoria.
     S.history = [...S.history, ...gone.filter((i) => !S.today.some((t) => t.id === i.id))];
     render();
@@ -1421,9 +1461,9 @@ function act(a, el, e) {
       const i = itemById(sh.id);
       S.sheet = null;
       if (!i) return render();
-      DB.batch([{ op: "delete", col: "items", id: i.id }]);
+      guardar([{ op: "delete", col: "items", id: i.id }]);
       const copy = { ...i };
-      return toast(`Eliminado: ${i.name}`, () => DB.batch([{ op: "set", col: "items", id: copy.id, data: DB.itemData(copy) }]));
+      return toast(`Eliminado: ${i.name}`, () => guardar([{ op: "set", col: "items", id: copy.id, data: DB.itemData(copy) }]));
     }
     case "pedit": e.stopPropagation(); return openPEdit(k);
     case "pnew": return openPEdit(null);
@@ -1436,7 +1476,7 @@ function act(a, el, e) {
       if (lpFired) { lpFired = false; return; }
       const p = productById(k); if (!p) return;
       const ex = pendingFor(p);
-      if (ex) DB.batch([{ op: "delete", col: "items", id: ex.id }]); else addProductToList(p, false);
+      if (ex) guardar([{ op: "delete", col: "items", id: ex.id }]); else addProductToList(p, false);
       return render();
     }
     case "undo": return runUndo();
@@ -1479,8 +1519,8 @@ function act(a, el, e) {
       const ids = sh.rows.filter((r) => r.on && S.pending.some((i) => i.id === r.id)).map((r) => r.id);
       S.sheet = null;
       if (!ids.length) return render();
-      DB.batch(ids.map((id) => ({ op: "update", col: "items", id, data: DB.checkData(S.me) })));
-      return toast(ids.length === 1 ? "Se ha tachado 1 artículo" : `Se han tachado ${ids.length} artículos`, () => DB.batch(ids.map((id) => ({ op: "update", col: "items", id, data: DB.uncheckData() }))));
+      guardar(ids.map((id) => ({ op: "update", col: "items", id, data: DB.checkData(S.me) })));
+      return toast(ids.length === 1 ? "Se ha tachado 1 artículo" : `Se han tachado ${ids.length} artículos`, () => guardar(ids.map((id) => ({ op: "update", col: "items", id, data: DB.uncheckData() }))));
     }
     case "review1": { S.menu = false; S.sheet = { type: "one", queue: dueList().slice(0, 12).map((p) => p.id), ix: 0, added: 0 }; return render(); }
     case "oneAdd": { const p = productById(sh.queue[sh.ix]); if (p && !pendingFor(p)) { addProductToList(p); sh.added++; } sh.ix++; return render(); }
@@ -1825,7 +1865,7 @@ function fixSpaces(col, list) {
       x.name = n;
     }
   }
-  if (ops.length) DB.batch(ops);
+  if (ops.length) guardar(ops);
   return list;
 }
 /* ---------- Lo que añade la otra persona ----------
@@ -1897,12 +1937,12 @@ function startData() {
   if (!S.ready.pending) S.ready = { stores: false, products: false, pending: false };
   setTimeout(() => { if (!S.ready.pending) { S.slowLoad = true; render(); } }, 8000);
   sub = DB.subscribe({
-    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; saveSnap(); if (S.store && !storeById(S.store)) S.store = null; renderSoon(); },
+    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; saveSnap(); if (S.store && !storeById(S.store)) S.store = null; renderSoon(); setTimeout(limpiarEspecialidad, 0); },
     products(list, added = [], fromCache) {
       const nuevos = !initialProducts && productsSynced ? added.filter((a) => !a.local).map((a) => a.id) : [];
       if (fromCache === false) productsSynced = true;
       initialProducts = false;
-      S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); renderSoon();
+      S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); renderSoon(); limpiarEspecialidad();
       if (nuevos.length) notaOtro("prods", nuevos);
     },
     pending(list, added, fromCache) {
@@ -1913,7 +1953,7 @@ function startData() {
       const primeraVezServidor = fromCache === false && !serverSynced;
       if (fromCache === false) serverSynced = true;
       initialPending = false;
-      S.pending = fixSpaces("items", list); S.ready.pending = true; mark("datos"); if (fromCache === false) mark("servidor"); saveSnap(); renderSoon();
+      S.pending = fixSpaces("items", list); S.ready.pending = true; mark("datos"); if (fromCache === false) mark("servidor"); saveSnap(); renderSoon(); setTimeout(limpiarEspecialidad, 0);
       if (nuevos.length) notaOtro("items", nuevos);
       // Al abrir la app: cartel con lo que añadió la otra persona desde la última vez.
       if (primeraVezServidor) { volviendoHasta = Date.now() + 1500; setTimeout(resumenOtro, 1500); }

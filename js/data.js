@@ -32,6 +32,8 @@ export const CATS = [
   ["bebidas", "Bebidas", "cup-soda", "#8A4D70", "#E3B2D0"],
   ["lucia", "Lucía", "baby", "var(--primary)", "var(--primary)"],
   ["higiene", "Higiene", "bath", "#7B5C80", "#D8BEDC"],
+  ["medicamentos", "Medicamentos", "pill", "#8A4B4B", "#E6B0AC"],
+  ["parafarmacia", "Parafarmacia", "cross", "#3F7067", "#A9D6CB"],
   ["limpieza", "Limpieza", "spray-can", "#60678A", "#C5CBE4"],
   ["hogar", "Hogar", "house", "#4C5D7A", "#BCCAE6"],
   ["otros", "Otros", "shopping-basket", "#686570", "#C9C0D0"],
@@ -60,7 +62,9 @@ export const KW = {
   congelados: ["congelad", "congelado", "congelada", "congelados", "congeladas", "helado", "pizza", "croqueta", "empanadilla", "varitas", "san jacobo", "nugget", "hielo", "verdura congelada"],
   bebidas: ["agua", "cerveza", "vino", "cava", "champan", "sidra", "refresco", "cola", "coca cola", "fanta", "tonica", "gaseosa", "zumo", "nectar", "bebida isotonica", "aquarius", "ginebra", "ron", "whisky", "vermut", "tinto de verano", "horchata"],
   lucia: ["panal", "toallita", "potito", "biberon", "tetina", "chupete", "bebe", "papilla", "leche de continuacion", "leche de crecimiento", "leche infantil", "crema del culito", "crema de panal", "suero fisiologico"],
-  higiene: ["gel", "champu", "acondicionador", "mascarilla", "desodorante", "cepillo de dientes", "pasta de dientes", "dentifrico", "enjuague", "colutorio", "hilo dental", "compresa", "tampon", "protege slip", "salvaslip", "crema", "colonia", "perfume", "maquinilla", "cuchilla", "espuma de afeitar", "jabon de manos", "jabon", "bastoncillo", "algodon", "pasta dental", "protector solar", "crema solar", "tirita", "ibuprofeno", "paracetamol", "medicina", "pastilla", "termometro", "panuelo"],
+  higiene: ["gel", "champu", "acondicionador", "mascarilla", "desodorante", "cepillo de dientes", "pasta de dientes", "dentifrico", "enjuague", "colutorio", "hilo dental", "compresa", "tampon", "protege slip", "salvaslip", "crema", "colonia", "perfume", "maquinilla", "cuchilla", "espuma de afeitar", "jabon de manos", "jabon", "bastoncillo", "algodon", "pasta dental", "protector solar", "crema solar", "panuelo"],
+  medicamentos: ["medicamento", "medicina", "pastilla", "comprimido", "ibuprofeno", "paracetamol", "aspirina", "gelocatil", "dalsy", "apiretal", "termalgin", "nolotil", "metamizol", "enantyum", "dexketoprofeno", "omeprazol", "almax", "antiacido", "antibiotico", "amoxicilina", "antihistaminico", "ebastina", "loratadina", "cetirizina", "frenadol", "jarabe", "mucosan", "fluimucil", "bisolvon", "antigripal", "colirio", "gotas para", "spray nasal", "receta", "inhalador", "ventolin", "vacuna", "laxante", "fortasec", "lorazepam", "orfidal", "anticonceptiva", "pildora"],
+  parafarmacia: ["parafarmacia", "tirita", "aposito", "gasa", "venda", "esparadrapo", "betadine", "povidona", "clorhexidina", "cristalmina", "agua oxigenada", "alcohol de 96", "alcohol sanitario", "termometro", "test de embarazo", "test de antigenos", "mascarilla quirurgica", "mascarilla ffp2", "pomada", "lagrimas artificiales", "suero oral", "sueroral", "vitamina", "magnesio", "melatonina", "probiotico", "colageno", "preservativo", "lubricante", "crema hidratante facial", "protector labial", "repelente", "pastillas para la garganta", "caramelos para la garganta", "strepsils", "juanolas"],
   limpieza: ["lejia", "multiusos", "oxi", "oxicolor", "oxiblanco", "quitamanchas", "jabon marsella", "jabon de marsella", "lavadora", "detergente", "suavizante", "friegasuelos", "friega", "limpiador", "limpia", "limpiacristales", "quitagrasa", "desengrasante", "lavavajillas", "pastilla lavavajillas", "abrillantador", "fregona", "estropajo", "bayeta", "esponja", "guante", "basura", "bolsa de basura", "amoniaco", "papel higienico", "papel culo", "papel humedo", "servilleta", "papel de cocina", "rollo de cocina", "papel de aluminio", "papel film", "papel de horno", "ambientador", "insecticida", "quitamanchas", "escoba", "recogedor", "cubo"],
   hogar: ["bombilla", "pila", "vela", "enchufe", "alargador", "pegamento", "cinta", "celo", "tupper", "taper", "mechero", "cerilla", "planta", "flor", "maceta", "abono", "tornillo", "cargador", "cable", "sarten", "olla", "vaso", "plato", "cubierto", "toalla", "sabana", "percha"],
 };
@@ -112,7 +116,7 @@ export const ICON_KW = {
   cubo: "1FAA3", detergente: "1FAA3", suavizante: "1FAA3", friegasuelos: "E0B1", lejia: "E0B1", limpia: "E0B1",
   limpiador: "E0B1", amoniaco: "E0B1", lavavajillas: "E0CB", estropajo: "1F9FD", esponja: "1F9FD", bayeta: "1F9FD",
   escoba: "1F9F9", fregona: "1F9F9", basura: "1F5D1", "bolsa de basura": "1F5D1", bombilla: "1F4A1", pila: "1F50B",
-  medicina: "1F48A", pastilla: "1F48A", ibuprofeno: "1F48A", paracetamol: "1F48A", tirita: "1FA79",
+  medicina: "1F48A", pastilla: "1F48A", ibuprofeno: "1F48A", paracetamol: "1F48A", tirita: "1FA79", medicamento: "1F48A", comprimido: "1F48A", aspirina: "1F48A", gelocatil: "1F48A", dalsy: "1F48A", apiretal: "1F48A", nolotil: "1F48A", omeprazol: "1F48A", antibiotico: "1F48A", vitamina: "1F48A", magnesio: "1F48A", melatonina: "1F48A", aposito: "1FA79",
   suero: "E307", termometro: "E324", flor: "1F337", planta: "1FAB4", cesta: "1F9FA",
 };
 
