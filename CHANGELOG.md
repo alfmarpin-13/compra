@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v70 · 20/11/2026
+- Cada casilla y cada fila de la lista (también en la Despensa) tiene de fondo el color de su categoría, más claro: la fruta en naranja suave, la carne en rosa, la higiene en malva…
+
 ## v69 · 20/11/2026
 - Los buscadores de la Despensa y del Historial muestran una X para borrar lo escrito en cuanto hay algo.
 
