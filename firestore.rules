@@ -32,10 +32,13 @@ service cloud.firestore {
     match /stores/{id} {
       allow read, delete: if esDeCasa();
       allow create, update: if esDeCasa() && idValido(id)
-        && d().keys().hasOnly(['name', 'kind', 'order', 'aliases', 'icon'])
+        && d().keys().hasOnly(['name', 'kind', 'order', 'aliases', 'icon', 'cats'])
         && d().keys().hasAll(['name', 'kind', 'order', 'aliases'])
         && (igual('name') || texto(d().name, 40))
-        && (igual('kind') || d().kind in ['generic', 'unique'])
+        && (igual('kind') || d().kind in ['generic', 'specialty', 'unique'])
+        // Lo que vende una tienda de especialidad: solo categorías que existen en la app.
+        && (igual('cats') || (d().get('cats', []) is list && d().get('cats', []).size() <= 30
+            && d().get('cats', []).hasOnly(['fruta', 'verdura', 'carne', 'pescado', 'charcuteria', 'quesos', 'lacteos', 'pan', 'bolleria', 'cafe', 'pasta', 'legumbres', 'conservas', 'aceite', 'reposteria', 'aperitivos', 'congelados', 'bebidas', 'lucia', 'higiene', 'medicamentos', 'parafarmacia', 'limpieza', 'hogar', 'otros'])))
         && (igual('order') || (d().order is int && d().order >= 0 && d().order < 1000))
         && (igual('aliases') || (d().aliases is list && d().aliases.size() <= 30))
         && (igual('icon') || textoONulo(d().get('icon', null), 40));
