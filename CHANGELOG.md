@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v52 · 20/11/2026
+- Sugerencias de la despensa al escribir: la fila solo se desplaza en horizontal (antes también se movía en vertical y las pastillas quedaban cortadas).
+
 ## v51 · 20/11/2026
 - Opciones: fuera la línea de tiempos del arranque («Arranque: Firebase… sesión… datos… servidor»).
 
