@@ -430,7 +430,7 @@ function vHeader() {
     </span></div>
     <div class="hb-r">
       <button class="ib sm" data-act="layout" aria-label="${S.layout === "grid" ? "Ver como lista" : "Ver como casillas"}">${ic(S.layout === "grid" ? "list" : "layout-grid", 20)}</button>
-      <button class="ib sm" data-act="menu" aria-label="Más opciones" aria-expanded="${S.menu}">${ic("ellipsis-vertical", 20)}</button>
+      <button class="ib sm" data-act="menu" aria-label="Opciones" aria-expanded="${S.menu}">${ic("settings", 20)}</button>
     </div></div>`;
 }
 // Iconos que se pueden elegir para una tienda.

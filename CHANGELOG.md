@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v65 · 20/11/2026
+- El botón de Opciones de la cabecera es ahora un engranaje (los tres puntos se confundían con el botón de cambiar entre casillas y lista).
+
 ## v64 · 20/11/2026
 - Hoja «Esto es lo que he entendido» / «¿Dónde lo apunto?»: cada artículo lleva los rótulos «Tienda» y «Categoría» encima de sus botones, para que se vea que son dos cosas distintas. «Cambiar tienda» muestra la tienda elegida.
 

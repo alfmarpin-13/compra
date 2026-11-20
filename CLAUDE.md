@@ -73,8 +73,8 @@ Mismo diseño que el prototipo. Resumen:
 
 1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
 2. **Lista (principal).**
-   - **Cabecera compacta:** las pestañas «Lista» / «Despensa» (con el logo como icono de la Lista) y dos botones: cambiar vista (casillas/lista) y menú ⋮. El Historial está solo dentro del menú. Solo iconos, sin fondo (decisión de Alfonso).
-   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. Cambiar de filtro es instantáneo, sin animación. Si la tienda abierta se queda sin artículos suyos (se tachan, se borran o se quitan desde la despensa), su filtro desaparece y se vuelve a «Todas» sola; si se abrió ya vacía desde Tiendas, se respeta. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
+   - **Cabecera compacta:** las pestañas «Lista» / «Despensa» (con el logo como icono de la Lista) y dos botones: cambiar vista (casillas/lista) y Opciones, con un engranaje (decisión de Alfonso: los tres puntos se confundían con el botón de vista). El Historial está solo dentro del menú. Solo iconos, sin fondo (decisión de Alfonso).
+   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde Opciones. Cambiar de filtro es instantáneo, sin animación. Si la tienda abierta se queda sin artículos suyos (se tachan, se borran o se quitan desde la despensa), su filtro desaparece y se vuelve a «Todas» sola; si se abrió ya vacía desde Tiendas, se respeta. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
    - **Contenido:** artículos pendientes agrupados por categoría. **Categorías por orden alfabético** (Otros al final) y, dentro de cada una, **artículos por orden alfabético** (decisión de Alfonso; igual en la Despensa). Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría y el nombre. La tienda va como logo o icono pequeño en la esquina superior derecha, sin texto (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la izquierda.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
@@ -89,7 +89,7 @@ Mismo diseño que el prototipo. Resumen:
    - Si la búsqueda no encuentra nada: «No está en la despensa» y un botón «Añadir «X»», que abre la ficha con el nombre ya escrito.
 4. **Historial:** ←, «Historial», buscador y tarjetas por día (cada artículo se borra también **deslizándolo hacia la izquierda**, que deja ver «Borrar» en rojo, con Deshacer) («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir (N)», que se salta lo que ya está pendiente, y un botón con papelera para borrar lo seleccionado del historial (con Deshacer).
 5. **Tiendas** (hoja inferior): lista de todas las tiendas con su tipo, lo pendiente y un lápiz. Tocar una abre la lista filtrada por esa tienda. Abajo, «Añadir tienda».
-6. **Opciones** (botón ⋮): pantalla completa, no ventana emergente. En Opciones e Historial funciona el **gesto de volver del iPhone** (decisión de Alfonso): deslizar a la derecha, desde el borde o desde cualquier sitio, hace que la pantalla siga al dedo con la anterior asomando debajo; al soltar pasado ~1/3 o con un golpe rápido vuelve, si no se recoloca. Tiendas, Repasar la despensa, Historial; modo Como el iPhone / Claro / Oscuro directamente ahí; cuenta, Compartida con… y Cerrar sesión; versión y créditos.
+6. **Opciones** (botón del engranaje): pantalla completa, no ventana emergente. En Opciones e Historial funciona el **gesto de volver del iPhone** (decisión de Alfonso): deslizar a la derecha, desde el borde o desde cualquier sitio, hace que la pantalla siga al dedo con la anterior asomando debajo; al soltar pasado ~1/3 o con un golpe rápido vuelve, si no se recoloca. Tiendas, Repasar la despensa, Historial; modo Como el iPhone / Claro / Oscuro directamente ahí; cuenta, Compartida con… y Cerrar sesión; versión y créditos.
 7. **Barra inferior flotante y translúcida:** el contenido se desplaza por detrás de ella.
 
 ### Animaciones
@@ -316,7 +316,7 @@ Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes si
 - **Título del PR con la versión:** «vN: resumen corto». La descripción dice qué cambia y cómo se ha probado.
 - **Cada cambio en la web lleva versión nueva:** sube el número en `js/version.js` (`APP_VERSION` y `APP_DATE`) y el mismo número en `VERSION` de `sw.js` (`compra-vN`), y añade la entrada en `CHANGELOG.md`.
 - Los cambios que no tocan la web (documentación) no suben versión.
-- La versión se ve en el menú ⋮ y en Preferencias, debajo de «Cerrar sesión», en gris claro, para que Alfonso sepa si el iPhone tiene la última.
+- La versión se ve en Opciones y en Preferencias, debajo de «Cerrar sesión», en gris claro, para que Alfonso sepa si el iPhone tiene la última.
 
 ## 13. Criterios de aceptación
 
