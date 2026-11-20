@@ -34,7 +34,6 @@ html,body{height:100%;touch-action:manipulation;overscroll-behavior:none}
 html{background:var(--ground)}
 /* Cambio de tema: sin transiciones sueltas; el fundido lo hace la transición de vista */
 html.sin-trans *,html.sin-trans *::before,html.sin-trans *::after{transition:none!important}
-::view-transition-old(root),::view-transition-new(root){animation-duration:.32s;animation-timing-function:ease}
 body{font-family:var(--fb);background:var(--ground);color:var(--ink);-webkit-font-smoothing:antialiased;font-synthesis:none;overflow:hidden;-webkit-text-size-adjust:100%}
 /* Es una app, no una página: sin selección de texto ni menú de «Copiar/Consultar» al mantener pulsado.
    Solo se puede seleccionar dentro de los campos donde se escribe. */

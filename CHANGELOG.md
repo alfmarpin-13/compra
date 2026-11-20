@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v63 · 20/11/2026
+- La franja de la hora se quedaba con el color del modo anterior (oscura en claro, clara en oscuro) y solo se corregía al rato. Ahora el cambio de modo es de golpe, sin fundido, y se le repite al iPhone el color nuevo durante el primer segundo y al volver a la app.
+
 ## v62 · 20/11/2026
 - Iconos nuevos para lo de la despensa que salía con el icono de su categoría: albahaca (y perejil, hierbabuena…), orégano y tomillo (ramita), albóndigas, alcachofas, calabaza, ciruelas, espárragos, estrellitas, Fairy (lavavajillas), pistachos, bote de especias (pimentón, comino, ajo y cebolla en polvo…), molinillo de pimienta y embutido curado (lomito, caña de lomo, chorizo, salchichón, fuet).
 - Con dibujo que ya existía: cherry (tomate), feta (queso), tila (infusión), fregasuelos y «papel de culo».

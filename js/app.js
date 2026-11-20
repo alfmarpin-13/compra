@@ -363,23 +363,32 @@ function applyTheme() {
   if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
   const color = BAR[t];
   const m = document.querySelector('meta[name="theme-color"]');
-  // Se cambia el elemento entero (no solo su valor): así el iPhone repinta también la franja de la hora.
-  if (!m || m.content !== color) {
-    const n = document.createElement("meta");
-    n.name = "theme-color"; n.content = color;
-    if (m) m.replaceWith(n); else document.head.appendChild(n);
-  }
+  if (!m || m.content !== color) { ponerColorBarra(color); avisarBarra(color); }
 }
-/** Cambiar de tema con un solo fundido de toda la pantalla (antes cada cosa cambiaba a su ritmo y daba saltos). */
+// Se cambia el elemento entero (no solo su valor): así el iPhone repinta también la franja de la hora.
+function ponerColorBarra(color) {
+  const m = document.querySelector('meta[name="theme-color"]');
+  const n = document.createElement("meta");
+  n.name = "theme-color"; n.content = color;
+  if (m) m.replaceWith(n); else document.head.appendChild(n);
+}
+// La franja de la hora la pinta el iPhone, que a veces se queda con el color de antes y no lo vuelve a mirar
+// hasta un rato después. Se le recuerda unas cuantas veces en el primer segundo y al volver a la app.
+let barraT = [];
+function avisarBarra(color) {
+  barraT.forEach(clearTimeout);
+  barraT = [60, 250, 600, 1200].map((ms) => setTimeout(() => { if (BAR[document.documentElement.dataset.theme] === color) ponerColorBarra(color); }, ms));
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { const c = BAR[document.documentElement.dataset.theme]; if (c) { ponerColorBarra(c); avisarBarra(c); } } });
+/** Cambiar de tema de una vez, toda la pantalla en el mismo fotograma (antes cada cosa cambiaba a su ritmo y
+ *  daba saltos). Sin fundido: mientras dura, el iPhone ve aún los colores de antes y la franja de la hora
+ *  se quedaba con ellos. */
 function cambiarTema(fn) {
-  const go = () => {
-    document.documentElement.classList.add("sin-trans");
-    fn();
-    render();
-    void document.body.offsetHeight;
-    requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove("sin-trans")));
-  };
-  if (document.startViewTransition && !REDUCE.matches) document.startViewTransition(go); else go();
+  document.documentElement.classList.add("sin-trans");
+  fn();
+  render();
+  void document.body.offsetHeight;
+  requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove("sin-trans")));
 }
 
 /* ===================================================================
