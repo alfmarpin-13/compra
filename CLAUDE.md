@@ -132,7 +132,7 @@ El tipo se elige a mano al crear o editar la tienda (decisión de Alfonso, v61; 
 - Se pueden escribir varios a la vez: «leche, pan de la panadería y pañales para la niña».
 - **Separadores:** comas, « y », « e », «también». Se ignoran muletillas como «me hace falta», «necesito», «apunta» o «hay que comprar».
 - **Interpretación de cada trozo:**
-  - Se busca en la despensa tolerando faltas: distancia de edición normalizada de 0,26 o menos, singular o plural y sin tildes.
+  - Se busca en la despensa tolerando faltas: distancia de edición normalizada de 0,26 o menos, singular o plural y sin tildes. Además, **cada palabra** con contenido (sin «de», «la»…) tiene que parecerse a la suya (≤ 0,34) y tiene que haber las mismas: una falta cambia letras, no palabras («pasta de dientes» no es «Pasta de lentejas»).
   - «de/del/en + tienda» fija la tienda; se reconoce por el nombre o los alias de la tienda.
   - «para la niña / de Lucía / del bebé» asigna la categoría Lucía.
   - «de/en cualquier súper / da igual dónde» fija «Cualquier súper».
@@ -140,7 +140,7 @@ El tipo se elige a mano al crear o editar la tienda (decisión de Alfonso, v61; 
   - Un producto que no está en la despensa se crea en ella, con la categoría deducida por palabras clave y «Otros» si no hay coincidencia.
 - **Si todo está claro,** se añade directamente: todos los productos están ya en la despensa, sin faltas corregidas ni duplicados. Aviso: «Añadido: Leche entera · Mercadona» con Deshacer. **Lo nuevo siempre pasa por la hoja** (decisión de Alfonso), para poder revisar su categoría y su tienda.
 - **Si no,** se abre la hoja **«Esto es lo que he entendido»** (o «¿Dónde lo apunto?» si es uno solo). Por cada artículo, una casilla para incluirlo, su categoría y tienda, y una nota según el caso:
-  - corrección: «Entiendo «Plátanos» (escribiste «platnos»)»;
+  - corrección: «Entiendo «Plátanos» (escribiste «platnos»)» con [Es «Plátanos»] [Es otro producto] (este lo crea con lo escrito); también en la Despensa, junto a «Ya está en la despensa»;
   - duplicado: «Ya está en la lista. No lo duplico»;
   - tienda habitual: «Normalmente lo apuntáis en Mercadona. ¿Lo dejo ahí o en cualquier súper?», con botones [Mercadona] [Cualquier súper] [Otra…];
   - producto nuevo: «Es nuevo. Lo de fruta soléis comprarlo en Frutería», usando la tienda dominante de esa categoría si reúne al menos el 60 %;

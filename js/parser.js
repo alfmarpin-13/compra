@@ -62,6 +62,15 @@ export function categoryHabit(category, products, stores = []) {
 }
 
 /** Busca en la despensa tolerando faltas (≤ 0,26), plurales y tildes. */
+/** Una falta de ortografía cambia letras, no palabras: «pasta de dientes» no es «pasta de lentejas» aunque la
+ *  frase entera se parezca. Cada palabra con contenido tiene que parecerse a la suya (sin «de», «la»…). */
+const VACIAS = new Set(["de", "del", "la", "el", "los", "las", "con", "en", "para", "a", "al", "y"]);
+const palabras = (t) => t.split(" ").filter((w) => w && !VACIAS.has(w));
+function mismasPalabras(a, b) {
+  const x = palabras(a), y = palabras(b);
+  if (x.length !== y.length) return false;
+  return x.every((w, i) => w === y[i] || lev(w, y[i]) / Math.max(w.length, y[i].length) <= 0.34);
+}
 export function matchProduct(q, products) {
   const sq = singAll(q);
   let best = null, score = 9, part = false;
@@ -71,7 +80,10 @@ export function matchProduct(q, products) {
     if (t === sq) d = 0;
     else if (sq.length >= 4 && (" " + t + " ").includes(" " + sq + " ")) {
       d = 0.05 + Math.abs(t.length - sq.length) / 400; isPart = true;
-    } else d = lev(sq, t) / Math.max(sq.length, t.length);
+    } else {
+      d = lev(sq, t) / Math.max(sq.length, t.length);
+      if (d <= 0.26 && !mismasPalabras(sq, t)) d = 9;
+    }
     if (d < score) { score = d; best = p; part = isPart; }
   }
   if (best && score <= 0.26) return { product: best, exact: score === 0, partial: part, score };
