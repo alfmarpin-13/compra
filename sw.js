@@ -1,6 +1,6 @@
 // Service worker de Compra: carcasa en caché para abrir al instante y sin conexión.
 // Los datos los gestiona la caché de Firestore. Sube VERSION en cada despliegue.
-const VERSION = "compra-v56"; // mismo número que js/version.js
+const VERSION = "compra-v57"; // mismo número que js/version.js
 const SHELL = [
   "./", "index.html", "styles.css", "manifest.webmanifest", "logo.svg",
   "js/tema.js", "js/app.js", "js/config.js", "js/version.js", "js/data.js", "js/db.js", "js/iconos.js", "js/parser.js", "js/util.js", "js/productos.js",

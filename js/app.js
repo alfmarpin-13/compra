@@ -1038,7 +1038,7 @@ function focusDraft() {
 }
 /** Cierra el campo de escribir sin saltos: la app vuelve ya a su altura completa y el teclado baja por encima. */
 function closeTyping() {
-  root.style.top = ""; root.style.height = ""; root.classList.remove("kb"); vvLast = "";
+  root.style.top = ""; root.style.height = ""; root.classList.remove("kb", "kb-draft"); vvLast = "-";
   const inp = root.querySelector("#draft");
   if (inp) inp.blur();
   S.capture = "idle"; S.draft = "";
@@ -1089,7 +1089,7 @@ async function toggleVoice() {
   if (S.capture === "thinking") return;
   if (S.capture === "listening") return stopListening();
   if (!Voz.supported()) return toast("Este navegador no deja grabar audio.");
-  if (S.capture === "typing") { const inp = root.querySelector("#draft"); S.capture = "idle"; S.draft = ""; root.style.height = ""; root.classList.remove("kb", "kb-draft"); vvLast = ""; if (inp) inp.blur(); }
+  if (S.capture === "typing") { const inp = root.querySelector("#draft"); S.capture = "idle"; S.draft = ""; root.style.height = ""; root.classList.remove("kb", "kb-draft"); vvLast = "-"; if (inp) inp.blur(); }
   const run = ++vozRun;
   S.capture = "listening"; S.voiceReady = false; S.partial = ""; S.heard = false; S.band = null; S.sheet = null; S.menu = false;
   S.vozDl = Voz.modelReady() ? null : S.vozDl ?? null;
@@ -1931,7 +1931,7 @@ function fitViewport() {
     vvRaf = 0;
     const kb = window.innerHeight - vv.height > 80 && document.activeElement && document.activeElement.tagName === "INPUT";
     // iOS desplaza la vista para enseñar el campo: se deshace, porque la app ya se ajusta sola.
-    if (kb && (window.scrollY || vv.offsetTop)) window.scrollTo(0, 0);
+    if (window.scrollY || vv.offsetTop) window.scrollTo(0, 0);
     const key = kb ? Math.round(vv.height) + (document.activeElement.id || "") : "";
     if (key === vvLast) return;
     vvLast = key;
