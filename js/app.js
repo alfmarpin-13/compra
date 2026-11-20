@@ -487,7 +487,6 @@ function vOptions() {
        <button class="opt-row" data-act="repair">${ic("rotate-ccw", 20)}<span class="opt-l">Reparar la app<small>Si algo no carga bien. Hay que volver a entrar.</small></span></button>
      </div>
      <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
-     ${(() => { const b = Object.keys(bootT).length ? bootT : lastBoot; if (!b) return ""; const f = (k) => (b[k] != null ? (b[k] / 1000).toFixed(1).replace(".", ",") + " s" : "—"); return `<p class="credits">Arranque: Firebase ${f("firebase")} · sesión ${f("sesion")} · datos ${f("datos")} · servidor ${f("servidor")}</p>`; })()}
    </div>
    ${S.band ? vBand() : ""}
   </div>`;
@@ -1659,8 +1658,8 @@ let bootStep = "abriendo la app";
 // Tiempos del arranque (se ven en Opciones) para saber dónde se va el tiempo si vuelve a tardar.
 const T0 = performance.now();
 const bootT = {};
-const mark = (k) => { if (!(k in bootT)) bootT[k] = Math.round(performance.now() - T0); if (k === "datos") { try { localStorage.setItem("compra.boot", JSON.stringify(bootT)); } catch (e) {} } };
-const lastBoot = (() => { try { return JSON.parse(localStorage.getItem("compra.boot") || "null"); } catch (e) { return null; } })();
+const mark = (k) => { if (!(k in bootT)) bootT[k] = Math.round(performance.now() - T0); };
+try { localStorage.removeItem("compra.boot"); } catch (e) {} // ya no se enseñan los tiempos del arranque
 async function boot() {
   applyTheme();
   if (isConfigured()) loadSnap();

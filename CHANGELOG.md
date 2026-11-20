@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v51 · 20/11/2026
+- Opciones: fuera la línea de tiempos del arranque («Arranque: Firebase… sesión… datos… servidor»).
+
 ## v50 · 20/11/2026
 - Icono propio para el «papel culo» (papel higiénico húmedo): un rollo con una gota de agua. Se reconoce solo al escribir «papel culo», «papel húmedo» o «papel higiénico húmedo».
 
