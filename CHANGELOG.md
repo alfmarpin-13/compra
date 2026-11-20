@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v57 · 20/11/2026
+- Al tocar «Añadir» y cerrar tocando fuera, la barra de abajo se quedaba a veces pegada al borde de la pantalla, más baja que su sitio. Ahora vuelve siempre a su posición.
+
 ## v56 · 20/11/2026
 - Frutería, Carnicería, Panadería y demás tiendas de especialidad ya no son excluyentes: al abrir la Frutería salen también la fruta y la verdura de «Cualquier súper», y lo apuntado en la Frutería sale también en el Mercadona, Hipercor y Lidl. La Farmacia sigue mostrando solo lo suyo.
 - La cruz de la farmacia va rellena.
