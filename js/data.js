@@ -1,6 +1,12 @@
 // Datos fijos de la app: categorías, palabras clave, iconos de producto y tiendas iniciales.
 
 export const USERS = ["alfonso", "mariluz"];
+// Cómo se llama cada uno en pantalla. Por dentro (cuenta, datos guardados y reglas) sigue siendo «Mariluz»,
+// así no hay que tocar Firebase ni los datos: solo cambia lo que se ve (decisión de Alfonso: «Ilu»).
+export const MOSTRAR = { Mariluz: "Ilu" };
+export const nombre = (n) => MOSTRAR[n] || n;
+// Al entrar se puede escribir el nombre que se ve o el de la cuenta.
+export const ALIAS_LOGIN = { ilu: "mariluz" };
 export const EMAIL_DOMAIN = "compra.app";
 export const GENERIC = "Cualquier súper";
 

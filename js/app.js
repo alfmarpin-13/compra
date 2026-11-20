@@ -3,7 +3,7 @@ import { firebaseConfig, isConfigured } from "./config.js";
 import { APP_VERSION, APP_DATE } from "./version.js";
 import * as DB from "./db.js";
 import * as Voz from "./voz.js";
-import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW } from "./data.js";
+import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW, nombre, ALIAS_LOGIN } from "./data.js";
 import { LUCIDE } from "./iconos.js";
 import { PRODUCTOS } from "./productos.js";
 import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
@@ -51,7 +51,8 @@ const S = {
 };
 let sub = null;
 
-const otherName = () => (S.meKey === "alfonso" ? "Mariluz" : "Alfonso");
+const otherName = () => nombre(S.meKey === "alfonso" ? "Mariluz" : "Alfonso");
+const meName = () => nombre(S.me);
 const storeById = (id) => (id ? S.stores.find((s) => s.id === id) || null : null);
 const storeName = (id) => storeById(id)?.name || GENERIC;
 const productById = (id) => (id ? S.products.find((p) => p.id === id) || null : null);
@@ -301,9 +302,9 @@ function vLogin() {
   return `<div class="scr" data-key="login"><div class="login">
     <div class="wordmark">${LOGO(44, "Compra")}<span>Compra<span class="dotc">.</span></span></div>
     <h1>La lista de casa, en los dos teléfonos.</h1>
-    <p class="lede">Lo que apuntéis aparece al momento para Alfonso y Mariluz, en el iPhone o en el ordenador.</p>
+    <p class="lede">Lo que apuntéis aparece al momento para Alfonso e Ilu, en el iPhone o en el ordenador.</p>
     <form id="loginForm" novalidate>
-      <div class="field"><label for="lu">Usuario</label><input id="lu" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="alfonso o mariluz" value=""></div>
+      <div class="field"><label for="lu">Usuario</label><input id="lu" name="username" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="alfonso o ilu" value=""></div>
       <div class="field"><label for="lp">Contraseña</label><input id="lp" name="password" type="password" autocomplete="current-password" placeholder="Contraseña" value=""></div>
       ${S.loginErr ? `<p class="err" role="alert">No se ha podido verificar el usuario o la contraseña.</p>` : ""}
       <label class="remember"><input type="checkbox" id="remember" ${S.remember ? "checked" : ""}><span class="mini-ck ${S.remember ? "on" : ""}">${S.remember ? ic("check", 14) : ""}</span>Recordarme en este iPhone</label>
@@ -369,7 +370,7 @@ function groupRows(rows) {
 const byOther = (i) => i.addedBy && S.me && i.addedBy !== S.me;
 function vRow(i) {
   const st = i.storeId && storeById(i.storeId) ? `${slot(i.storeId)}${esc(storeName(i.storeId))}` : esc(GENERIC);
-  const by = byOther(i) ? `<span class="by">· ${esc(i.addedBy)}</span>` : "";
+  const by = byOther(i) ? `<span class="by">· ${esc(nombre(i.addedBy))}</span>` : "";
   const tk = ticking.has(i.id);
   return `<div class="row ${i.checked ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" data-flip data-key="r-${esc(i.id)}" data-id="${esc(i.id)}" role="checkbox" aria-checked="${i.checked}" tabindex="0">
     <span class="ck">${i.checked ? ic("check", 16) : ""}</span>
@@ -381,7 +382,7 @@ function vTile(i) {
   const p = productOf(i);
   const tk = ticking.has(i.id);
   return `<div class="tile ${i.checked && !tk ? "done" : ""} ${tk ? "ticking" : ""} ${S.fresh.has(i.id) ? "fresh" : ""}" style="${catStyle(i.category)}" data-flip data-key="t-${esc(i.id)}" data-id="${esc(i.id)}" role="checkbox" aria-checked="${i.checked}" aria-label="${esc(i.name)}${st ? ", " + esc(st.name) : ""}" tabindex="0">
-    ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(i.addedBy)}">${esc(i.addedBy.charAt(0))}</span>` : ""}${st ? `<span class="tstore" title="${esc(st.name)}">${slot(st.id)}</span>` : ""}<button class="edb" data-act="edit" data-id="${esc(i.id)}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
+    ${byOther(i) ? `<span class="tby" title="Lo apuntó ${esc(nombre(i.addedBy))}">${esc(nombre(i.addedBy).charAt(0))}</span>` : ""}${st ? `<span class="tstore" title="${esc(st.name)}">${slot(st.id)}</span>` : ""}<button class="edb" data-act="edit" data-id="${esc(i.id)}" aria-label="Editar ${esc(i.name)}">${ic("pencil", 15)}</button>
     <span class="tic">${pic(i.name, i.category, p?.icon)}</span>
     <span class="tnm">${esc(i.name)}</span>${tk ? `<span class="tchk" aria-hidden="true">${ic("check", 22)}</span><button class="tundo" data-act="untick" data-id="${esc(i.id)}">Deshacer</button>` : ""}</div>`;
 }
@@ -426,6 +427,7 @@ function vMain() {
 }
 function vBand() {
   const b = S.band;
+  if (b.title) return `<div class="band solo cartel" data-key="band-${b.n}" role="status" data-act="closeBand"><span class="msg"><b>${esc(b.title)}</b>${esc(b.msg)}</span></div>`;
   return `<div class="band ${b.undo ? "" : "solo"}" data-key="band-${b.n}" role="status"><span class="msg" data-act="closeBand">${esc(b.msg)}</span>${b.undo ? `<button class="undo" data-act="undo">Deshacer</button>` : ""}</div>`;
 }
 function sugChoices() {
@@ -479,7 +481,7 @@ function vOptions() {
      <div class="seg" role="radiogroup" aria-label="Modo">${modes.map(([k, icn, l]) => `<button class="${S.theme === k ? "on" : ""}" role="radio" aria-checked="${S.theme === k}" data-act="theme" data-k="${k}">${ic(icn, 18)}<span>${l}</span></button>`).join("")}</div>
      <p class="opt-h">Cuenta</p>
      <div class="opt-group">
-       <div class="opt-row static"><span class="avatar">${esc(S.me.charAt(0))}</span><span class="opt-l"><b>${esc(S.me)}</b><small>Sesión iniciada en este dispositivo</small></span></div>
+       <div class="opt-row static"><span class="avatar">${esc(meName().charAt(0))}</span><span class="opt-l"><b>${esc(meName())}</b><small>Sesión iniciada en este dispositivo</small></span></div>
        ${row("share", "users", `Compartida con ${esc(otherName())}`)}
        <button class="opt-row danger" data-act="logout">${ic("log-out", 20)}<span class="opt-l">Cerrar sesión</span></button>
      </div>
@@ -703,7 +705,7 @@ function shPrefs() {
    <div><p class="labelsm" style="margin-bottom:8px">Modo</p><div class="wrap">${[["system", "Como el iPhone"], ["light", "Claro"], ["dark", "Oscuro"]].map(([k, l]) => `<button class="chip sm ${S.theme === k ? "on" : ""}" data-act="theme" data-k="${k}">${l}</button>`).join("")}</div></div>
    <div class="rule"></div>
    <div><p class="labelsm" style="font-size:14px;color:var(--ink);margin-bottom:12px">Cuenta</p>
-     <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
+     <div class="acct"><span class="avatar">${esc(meName().charAt(0))}</span><div><b>${esc(meName())}</b><span>Sesión iniciada en este dispositivo</span></div></div></div>
    <div class="btns"><button class="btn out" data-act="logout">${ic("log-out", 18)}Cerrar sesión</button></div>
    <p class="version">Versión ${APP_VERSION} · ${APP_DATE}</p>
    </div>`;
@@ -730,7 +732,7 @@ function shShare() {
    <div class="shead"><h2 class="stitle">Compartida.</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
    <p class="help">Las dos personas ven los cambios en segundos y pueden añadir o tachar artículos. Nadie más puede entrar.</p>
    <div class="card" style="padding:16px">
-     <div class="acct"><span class="avatar">${esc(S.me.charAt(0))}</span><div><b>${esc(S.me)}</b><span>Tú · este dispositivo</span></div></div>
+     <div class="acct"><span class="avatar">${esc(meName().charAt(0))}</span><div><b>${esc(meName())}</b><span>Tú · este dispositivo</span></div></div>
      <div class="acct"><span class="avatar acc">${esc(otherName().charAt(0))}</span><div><b>${esc(otherName())}</b><span>Puede añadir y tachar</span></div></div>
    </div>
    <p class="hint-ph" style="display:flex;gap:8px;align-items:center">${ic("lock", 16)}Acceso con usuario y contraseña; el repositorio público no contiene datos.</p></div>`;
@@ -740,12 +742,12 @@ function shShare() {
    Avisos con Deshacer
    =================================================================== */
 let bandN = 0, bandT = null;
-function toast(msg, undo) {
-  S.band = { msg, undo: undo || null, n: ++bandN };
+function toast(msg, undo, opts = {}) {
+  S.band = { msg, undo: undo || null, n: ++bandN, title: opts.title || "" };
   render();
   clearTimeout(bandT);
   const n = bandN;
-  bandT = setTimeout(() => { if (S.band && S.band.n === n) { S.band = null; render(); } }, 6000);
+  bandT = setTimeout(() => { if (S.band && S.band.n === n) { S.band = null; render(); } }, opts.ms || 6000);
 }
 function runUndo() {
   const u = S.band && S.band.undo;
@@ -1532,10 +1534,11 @@ root.addEventListener("touchcancel", () => {
 async function doLogin() {
   const u = norm(root.querySelector("#lu").value).replace(/@.*$/, "").replace(/\s/g, "");
   const p = root.querySelector("#lp").value;
-  if (!USERS.includes(u) || !p) { S.loginErr = true; return render(); }
+  const cuenta = ALIAS_LOGIN[u] || u;
+  if (!USERS.includes(cuenta) || !p) { S.loginErr = true; return render(); }
   S.loginBusy = true; S.loginErr = false; render();
   try {
-    await DB.login(u, p, S.remember);
+    await DB.login(cuenta, p, S.remember);
   } catch (err) {
     S.loginErr = true;
     const lp = root.querySelector("#lp"); if (lp) lp.value = "";
@@ -1572,21 +1575,95 @@ function fixSpaces(col, list) {
   if (ops.length) DB.batch(ops);
   return list;
 }
-let initialPending = true, serverSynced = false;
+/* ---------- Lo que añade la otra persona ----------
+   Con la app abierta: mini aviso al momento («Ilu ha añadido Leche a la lista»). Al volver a la app (abrirla o
+   traerla del segundo plano): cartel con lo que añadió mientras tanto («Ilu ha añadido 7 cosas a la lista y 2 a
+   la despensa»). Solo lo que añade la OTRA persona (no lo tachado, ni lo que añades tú desde otro aparato).
+   «Visto» se guarda por persona en este dispositivo al irse a segundo plano. */
+const VISTO = () => "compra.visto." + S.meKey;
+const avisado = new Set();
+let otroBuf = { items: new Set(), prods: new Set() }, otroT = null, volviendoHasta = 0;
+const guardarVisto = (t = Date.now()) => { if (S.meKey) try { localStorage.setItem(VISTO(), String(t)); } catch (e) {} };
+const leerVisto = () => { try { return +localStorage.getItem(VISTO()) || 0; } catch (e) { return 0; } };
+function fraseOtro(items, prods) {
+  const nI = items.length, nP = prods.length;
+  const L = nI === 1 ? items[0].name : `${nI} cosas`;
+  const P = nP === 1 ? prods[0].name : nI > 1 ? `${nP}` : `${nP} cosas`;
+  const que = nI && nP ? `${L} a la lista y ${P} a la despensa` : nI ? `${L} a la lista` : `${P} a la despensa`;
+  return `${otherName()} ha añadido ${que}`;
+}
+/** Lo nuevo de la otra persona entre estos ids (artículos y productos), sin lo ya avisado. */
+function deOtro(itemIds, prodIds) {
+  const items = [...S.pending, ...S.today].filter((i) => itemIds.has(i.id) && i.addedBy && i.addedBy !== S.me && !avisado.has(i.id));
+  const conItem = new Set(items.map((i) => i.productId));
+  const prods = S.products.filter((p) => prodIds.has(p.id) && p.createdBy && p.createdBy !== S.me && !conItem.has(p.id) && !avisado.has(p.id));
+  return { items, prods };
+}
+function mostrarOtro(msg, opts, intento = 0) {
+  // No se pisa un aviso con «Deshacer» que tengas delante: se espera a que se vaya.
+  if (S.band && S.band.undo && intento < 12) return setTimeout(() => mostrarOtro(msg, opts, intento + 1), 800);
+  toast(msg, null, opts);
+}
+function notaOtro(kind, ids) {
+  ids.forEach((id) => otroBuf[kind].add(id));
+  clearTimeout(otroT);
+  otroT = setTimeout(() => {
+    const buf = otroBuf; otroBuf = { items: new Set(), prods: new Set() };
+    // En segundo plano o justo al volver, lo cuenta el cartel de «mientras no estabas».
+    if (document.hidden || Date.now() < volviendoHasta || S.phase !== "app") return;
+    const { items, prods } = deOtro(buf.items, buf.prods);
+    if (!items.length && !prods.length) return;
+    [...items, ...prods].forEach((x) => avisado.add(x.id));
+    mostrarOtro(fraseOtro(items, prods));
+  }, 1200);
+}
+/** Cartel al volver: todo lo que añadió la otra persona desde la última vez que miraste. */
+function resumenOtro() {
+  if (S.phase !== "app" || !S.me) return;
+  const desde = leerVisto();
+  guardarVisto();
+  if (!desde) return;
+  const items = [...S.pending, ...S.today].filter((i) => i.addedBy && i.addedBy !== S.me && i.addedAt > desde && !avisado.has(i.id));
+  const conItem = new Set(items.map((i) => i.productId));
+  const prods = S.products.filter((p) => p.createdBy && p.createdBy !== S.me && p.createdAt > desde && !conItem.has(p.id) && !avisado.has(p.id));
+  if (!items.length && !prods.length) return;
+  [...items, ...prods].forEach((x) => avisado.add(x.id));
+  mostrarOtro(fraseOtro(items, prods), { title: "Mientras no estabas", ms: 9000 });
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { guardarVisto(); return; }
+  volviendoHasta = Date.now() + 3000;
+  setTimeout(resumenOtro, 3000); // tiempo para que Firestore traiga lo nuevo
+});
+window.addEventListener("pagehide", () => guardarVisto());
+setInterval(() => { if (!document.hidden && S.phase === "app" && S.live) guardarVisto(); }, 30000);
+
+let initialPending = true, serverSynced = false, initialProducts = true, productsSynced = false;
 function startData() {
-  initialPending = true; serverSynced = false; S.dataError = null; S.slowLoad = false;
+  initialPending = true; serverSynced = false; initialProducts = true; productsSynced = false; S.dataError = null; S.slowLoad = false;
   if (!S.ready.pending) S.ready = { stores: false, products: false, pending: false };
   setTimeout(() => { if (!S.ready.pending) { S.slowLoad = true; render(); } }, 8000);
   sub = DB.subscribe({
     stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; saveSnap(); if (S.store && !storeById(S.store)) S.store = null; render(); },
-    products(list) { S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); render(); },
+    products(list, added = [], fromCache) {
+      const nuevos = !initialProducts && productsSynced ? added.filter((a) => !a.local).map((a) => a.id) : [];
+      if (fromCache === false) productsSynced = true;
+      initialProducts = false;
+      S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); render();
+      if (nuevos.length) notaOtro("prods", nuevos);
+    },
     pending(list, added, fromCache) {
-      // Lo que apunta la otra persona se resalta igual, sin avisos. Pero solo lo que llega después de la
+      // Lo que apunta la otra persona se resalta y avisa (notaOtro). Pero solo lo que llega después de la
       // primera carga del servidor: lo que ya estaba no es «nuevo» (si no, todo salía gris al abrir).
-      if (!initialPending && serverSynced) markFresh(added.filter((a) => !a.local).map((a) => a.id));
+      const nuevos = !initialPending && serverSynced ? added.filter((a) => !a.local).map((a) => a.id) : [];
+      if (nuevos.length) markFresh(nuevos);
+      const primeraVezServidor = fromCache === false && !serverSynced;
       if (fromCache === false) serverSynced = true;
       initialPending = false;
       S.pending = fixSpaces("items", list); S.ready.pending = true; mark("datos"); if (fromCache === false) mark("servidor"); saveSnap(); render();
+      if (nuevos.length) notaOtro("items", nuevos);
+      // Al abrir la app: cartel con lo que añadió la otra persona desde la última vez.
+      if (primeraVezServidor) { volviendoHasta = Date.now() + 1500; setTimeout(resumenOtro, 1500); }
     },
     today(list) { S.today = list; saveSnap(); render(); },
     error(e) { console.warn("Firestore", e); S.dataError = (e && (e.code || e.message)) || "desconocido"; render(); },
@@ -1678,7 +1755,7 @@ async function boot() {
     if (user) {
       const me = DB.whoFromEmail(user.email);
       if (S.me && S.me !== me) { stopData(); }
-      S.me = me; S.meKey = me.toLowerCase();
+      S.me = me; S.meKey = me.toLowerCase(); DB.setMe(me);
       DB.markReady();
       if (!S.live) { S.live = true; S.phase = "app"; startData(); }
     } else {
@@ -1718,7 +1795,7 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
   navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((reg) => {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState !== "visible") return;
-      if (updated) location.reload(); else reg.update().catch(() => {});
+      if (updated) location.reload(); else if (reg && reg.update) reg.update().catch(() => {});
     });
   }).catch(() => {});
 }

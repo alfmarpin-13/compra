@@ -157,7 +157,11 @@ async function rewire(rec) {
 export class Vad {
   constructor() { this.hist = []; this.n = 0; this.t = 0; this.speechMs = 0; this.heard = false; this.lastVoiceT = 0; this.floor = 0; this.firstT = -1; this.lastT = -1; }
   push(rms, ms) {
-    this.t += ms; this.n++;
+    this.t += ms;
+    // Silencio digital (ceros: el micro aún no da sonido al arrancar) no cuenta para el ruido de fondo:
+    // si no, el «ruido» sería 0 y cualquier ruido normal parecería voz.
+    if (rms < 0.0005) return false;
+    this.n++;
     const sorted = this.hist.slice().sort((x, y) => x - y);
     this.floor = sorted.length ? sorted[Math.floor(sorted.length * 0.1)] : rms;
     let voice = this.n > 2 && rms > Math.max(this.floor * 3.2, 0.006);

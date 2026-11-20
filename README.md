@@ -1,6 +1,6 @@
 # Compra
 
-Lista de la compra de casa, compartida en tiempo real entre Alfonso y Mariluz. PWA sin paso de compilación (HTML, CSS y módulos ES) con Firebase Auth y Cloud Firestore. Se publica en GitHub Pages: <https://alfmarpin-13.github.io/compra/>.
+Lista de la compra de casa, compartida en tiempo real entre Alfonso e Ilu (cuenta «mariluz»). PWA sin paso de compilación (HTML, CSS y módulos ES) con Firebase Auth y Cloud Firestore. Se publica en GitHub Pages: <https://alfmarpin-13.github.io/compra/>.
 
 El diseño y el comportamiento siguen `prototipo.html`; las reglas están en `CLAUDE.md`.
 

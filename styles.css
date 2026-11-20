@@ -292,6 +292,10 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .band .msg{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 0;cursor:default}
 .band.solo{padding:6px 20px;min-height:52px;justify-content:center}
 .band.solo .msg{text-align:center}
+/* Cartel «Mientras no estabas»: dos líneas, sin cortar el texto */
+.band.cartel{border-radius:22px;padding:10px 20px;width:max-content;max-width:calc(100% - 32px)}
+.band.cartel .msg{white-space:normal;padding:2px 0;line-height:19px}
+.band.cartel .msg b{display:block;font-weight:700;font-size:13px;opacity:.75;margin-bottom:2px}
 .band:not(.solo){min-height:52px}
 .band .undo{flex:none;min-height:40px;padding:0 14px;border-radius:999px;color:var(--toast-act);font:700 15px/20px var(--fb)}
 .band.leaving{animation:toastOut .28s ease-in forwards}

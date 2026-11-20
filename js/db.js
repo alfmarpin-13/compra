@@ -61,7 +61,7 @@ function itemFrom(d) {
 }
 function productFrom(d) {
   const x = d.data({ serverTimestamps: "estimate" });
-  return { id: d.id, name: x.name || "", nameKey: x.nameKey || nameKey(x.name), category: x.category || "otros", storeId: x.storeId ?? null, icon: x.icon ?? null, createdAt: ts(x.createdAt) };
+  return { id: d.id, name: x.name || "", nameKey: x.nameKey || nameKey(x.name), category: x.category || "otros", storeId: x.storeId ?? null, icon: x.icon ?? null, createdAt: ts(x.createdAt), createdBy: x.createdBy || null, local: d.metadata.hasPendingWrites };
 }
 function storeFrom(d) {
   const x = d.data();
@@ -80,7 +80,7 @@ export function subscribe(h) {
     if (s.empty && !s.metadata.fromCache && !seeded) { seeded = true; seedStores(); }
     h.stores(s.docs.map(storeFrom).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name)));
   }, h.error));
-  unsubs.push(F.onSnapshot(col("products"), (s) => h.products(s.docs.map(productFrom)), h.error));
+  unsubs.push(F.onSnapshot(col("products"), (s) => h.products(s.docs.map(productFrom), s.docChanges().filter((c) => c.type === "added").map((c) => ({ id: c.doc.id, local: c.doc.metadata.hasPendingWrites })), s.metadata.fromCache), h.error));
   unsubs.push(F.onSnapshot(F.query(col("items"), F.where("checked", "==", false)), (s) => {
     h.pending(s.docs.map(itemFrom), s.docChanges().filter((c) => c.type === "added").map((c) => ({ id: c.doc.id, local: c.doc.metadata.hasPendingWrites })), s.metadata.fromCache);
   }, h.error));
@@ -180,7 +180,13 @@ export function batch(ops) {
         else if (o.op === "update") b.update(ref, conv(o.data));
         else if (o.op === "delete") b.delete(ref);
       }
-      b.commit().catch(fail);
+      const chunk = ops.slice(i, i + 450);
+      b.commit().catch((e) => {
+        // Si las reglas de Firestore aún no conocen «createdBy» (no se han pegado las nuevas), se repite sin él.
+        if (e && e.code === "permission-denied" && chunk.some((o) => o.data && "createdBy" in o.data)) {
+          batch(chunk.map((o) => (o.data && "createdBy" in o.data ? { ...o, data: (({ createdBy, ...r }) => r)(o.data) } : o)));
+        } else fail(e);
+      });
     }
   });
 }
@@ -190,9 +196,12 @@ export const itemData = (x) => ({
   addedBy: x.addedBy, addedAt: T(x.addedAt || Date.now()),
   checked: !!x.checked, checkedAt: x.checkedAt ? T(x.checkedAt) : null, checkedBy: x.checkedBy || null,
 });
+// Quién usa la app en este dispositivo («Alfonso» o «Mariluz»), para apuntar quién crea cada producto.
+let yo = "";
+export const setMe = (n) => { yo = n || ""; };
 export const productData = (x, isNew) => {
   const d = { name: x.name, nameKey: nameKey(x.name), category: x.category, storeId: x.storeId ?? null, icon: x.icon ?? null, updatedAt: SERVER };
-  if (isNew) d.createdAt = SERVER;
+  if (isNew) { d.createdAt = SERVER; const by = x.createdBy || yo; if (by) d.createdBy = by; }
   return d;
 };
 export const checkData = (by) => ({ checked: true, checkedAt: T(Date.now()), checkedBy: by });

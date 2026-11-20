@@ -44,7 +44,7 @@ service cloud.firestore {
     match /products/{id} {
       allow read, delete: if esDeCasa();
       allow create, update: if esDeCasa() && idValido(id)
-        && d().keys().hasOnly(['name', 'nameKey', 'category', 'storeId', 'icon', 'createdAt', 'updatedAt'])
+        && d().keys().hasOnly(['name', 'nameKey', 'category', 'storeId', 'icon', 'createdAt', 'updatedAt', 'createdBy'])
         && d().keys().hasAll(['name', 'nameKey', 'category'])
         && (igual('name') || texto(d().name, 80))
         && (igual('nameKey') || texto(d().nameKey, 80))
@@ -52,7 +52,8 @@ service cloud.firestore {
         && (igual('storeId') || textoONulo(d().get('storeId', null), 70))
         && (igual('icon') || textoONulo(d().get('icon', null), 40))
         && (igual('createdAt') || fechaONula(d().get('createdAt', null)))
-        && (igual('updatedAt') || fechaONula(d().get('updatedAt', null)));
+        && (igual('updatedAt') || fechaONula(d().get('updatedAt', null)))
+        && (igual('createdBy') || d().get('createdBy', null) == null || persona(d().get('createdBy', null)));
     }
 
     match /items/{id} {
