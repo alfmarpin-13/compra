@@ -16,7 +16,8 @@ El diseño y el comportamiento siguen `prototipo.html`; las reglas están en `CL
 | `vendor/` | transformers.js y el motor onnxruntime (wasm), copiados del paquete npm oficial, con sus licencias |
 | `js/data.js` | Categorías, palabras clave, iconos por producto y tiendas iniciales |
 | `js/util.js` | Texto, distancia de edición y fechas en Europe/Madrid |
-| `js/iconos.js` | Iconos Lucide (ISC) y OpenMoji (CC BY-SA 4.0), generados |
+| `js/iconos.js` | Iconos de interfaz Lucide (ISC), generados |
+| `js/productos.js` | Iconos de productos, dibujos propios |
 | `js/config.js` | **Configuración web de Firebase (hay que rellenarla)** |
 | `sw.js`, `manifest.webmanifest`, `icons/` | PWA |
 | `firestore.rules` | Reglas de seguridad para pegar en la consola |
@@ -49,7 +50,7 @@ Para no gastar el cupo gratuito, la app escucha en tiempo real solo lo pendiente
 
 ## Licencias
 
-- Iconos de producto: [OpenMoji](https://openmoji.org), CC BY-SA 4.0.
+- Iconos de producto: dibujos propios.
 - Iconos de interfaz y categoría: [Lucide](https://lucide.dev), ISC.
 - Tipografías: Bricolage Grotesque y Figtree, OFL, incluidas en `fonts/` con su licencia.
 - Logos de tiendas (`icons/tiendas/`): marcas de sus propietarios, en versión de una tinta solo para uso doméstico.

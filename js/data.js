@@ -59,7 +59,7 @@ export const KW = {
   hogar: ["bombilla", "pila", "vela", "enchufe", "alargador", "pegamento", "cinta", "celo", "tupper", "taper", "mechero", "cerilla", "planta", "flor", "maceta", "abono", "tornillo", "cargador", "cable", "sarten", "olla", "vaso", "plato", "cubierto", "toalla", "sabana", "percha"],
 };
 
-// Palabra clave → icono OpenMoji. Gana la coincidencia más larga, como en las categorías.
+// Palabra clave → icono de producto (js/productos.js; las claves son códigos de emoji, solo como nombre). Gana la coincidencia más larga, como en las categorías.
 export const ICON_KW = {
   platano: "1F34C", banana: "1F34C", manzana: "1F34E", pera: "1F350", naranja: "1F34A", mandarina: "1F34A",
   limon: "1F34B", uva: "1F347", melon: "1F348", sandia: "1F349", pina: "1F34D", mango: "1F96D",
