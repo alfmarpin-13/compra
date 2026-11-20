@@ -37,7 +37,8 @@ Hay una única casa, así que las colecciones van en la raíz.
 ```
 stores/{storeId}
   name: string            // "Mercadona"
-  kind: "generic" | "unique"
+  kind: "generic" | "specialty" | "unique"   // Supermercado | Especialidad | Única
+  cats: string[]          // solo especialidad: lo que vende (ids de categoría); vacío en los demás
   order: number           // posición en la barra de tiendas
   aliases: string[]       // para reconocerla al escribir o dictar: ["mercadona","merca"]
 
@@ -104,13 +105,16 @@ Mismo diseño que el prototipo. Resumen:
 
 ## 5. Reglas de funcionamiento
 
-### 5.1 Tiendas genéricas, de especialidad y únicas
-- **Genérica** (Mercadona, Hipercor, Lidl): su vista muestra lo asignado a ella, todo lo de «Cualquier súper» (`storeId == null`) menos los Medicamentos, y lo asignado a las tiendas de especialidad que no sean la farmacia.
-- **De especialidad** (tienda única cuyo nombre dice qué vende; `ESPECIALIDAD` y `especialidad()` en `js/parser.js`): Frutería/Verdulería → Fruta y Verdura; Carnicería/Pollería → Carne y Charcutería; Pescadería/Marisquería → Pescado; Panadería/Horno → Pan y Bollería; Pastelería → Bollería; Charcutería; Quesería; **Farmacia → Medicamentos y Parafarmacia**. Su vista muestra lo asignado a ella y lo de «Cualquier súper» de sus categorías.
-- **Lo de sus categorías nunca se guarda «en» ellas** (decisión de Alfonso, v58): la fruta va en «Cualquier súper» y la Frutería sale sola en la barra cuando hay fruta apuntada. `tiendaPara()` lo aplica en toda escritura (`guardar()` en `js/app.js`), en el intérprete y en las hojas, que no ofrecen esa tienda para esas categorías. Al abrir, `limpiarEspecialidad()` pasa a «Cualquier súper» lo antiguo que estuviera así y, una vez por usuario y dispositivo, lleva a Medicamentos/Parafarmacia lo de Higiene que lo sea.
-- Los **Medicamentos** solo salen en la Farmacia (y en «Todas»), nunca en los súper; la Parafarmacia sale en la Farmacia y en los súper. Lo asignado expresamente a la Farmacia no sale en los súper.
-- **Única sin especialidad** (por ejemplo, una droguería): solo lo asignado a ella.
-- En la barra, una tienda sale si tiene algo pendiente «suyo»: asignado a ella o, si es de especialidad, de «Cualquier súper» en sus categorías (`propios()`).
+### 5.1 Tipos de tienda: Supermercado, Especialidad y Única
+El tipo se elige a mano al crear o editar la tienda (decisión de Alfonso, v61; antes se deducía del nombre y no se entendía).
+- **Supermercado** (`generic`; Mercadona, Hipercor, Lidl): su vista muestra lo apuntado en él y todo lo de «Cualquier súper» (`storeId == null`), menos los Medicamentos.
+- **Especialidad** (`specialty`, con `cats`; Frutería → Fruta y Verdura, Farmacia → Medicamentos y Parafarmacia…): su vista muestra lo apuntado en ella y lo de «Cualquier súper» de sus categorías. Al elegir «Especialidad», la hoja propone las categorías por el nombre (`catsSugeridas()`), y hay que dejar al menos una.
+- **Única** (`unique`): solo lo apuntado en ella.
+- Lo apuntado en una tienda que no es supermercado sale solo en esa tienda.
+- **Lo de las categorías de una especialidad nunca se guarda «en» ella** (v58): la fruta va en «Cualquier súper» y la Frutería sale sola en la barra cuando hay fruta apuntada. `tiendaPara()` lo aplica en toda escritura (`guardar()` en `js/app.js`), en el intérprete y en las hojas, que no ofrecen esa tienda para esas categorías. Al abrir, `limpiarEspecialidad()` pasa a «Cualquier súper» lo antiguo que estuviera así y, una vez por usuario y dispositivo, lleva a Medicamentos/Parafarmacia lo de Higiene que lo sea.
+- Migración v61 (`migrarTiendas()`, una vez por usuario; se repite si no se pudo guardar): las tiendas «únicas» cuyo nombre antes se tomaba por especialidad (frutería, carnicería, panadería, pescadería, farmacia…) pasan a Especialidad con sus categorías.
+- Si las reglas pegadas en Firebase aún no conocen `specialty`/`cats`, `DB.batch` repite la escritura como «única» sin `cats` (no se pierde la tienda).
+- En la barra, una tienda sale si tiene algo pendiente «suyo»: apuntado en ella o, si es de especialidad, de «Cualquier súper» en sus categorías (`propios()`).
 - La tienda dominante de una categoría (5.3) no cuenta si es de especialidad.
 - «Todas» lo muestra todo.
 - El contador de cada tienda en la barra es lo que verías al abrirla.
@@ -171,8 +175,8 @@ Mismo diseño que el prototipo. Resumen:
 - En la Despensa, tocar un producto lo apunta en la lista o lo quita de ella.
 
 ### 5.7 Tiendas editables
-- **Añadir:** nombre y tipo (Genérica: «Le caen también las cosas de «Cualquier súper», como los huevos»; Única: «Solo lo que se compra allí, como en la farmacia»).
-- **Editar:** nombre, tipo, «Mover antes» y «Mover después» (cambian `order`).
+- **Añadir:** nombre y tipo: Supermercado («Sale todo lo apuntado en «Cualquier súper», como los huevos»), Especialidad («Sale solo lo que vende, aunque esté en «Cualquier súper»», con «Qué vende»: chips de categorías) o Única («Solo lo que apuntéis en ella»).
+- **Editar:** nombre, tipo (y qué vende), «Mover antes» y «Mover después» (cambian `order`).
 - **Borrar:** pide confirmación. Lo asignado a esa tienda (artículos pendientes y productos de la despensa) pasa a «Cualquier súper».
 - El nombre nuevo se añade a `aliases`.
 
@@ -204,10 +208,10 @@ Al primer arranque, si `stores` está vacía, crea:
 | 0 | mercadona | Mercadona | generic | mercadona, merca |
 | 1 | hipercor | Hipercor | generic | hipercor, corte ingles, el corte ingles |
 | 2 | lidl | Lidl | generic | lidl, lidel |
-| 3 | fruteria | Frutería | unique | fruteria, frutero |
-| 4 | carniceria | Carnicería | unique | carniceria, carnicero |
-| 5 | panaderia | Panadería | unique | panaderia, panadero, horno |
-| 6 | farmacia | Farmacia | unique | farmacia |
+| 3 | fruteria | Frutería | specialty (fruta, verdura) | fruteria, frutero |
+| 4 | carniceria | Carnicería | specialty (carne, charcuteria) | carniceria, carnicero |
+| 5 | panaderia | Panadería | specialty (pan, bolleria) | panaderia, panadero, horno |
+| 6 | farmacia | Farmacia | specialty (medicamentos, parafarmacia) | farmacia |
 
 **Categorías:** lista fija en el código (en pantalla se muestran por orden alfabético, con Otros al final). Cada una tiene un color para claro y otro para oscuro, en tonos tierra como los del prototipo.
 
@@ -280,7 +284,7 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
 
 Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes sin decírselo:
 
-- **Reglas de Firestore** (`firestore.rules`, pegadas a mano en la consola con los dos UID; Alfonso las pega, el repo lleva `UID_ALFONSO`/`UID_MARILUZ`): solo los dos UID leen y escriben; solo `stores`, `products` e `items`; campos cerrados con tipo y tamaño máximo (nombres ≤ 80, ids `^[A-Za-z0-9_-]{1,70}$`, `addedBy`/`checkedBy`/`createdBy` solo «Alfonso»/«Mariluz», etc.); en una modificación, los campos que no cambian no se recomprueban (un dato antiguo no bloquea tachar). Se prueban en el emulador de Firestore con todas las escrituras de la app y una batería de ataques antes de cambiarlas.
+- **Reglas de Firestore** (`firestore.rules`, pegadas a mano en la consola con los dos UID; Alfonso las pega, el repo lleva `UID_ALFONSO`/`UID_MARILUZ`): solo los dos UID leen y escriben; solo `stores`, `products` e `items`; campos cerrados con tipo y tamaño máximo (`kind` solo generic/specialty/unique y `cats` solo con ids de categoría que existen, así que **una categoría nueva hay que añadirla también en las reglas**; nombres ≤ 80, ids `^[A-Za-z0-9_-]{1,70}$`, `addedBy`/`checkedBy`/`createdBy` solo «Alfonso»/«Mariluz», etc.); en una modificación, los campos que no cambian no se recomprueban (un dato antiguo no bloquea tachar). Se prueban en el emulador de Firestore con todas las escrituras de la app y una batería de ataques antes de cambiarlas.
 - **Sin código de fuera:** Firebase y la librería de voz van en `vendor/`. El modelo de voz se descarga de Hugging Face, pero es solo datos que corren en el sandbox de WebAssembly del worker.
 - **CSP en `<meta>`** (`index.html`): `script-src 'self' 'wasm-unsafe-eval'`, sin scripts en línea (el tema va en `js/tema.js`), `connect-src` solo a Firestore, Identity Toolkit, Secure Token y Hugging Face, `img-src` admite `www.google.com` (Firestore lo usa para comprobar la conexión), `object-src`/`frame-src`/`base-uri` cerrados. `style-src` necesita `'unsafe-inline'` por los `style=""` de las plantillas. Si se añade un servicio nuevo, hay que añadirlo aquí.
 - **Sin marcos:** `js/tema.js` no deja abrir la app dentro de otra web (GitHub Pages no permite la cabecera `frame-ancestors`).

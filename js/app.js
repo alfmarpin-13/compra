@@ -7,7 +7,7 @@ import { CATS, CAT, GENERIC, USERS, ICON_KW, STORE_ICON_KW, nombre, ALIAS_LOGIN 
 import { LUCIDE } from "./iconos.js";
 import { PRODUCTOS } from "./productos.js";
 import { esc, norm, nameKey, singAll, lev, cap, clean, plural, bestKeyword, dayKey, daysBetween, dayLabel, median } from "./util.js";
-import { parseUtterance, parseCommand, isClear, inStore, especialidad, tiendaPara, matchProduct, guessCategory as guessCat } from "./parser.js";
+import { parseUtterance, parseCommand, isClear, inStore, especialidad, catsSugeridas, tiendaPara, matchProduct, guessCategory as guessCat } from "./parser.js";
 
 /* ===================================================================
    Iconos
@@ -761,20 +761,23 @@ function shEdit(s) {
    </div>
    <div class="sfoot"><button class="btn out" data-act="closeSheet">Cancelar</button><button class="btn fill" data-act="edSave">Guardar</button></div>`;
 }
+const TIPOS = { generic: "Supermercado", specialty: "Especialidad", unique: "Única" };
+const tipoTienda = (st) => (st.kind === "specialty" && !especialidad(st) ? "Única" : TIPOS[st.kind] || "Supermercado");
+const catsTexto = (cats) => { const xs = cats.map((c) => CAT[c].l.toLowerCase()); return xs.length > 1 ? xs.slice(0, -1).join(", ") + " y " + xs[xs.length - 1] : xs[0] || ""; };
 function shStores() {
   const pv = pendVista();
   const rows = S.stores.map((st) => { const all = pv.filter((i) => inStore(i, st, S.stores)); const own = all.filter((i) => i.storeId === st.id).length; return { st, all: all.length, own }; });
   const meta = ({ st, all, own }) => {
     if (!all) return "nada pendiente";
-    if (st.kind === "generic") return [own ? `${own} solo de aquí` : "", all - own ? `${all - own} de cualquier sitio` : ""].filter(Boolean).join(" + ");
-    if (especialidad(st)) return [own ? `${own} de aquí` : "", all - own ? `${all - own} de ${especialidad(st).map((c) => CAT[c].l.toLowerCase()).join(" y ")}` : ""].filter(Boolean).join(" + ");
+    if (st.kind === "generic") return [own ? `${own} solo de aquí` : "", all - own ? `${all - own} de cualquier súper` : ""].filter(Boolean).join(" + ");
+    if (especialidad(st)) return [own ? `${own} solo de aquí` : "", all - own ? `${all - own} de ${catsTexto(especialidad(st))}` : ""].filter(Boolean).join(" + ");
     return plural(all, "artículo", "artículos");
   };
   return `<div class="sbody">
    <div class="shead"><h2>Tiendas</h2><button class="tbtn" data-act="closeSheet">Cerrar</button></div>
-   <p class="help">Una tienda <b>genérica</b> (Mercadona, Lidl…) muestra lo suyo y todo lo de «Cualquier súper». Una de <b>especialidad</b> (frutería, carnicería, farmacia…) sale sola cuando hay algo de lo suyo apuntado: la fruta no hace falta apuntarla en la frutería. Los medicamentos solo salen en la farmacia. Toca una para ver su lista.</p>
+   <p class="help">Toca una para ver lo que hay que comprar allí. Con el lápiz eliges su tipo: <b>supermercado</b> (sale todo lo de «Cualquier súper»), <b>especialidad</b> (sale lo que vende, como la fruta en la frutería, sin tener que apuntarlo allí) o <b>única</b> (solo lo que apuntéis en ella).</p>
    <div class="card">${rows.map((r) => `<div class="prow tap" data-key="s-${esc(r.st.id)}" data-act="shopAt" data-k="${esc(r.st.id)}" style="align-items:center" tabindex="0">${slot(r.st.id, true)}
-      <div class="pmain"><div class="pname">${esc(r.st.name)}</div><div class="pmeta">${r.st.kind === "generic" ? "Genérica" : especialidad(r.st) ? "Especialidad" : "Única"} · ${meta(r)}</div></div>
+      <div class="pmain"><div class="pname">${esc(r.st.name)}</div><div class="pmeta">${tipoTienda(r.st)} · ${meta(r)}</div></div>
       <button class="ib" style="width:44px;height:44px;color:var(--muted);background:transparent" data-act="sedit" data-k="${esc(r.st.id)}" aria-label="Editar ${esc(r.st.name)}">${ic("pencil", 18)}</button></div>`).join("")}
    </div>
    <button class="btn out" data-act="snew">${ic("plus", 18)}Añadir tienda</button>
@@ -789,8 +792,11 @@ function shSEdit(s) {
    <h2 class="stitle">${s.k ? "Editar tienda" : "Nueva tienda"}</h2>
    <div class="field"><label for="sn">Tienda</label><input id="sn" type="search" inputmode="text" autocapitalize="sentences" name="tienda-compra" value="${esc(d.name)}" placeholder="p. ej. Pescadería" autocomplete="off" autocorrect="on" enterkeyhint="done"></div>
    ${s.err ? `<p class="note" style="color:var(--danger)">${esc(s.err)}</p>` : ""}
-   <div class="card">${kind("generic", "Genérica", "Le caen también las cosas de «Cualquier súper», como los huevos")}${kind("unique", "Única", "Solo lo que se compra allí, como en la farmacia")}</div>
-   ${(() => { const cats = especialidad({ name: d.name, kind: d.kind }); return cats ? `<p class="hint-ph" style="margin-top:-6px">Tienda de especialidad: le sale sola ${esc(cats.map((c) => CAT[c].l.toLowerCase()).join(" y "))}, sin apuntarla aquí.</p>` : ""; })()}
+   <div><p class="labelsm" style="margin-bottom:8px">Tipo</p>
+   <div class="card" role="radiogroup" aria-label="Tipo de tienda">${kind("generic", "Supermercado", "Sale todo lo apuntado en «Cualquier súper», como los huevos. Como el Mercadona")}${kind("specialty", "Especialidad", "Sale solo lo que vende, aunque esté en «Cualquier súper». Como la frutería con la fruta")}${kind("unique", "Única", "Solo lo que apuntéis en ella")}</div></div>
+   ${d.kind === "specialty" ? `<div><p class="labelsm" style="margin-bottom:8px">Qué vende</p><div class="wrap">
+     ${CATS.filter((c) => c.k !== "otros").map((c) => `<button class="chip sm ${d.cats.includes(c.k) ? "on" : ""}" data-act="sdCat" data-k="${c.k}" aria-pressed="${d.cats.includes(c.k)}">${esc(c.l)}</button>`).join("")}</div>
+     <p class="hint-ph" style="margin-top:8px">${d.cats.length ? `Cuando haya ${esc(catsTexto(d.cats))} en la lista, esta tienda saldrá sola en la barra con todo eso. No hace falta apuntarlo aquí.` : "Elige al menos una."}</p></div>` : ""}
    <div><p class="labelsm" style="margin-bottom:8px">Icono</p><div class="wrap">
      <button class="chip sm ${!d.icon ? "on" : ""}" data-act="sdIcon" data-k="">${autoLogo(d.name) ? logoSpan(autoLogo(d.name)) : ic(autoStoreIcon(d.name, d.kind), 16)}Automático</button>
      ${Object.keys(LOGOS).map((g) => `<button class="chip sm iconchip ${d.icon === g ? "on" : ""}" data-act="sdIcon" data-k="${g}" aria-label="Logo ${LOGOS[g].match}">${logoSpan(g)}</button>`).join("")}
@@ -905,9 +911,21 @@ function guardar(ops) {
 /** Una vez por sesión, con los datos del servidor: lo de la fruta que estaba «en la Frutería» (y demás) pasa a
  *  «Cualquier súper», y lo de Higiene que es de farmacia, a Medicamentos o Parafarmacia (solo la primera vez). */
 let limpiado = false;
+// Hasta la v60 la especialidad se deducía del nombre de una tienda «única»; ahora se elige. Las que ya se
+// comportaban así pasan a «Especialidad» con lo que vendían (una vez por usuario; se repite si no se pudo guardar).
+const ANTES_ESP = ["fruter", "verdul", "carnic", "polleri", "pescader", "marisquer", "panader", "horno", "pasteler", "charcut", "queser", "farmac"];
+function migrarTiendas() {
+  const key = "mig61." + (S.me || "").toLowerCase();
+  if (LS.get(key)) return;
+  const ops = S.stores.filter((st) => st.kind === "unique" && ANTES_ESP.some((w) => nameKey(st.name).includes(w)))
+    .map((st) => ({ op: "update", col: "stores", id: st.id, data: { kind: "specialty", cats: catsSugeridas(st.name) } }));
+  if (!ops.length) return LS.set(key, "1");
+  DB.batch(ops).then((okk) => { if (okk) LS.set(key, "1"); });
+}
 function limpiarEspecialidad() {
   if (limpiado || !S.live || !S.me || !serverSynced || !productsSynced || !S.ready.stores) return;
   limpiado = true;
+  migrarTiendas();
   const migKey = "mig58." + (S.me || "").toLowerCase();
   const recat = !LS.get(migKey);
   const ops = [];
@@ -1109,7 +1127,7 @@ function voiceVocab() {
   }
   // Las cadenas con mayúscula («Mercadona»); las tiendas de oficio en minúscula («frutería»), como se escriben.
   const stores = [...S.stores].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((x) => (x.kind === "unique" && !/\s/.test(x.name.trim()) ? x.name.trim().toLowerCase() : x.name.trim()));
+    .map((x) => (x.kind !== "generic" && !/\s/.test(x.name.trim()) ? x.name.trim().toLowerCase() : x.name.trim()));
   return { products: out, stores };
 }
 function vozProgress(loaded, total) {
@@ -1291,15 +1309,17 @@ function saveStore(sh) {
   if (!name) { sh.err = "Escribe un nombre."; render(); return; }
   const k = nameKey(name);
   if (S.stores.some((s) => nameKey(s.name) === k && s.id !== sh.k)) { sh.err = "Ya hay una tienda con ese nombre."; sh.draft.name = name; render(); return; }
+  const kind = sh.draft.kind, cats = kind === "specialty" ? CATS.map((c) => c.k).filter((c) => sh.draft.cats.includes(c)) : [];
+  if (kind === "specialty" && !cats.length) { sh.err = "Elige qué vende la tienda de especialidad."; sh.draft.name = name; render(); return; }
   if (sh.k) {
     const st = storeById(sh.k);
     const aliases = [...new Set([...(st.aliases || []), k])];
-    guardar([{ op: "update", col: "stores", id: st.id, data: { name, kind: sh.draft.kind, aliases, icon: sh.draft.icon || null } }]);
+    guardar([{ op: "update", col: "stores", id: st.id, data: { name, kind, cats, aliases, icon: sh.draft.icon || null } }]);
   } else {
     let id = slugId(k), n = 2;
     while (S.stores.some((s) => s.id === id)) id = slugId(k) + "-" + n++;
     const order = S.stores.reduce((m, s) => Math.max(m, s.order), -1) + 1;
-    guardar([{ op: "set", col: "stores", id, data: { name, kind: sh.draft.kind, order, aliases: [k], icon: sh.draft.icon || null } }]);
+    guardar([{ op: "set", col: "stores", id, data: { name, kind, cats, order, aliases: [k], icon: sh.draft.icon || null } }]);
   }
   S.sheet = { type: "stores" };
   render();
@@ -1444,10 +1464,11 @@ function act(a, el, e) {
     case "store": S.store = k || null; return render();
     case "stores": S.menu = false; S.sheet = { type: "stores" }; return render();
     case "shopAt": if (lpFired) { lpFired = false; return; } S.store = k || null; S.sheet = null; S.view = "list"; return render();
-    case "sedit": { e.stopPropagation(); const st = storeById(k); S.sheet = { type: "sedit", k, draft: { name: st.name, kind: st.kind, icon: st.icon || null } }; return render(); }
-    case "snew": S.sheet = { type: "sedit", k: null, draft: { name: "", kind: "unique", icon: null } }; render(); return focusField("#sn");
+    case "sedit": { e.stopPropagation(); const st = storeById(k); S.sheet = { type: "sedit", k, draft: { name: st.name, kind: st.kind === "specialty" && !especialidad(st) ? "unique" : st.kind, cats: [...(st.cats || [])], icon: st.icon || null } }; return render(); }
+    case "snew": S.sheet = { type: "sedit", k: null, draft: { name: "", kind: "unique", cats: [], icon: null } }; render(); return focusField("#sn");
+    case "sdCat": { sh.draft.name = root.querySelector("#sn").value; const c = sh.draft.cats; const ix = c.indexOf(k); if (ix >= 0) c.splice(ix, 1); else c.push(k); sh.err = null; return render(); }
     case "sdIcon": sh.draft.name = root.querySelector("#sn").value; sh.draft.icon = k || null; return render();
-    case "sdKind": sh.draft.name = root.querySelector("#sn").value; sh.draft.kind = k; return render();
+    case "sdKind": sh.draft.name = root.querySelector("#sn").value; sh.draft.kind = k; sh.err = null; if (k === "specialty" && !sh.draft.cats.length) sh.draft.cats = [...catsSugeridas(sh.draft.name)]; return render();
     case "sdMove": sh.draft.name = root.querySelector("#sn").value; return moveStore(sh, +k);
     case "sdDel": sh.draft.name = root.querySelector("#sn").value; sh.confirm = true; return render();
     case "sdNo": sh.confirm = false; return render();

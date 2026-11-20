@@ -10,26 +10,28 @@ export function guessCategory(text) {
   return bestKeyword(text, KW_LIST) || "otros";
 }
 
-/** Tiendas de especialidad: una tienda única cuyo nombre dice qué se compra allí (frutería → fruta y verdura).
- *  Lo de sus categorías no se apunta «en» ellas: va en «Cualquier súper» y sale solo en la tienda (tiendaPara).
- *  La farmacia es especial: los medicamentos no salen en los súper, ni lo apuntado en ella. */
-const SOLO_FARMACIA = new Set(["medicamentos"]);
-const ESPECIALIDAD = [["farmac", ["medicamentos", "parafarmacia"]],
+/** Tipos de tienda (se eligen al crearla o editarla):
+ *  - «generic» (Supermercado): lo apuntado en ella y todo lo de «Cualquier súper», menos los medicamentos;
+ *  - «specialty» (Especialidad, con `cats`, lo que vende): lo apuntado en ella y lo de «Cualquier súper» de sus categorías;
+ *  - «unique» (Única): solo lo apuntado en ella.
+ *  Lo de las categorías de una tienda de especialidad no se apunta «en» ella: se queda en «Cualquier súper» y sale
+ *  allí solo (tiendaPara). Lo apuntado en una tienda que no es súper sale solo en esa tienda. */
+const SOLO_ESPECIALIDAD = new Set(["medicamentos"]);
+export function especialidad(st) {
+  return st && st.kind === "specialty" && st.cats && st.cats.length ? st.cats : null;
+}
+/** Lo que suele vender una tienda por su nombre, solo para proponerlo al elegir «Especialidad». */
+const SUGERIDAS = [
   ["fruter", ["fruta", "verdura"]], ["verdul", ["verdura", "fruta"]], ["carnic", ["carne", "charcuteria"]], ["polleri", ["carne"]],
   ["pescader", ["pescado"]], ["marisquer", ["pescado"]], ["panader", ["pan", "bolleria"]], ["horno", ["pan", "bolleria"]],
-  ["pasteler", ["bolleria"]], ["charcut", ["charcuteria"]], ["queser", ["quesos"]],
+  ["pasteler", ["bolleria"]], ["charcut", ["charcuteria"]], ["queser", ["quesos"]], ["farmac", ["medicamentos", "parafarmacia"]],
+  ["drogu", ["limpieza", "higiene"]], ["ferret", ["hogar"]], ["bodega", ["bebidas"]], ["vinoteca", ["bebidas"]], ["congelad", ["congelados"]],
 ];
-export function especialidad(st) {
-  if (!st || st.kind !== "unique") return null;
-  const k = nameKey(st.name);
-  for (const [w, cats] of ESPECIALIDAD) if (k.includes(w)) return cats;
-  return null;
+export function catsSugeridas(name) {
+  const k = nameKey(name || "");
+  for (const [w, cats] of SUGERIDAS) if (k.includes(w)) return cats;
+  return [];
 }
-/** Visible en una tienda (null → todo):
- *  - súper (genérica): lo suyo, lo de «Cualquier súper» y lo de las tiendas de especialidad (también se puede comprar allí);
- *  - de especialidad: lo suyo y lo de «Cualquier súper» de sus categorías (la frutería, toda la fruta y verdura);
- *  - única sin especialidad (farmacia): solo lo suyo. */
-const esFarmacia = (st) => !!st && st.kind === "unique" && nameKey(st.name).includes("farmac");
 /** La tienda con la que se guarda algo: lo que una tienda de especialidad ya ve por su categoría se queda
  *  en «Cualquier súper» (la fruta no se apunta en la Frutería; sale allí sola). */
 export function tiendaPara(storeId, category, stores = []) {
@@ -37,16 +39,14 @@ export function tiendaPara(storeId, category, stores = []) {
   const cats = especialidad(stores.find((s) => s.id === storeId));
   return cats && cats.includes(category) ? null : storeId;
 }
+/** Visible en una tienda (null → todo). */
 export function inStore(item, store, stores = []) {
   if (!store) return true;
   if (item.storeId === store.id) return true;
-  if (store.kind === "generic") {
-    if (item.storeId == null) return !SOLO_FARMACIA.has(item.category);
-    const st = stores.find((s) => s.id === item.storeId);
-    return !!especialidad(st) && !esFarmacia(st);
-  }
+  if (item.storeId != null) return false;
+  if (store.kind === "generic") return !SOLO_ESPECIALIDAD.has(item.category);
   const cats = especialidad(store);
-  return !!(cats && item.storeId == null && cats.includes(item.category));
+  return !!(cats && cats.includes(item.category));
 }
 
 /** Tienda dominante de una categoría en la despensa (al menos el 60 %). */

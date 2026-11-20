@@ -1,7 +1,7 @@
 // Capa de datos: Firebase Auth + Cloud Firestore con caché persistente.
 // La app no habla con Firestore directamente: usa estas funciones.
 
-import { EMAIL_DOMAIN, STORES_SEED } from "./data.js";
+import { EMAIL_DOMAIN, STORES_SEED, CAT } from "./data.js";
 import { startOfDay, nameKey } from "./util.js";
 
 export const FIREBASE_VERSION = "10.14.1";
@@ -65,7 +65,9 @@ function productFrom(d) {
 }
 function storeFrom(d) {
   const x = d.data();
-  return { id: d.id, name: x.name || d.id, kind: x.kind === "unique" ? "unique" : "generic", order: typeof x.order === "number" ? x.order : 99, aliases: Array.isArray(x.aliases) ? x.aliases : [], icon: typeof x.icon === "string" ? x.icon : null };
+  const kind = x.kind === "unique" || x.kind === "specialty" ? x.kind : "generic";
+  const cats = kind === "specialty" && Array.isArray(x.cats) ? x.cats.filter((c) => CAT[c]) : [];
+  return { id: d.id, name: x.name || d.id, kind, cats, order: typeof x.order === "number" ? x.order : 99, aliases: Array.isArray(x.aliases) ? x.aliases : [], icon: typeof x.icon === "string" ? x.icon : null };
 }
 
 /**
@@ -105,8 +107,12 @@ export function subscribe(h) {
 
 function seedStores() {
   const b = F.writeBatch(db);
-  for (const s of STORES_SEED) b.set(F.doc(db, "stores", s.id), { name: s.name, kind: s.kind, order: s.order, aliases: s.aliases });
-  b.commit().catch((e) => console.warn("No se pudieron crear las tiendas", e));
+  for (const s of STORES_SEED) b.set(F.doc(db, "stores", s.id), { name: s.name, kind: s.kind, order: s.order, aliases: s.aliases, ...(s.cats ? { cats: s.cats } : {}) });
+  b.commit().catch((e) => {
+    console.warn("No se pudieron crear las tiendas", e);
+    // Reglas antiguas (sin «especialidad»): se crean como «única» para no quedarse sin tiendas.
+    if (e && e.code === "permission-denied") batch(STORES_SEED.map((s) => ({ op: "set", col: "stores", id: s.id, data: { name: s.name, kind: s.kind === "specialty" ? "unique" : s.kind, order: s.order, aliases: s.aliases } })));
+  });
 }
 
 /* ---------------- Historial (carga incremental) ---------------- */
@@ -170,8 +176,10 @@ const ID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 export const newId = () => { const a = crypto.getRandomValues(new Uint8Array(20)); let id = ""; for (const x of a) id += ID_CHARS[x % 62]; return id; };
 
 /** Lote de operaciones: ops = [{op:"set"|"update"|"delete", col, id, data}] */
+/** Devuelve una promesa que dice si se ha guardado todo (true) o no (false). */
 export function batch(ops) {
-  ready.then(() => {
+  return ready.then(() => {
+    const commits = [];
     for (let i = 0; i < ops.length; i += 450) {
       const b = F.writeBatch(db);
       for (const o of ops.slice(i, i + 450)) {
@@ -181,13 +189,24 @@ export function batch(ops) {
         else if (o.op === "delete") b.delete(ref);
       }
       const chunk = ops.slice(i, i + 450);
-      b.commit().catch((e) => {
-        // Si las reglas de Firestore aún no conocen «createdBy» (no se han pegado las nuevas), se repite sin él.
-        if (e && e.code === "permission-denied" && chunk.some((o) => o.data && "createdBy" in o.data)) {
-          batch(chunk.map((o) => (o.data && "createdBy" in o.data ? { ...o, data: (({ createdBy, ...r }) => r)(o.data) } : o)));
-        } else fail(e);
-      });
+      commits.push(b.commit().then(() => true, (e) => {
+        // Si las reglas de Firestore aún no conocen «createdBy» o las tiendas de especialidad (no se han pegado
+        // las nuevas), se repite sin ello: no se pierde nada.
+        const viejo = (o) => o.data && ("createdBy" in o.data || (o.col === "stores" && (o.data.kind === "specialty" || "cats" in o.data)));
+        if (e && e.code === "permission-denied" && chunk.some(viejo)) {
+          batch(chunk.map((o) => {
+            if (!viejo(o)) return o;
+            const { createdBy, cats, ...r } = o.data;
+            if (r.kind === "specialty") r.kind = "unique";
+            return { ...o, data: r };
+          }));
+          return false;
+        }
+        fail(e);
+        return false;
+      }));
     }
+    return Promise.all(commits).then((r) => r.every(Boolean));
   });
 }
 

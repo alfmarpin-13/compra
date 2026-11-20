@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v61 · 20/11/2026
+- Tipos de tienda que se eligen a mano al crearla o editarla: **Supermercado** (sale todo lo de «Cualquier súper»), **Especialidad** (eliges qué vende y sale sola cuando hay algo de eso apuntado, como la fruta en la frutería) y **Única** (solo lo que apuntéis en ella). Antes la especialidad se adivinaba por el nombre.
+- Las tiendas que ya funcionaban como especialidad (Frutería, Farmacia…) pasan solas a ese tipo. Hay que pegar las reglas nuevas de Firestore.
+- Lo apuntado en una tienda concreta que no es supermercado sale solo en esa tienda.
+
 ## v60 · 20/11/2026
 - Arreglado: al volver del Historial a Opciones con el gesto, se veía la Lista mezclada por debajo de Opciones (su cabecera, el texto y la barra de abajo asomando).
 

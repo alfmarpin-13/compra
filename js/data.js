@@ -125,10 +125,10 @@ export const STORES_SEED = [
   { id: "mercadona", name: "Mercadona", kind: "generic", order: 0, aliases: ["mercadona", "merca"] },
   { id: "hipercor", name: "Hipercor", kind: "generic", order: 1, aliases: ["hipercor", "corte ingles", "el corte ingles"] },
   { id: "lidl", name: "Lidl", kind: "generic", order: 2, aliases: ["lidl", "lidel"] },
-  { id: "fruteria", name: "Frutería", kind: "unique", order: 3, aliases: ["fruteria", "frutero"] },
-  { id: "carniceria", name: "Carnicería", kind: "unique", order: 4, aliases: ["carniceria", "carnicero"] },
-  { id: "panaderia", name: "Panadería", kind: "unique", order: 5, aliases: ["panaderia", "panadero", "horno"] },
-  { id: "farmacia", name: "Farmacia", kind: "unique", order: 6, aliases: ["farmacia"] },
+  { id: "fruteria", name: "Frutería", kind: "specialty", cats: ["fruta", "verdura"], order: 3, aliases: ["fruteria", "frutero"] },
+  { id: "carniceria", name: "Carnicería", kind: "specialty", cats: ["carne", "charcuteria"], order: 4, aliases: ["carniceria", "carnicero"] },
+  { id: "panaderia", name: "Panadería", kind: "specialty", cats: ["pan", "bolleria"], order: 5, aliases: ["panaderia", "panadero", "horno"] },
+  { id: "farmacia", name: "Farmacia", kind: "specialty", cats: ["medicamentos", "parafarmacia"], order: 6, aliases: ["farmacia"] },
 ];
 
 // Icono para las tiendas únicas, deducido del nombre.
