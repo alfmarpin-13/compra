@@ -433,6 +433,7 @@ const LOGOS = {
   "logo-hipercor": { file: "icons/tiendas/hipercor.png", r: 1.77, match: "hipercor" },
   "logo-lidl": { file: "icons/tiendas/lidl.png", r: 2.53, match: "lidl" },
   "logo-domi-velez": { file: "icons/tiendas/domi-velez.png", r: 2.875, match: "domi velez" },
+  "logo-nino-manuel": { file: "icons/tiendas/nino-manuel.png", r: 1.3125, match: "nino manuel" },
 };
 const autoLogo = (name) => Object.keys(LOGOS).find((k) => (" " + nameKey(name) + " ").includes(" " + LOGOS[k].match + " ")) || null;
 const logoSpan = (key, big) => `<span class="slot logo${big ? " lg" : ""}" style="--logo:url('${LOGOS[key].file}');--r:${LOGOS[key].r}" aria-hidden="true"></span>`;
