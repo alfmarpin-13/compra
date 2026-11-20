@@ -73,7 +73,7 @@ Mismo diseño que el prototipo. Resumen:
 1. **Entrada:** logo, «Compra.», frase, usuario, contraseña, «Recordarme en este iPhone» y «Entrar». Solo un error genérico: «No se ha podido verificar el usuario o la contraseña».
 2. **Lista (principal).**
    - **Cabecera compacta:** las pestañas «Lista» / «Despensa» (con el logo como icono de la Lista) y dos botones: cambiar vista (casillas/lista) y menú ⋮. El Historial está solo dentro del menú. Solo iconos, sin fondo (decisión de Alfonso).
-   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. Cambiar de filtro es instantáneo, sin animación. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
+   - **Barra de tiendas** con desplazamiento horizontal. Primero «Todas N». Después solo las tiendas con algún artículo pendiente asignado a ellas mismas, más la tienda abierta en ese momento, cada una con su contador. Sin botón de editar tiendas en esta barra: Tiendas se abre desde el menú ⋮. Cambiar de filtro es instantáneo, sin animación. Si la tienda abierta se queda sin artículos suyos (se tachan, se borran o se quitan desde la despensa), su filtro desaparece y se vuelve a «Todas» sola; si se abrió ya vacía desde Tiendas, se respeta. En el ordenador, la rueda del ratón desplaza esta barra en horizontal y el borde derecho se difumina.
    - **Contenido:** artículos pendientes agrupados por categoría. **Categorías por orden alfabético** (Otros al final) y, dentro de cada una, **artículos por orden alfabético** (decisión de Alfonso; igual en la Despensa). Cada grupo lleva su icono, su nombre y un contador. Dos vistas, recordadas por dispositivo:
      - **Casillas** (por defecto): rejilla de 3 columnas. Cada casilla lleva el icono del producto en el color de su categoría y el nombre. La tienda va como logo o icono pequeño en la esquina superior derecha, sin texto (nada si es «Cualquier súper»). Si lo apuntó la otra persona, su inicial en un círculo arriba a la izquierda.
      - **Lista:** filas con círculo, nombre, tienda (o «Cualquier súper») y «· Mariluz» si lo apuntó la otra persona.
@@ -86,7 +86,7 @@ Mismo diseño que el prototipo. Resumen:
    - **«Os toca reponer»**, con «Repasar» a la derecha.
    - **Todo el catálogo por categorías,** en casillas o lista según la vista elegida. Lo que ya está en la lista va resaltado con un check.
    - Si la búsqueda no encuentra nada: «No está en la despensa» y un botón «Añadir «X»», que abre la ficha con el nombre ya escrito.
-4. **Historial:** ←, «Historial», buscador y tarjetas por día («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir (N)», que se salta lo que ya está pendiente, y un botón con papelera para borrar lo seleccionado del historial (con Deshacer).
+4. **Historial:** ←, «Historial», buscador y tarjetas por día (cada artículo se borra también **deslizándolo hacia la izquierda**, que deja ver «Borrar» en rojo, con Deshacer) («Hoy», «Ayer», «Martes, 17 de noviembre»…) con «N artículos tachados», «Seleccionar todo el día» y casillas por artículo. Abajo, «Volver a añadir (N)», que se salta lo que ya está pendiente, y un botón con papelera para borrar lo seleccionado del historial (con Deshacer).
 5. **Tiendas** (hoja inferior): lista de todas las tiendas con su tipo, lo pendiente y un lápiz. Tocar una abre la lista filtrada por esa tienda. Abajo, «Añadir tienda».
 6. **Opciones** (botón ⋮): pantalla completa, no ventana emergente. En Opciones e Historial funciona el **gesto de volver del iPhone** (decisión de Alfonso): deslizar a la derecha, desde el borde o desde cualquier sitio, hace que la pantalla siga al dedo con la anterior asomando debajo; al soltar pasado ~1/3 o con un golpe rápido vuelve, si no se recoloca. Tiendas, Repasar la despensa, Historial; modo Como el iPhone / Claro / Oscuro directamente ahí; cuenta, Compartida con… y Cerrar sesión; versión y créditos.
 7. **Barra inferior flotante y translúcida:** el contenido se desplaza por detrás de ella.
@@ -113,6 +113,7 @@ Mismo diseño que el prototipo. Resumen:
 ### 5.2 Tachar
 - Tocar un artículo pendiente lo tacha: `checked = true`, `checkedAt = ahora`, `checkedBy = yo`.
 - **Se tacha en el sitio** (decisión de Alfonso): la casilla o fila se queda donde está, tachada, con una marca, **«Deshacer» dentro** y una barrita de tiempo; a los ~4,5 s se recoge hacia «Comprado hoy». Tocarla otra vez también deshace. Sin aviso abajo.
+- Mientras se ve el «Deshacer», el artículo cuenta como pendiente en filtros y contadores; al deshacer (o al devolverlo desde «Comprado hoy») se ve como pendiente hasta que Firestore lo confirma (`pendVista()`), para que nada salte.
 - Tocar un artículo en «Comprado hoy» lo devuelve a pendiente, sin aviso.
 - Mantener pulsado (500 ms) abre su edición. En el ordenador, también con clic derecho o con un lápiz que aparece al pasar el ratón (solo en dispositivos con `hover`).
 
@@ -128,14 +129,16 @@ Mismo diseño que el prototipo. Resumen:
   - «de/en cualquier súper / da igual dónde» fija «Cualquier súper».
   - Los números y las cantidades se descartan («dos pimientos» → Pimientos). **La app no guarda cantidades.**
   - Un producto que no está en la despensa se crea en ella, con la categoría deducida por palabras clave y «Otros» si no hay coincidencia.
-- **Si todo está claro,** se añade directamente: el producto es conocido o la tienda se dijo, no hay faltas corregidas ni duplicados. Aviso: «Añadido: Leche entera · Mercadona» con Deshacer.
+- **Si todo está claro,** se añade directamente: todos los productos están ya en la despensa, sin faltas corregidas ni duplicados. Aviso: «Añadido: Leche entera · Mercadona» con Deshacer. **Lo nuevo siempre pasa por la hoja** (decisión de Alfonso), para poder revisar su categoría y su tienda.
 - **Si no,** se abre la hoja **«Esto es lo que he entendido»** (o «¿Dónde lo apunto?» si es uno solo). Por cada artículo, una casilla para incluirlo, su categoría y tienda, y una nota según el caso:
   - corrección: «Entiendo «Plátanos» (escribiste «platnos»)»;
   - duplicado: «Ya está en la lista. No lo duplico»;
   - tienda habitual: «Normalmente lo apuntáis en Mercadona. ¿Lo dejo ahí o en cualquier súper?», con botones [Mercadona] [Cualquier súper] [Otra…];
-  - producto nuevo: «Es nuevo. Lo de fruta soléis comprarlo en Frutería», usando la tienda dominante de esa categoría si reúne al menos el 60 %.
+  - producto nuevo: «Es nuevo. Lo de fruta soléis comprarlo en Frutería», usando la tienda dominante de esa categoría si reúne al menos el 60 %;
+  - nombre contenido en otro producto («vino blanco» y ya está «Vino blanco cocinar»): **no se da por el mismo**; «Ya tenéis «Vino blanco cocinar». ¿Es lo mismo o es otro producto?» con [Es «…»] [Es otro] (por defecto, otro);
+  - **categoría sugerida con «Cambiar»** (decisión de Alfonso): abre todas las categorías y lo elegido se guarda también en el producto de la despensa.
   - Botones: Cancelar y «Añadir N».
-- **Aprendizaje:** si al añadir se elige una tienda distinta de la habitual, esa pasa a ser la tienda habitual del producto en la despensa.
+- **Aprendizaje:** si al añadir se elige una tienda o una categoría distinta de la habitual, pasa a ser la del producto en la despensa.
 - Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte y un mini aviso (5.10).
 
 ### 5.4 Toca y habla

@@ -387,10 +387,16 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .cath.sec2 .tbtn{margin-right:-8px;min-height:36px}
 .noq{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:28px 4px}
 .noq p{margin:0;font:500 15px/22px var(--fb);color:var(--muted)}
-.trip{border:1px solid var(--line);border-radius:20px;padding:20px 20px 12px;margin-top:16px;background:color-mix(in srgb,var(--paper) 60%,transparent)}
+.trip{border:1px solid var(--line);border-radius:20px;padding:20px 20px 12px;margin-top:16px;background:color-mix(in srgb,var(--paper) 60%,var(--ground))}
 .trip h3{font:600 17px/24px var(--fb);letter-spacing:-.15px}
 .trip .tsub2{font:600 12px/18px var(--fb);color:var(--primary);margin-top:2px}
 .trip .titem{display:flex;align-items:center;gap:16px;min-height:48px;font:500 16px/24px var(--fb);cursor:pointer;padding-left:12px;width:100%;text-align:left}
+/* Deslizar para borrar: debajo de cada artículo hay una franja roja con «Borrar» */
+.tswipe{position:relative;overflow:hidden;border-radius:12px}
+.tswipe .tdel{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-right:18px;background:var(--danger);color:#fff;font:600 15px/20px var(--fb);opacity:0}
+:root[data-theme="dark"] .tswipe .tdel{color:#2A0E16}
+.tswipe.swiping .tdel{opacity:1}
+.trip .tswipe .titem{position:relative;background:color-mix(in srgb,var(--paper) 60%,var(--ground))}
 .trip .titem .ago{margin-left:auto;font:500 12px/18px var(--fb);color:var(--muted)}
 .bottombtn{padding:12px 20px 4px;background:var(--ground)}
 .bottombtn{display:flex;gap:10px}
