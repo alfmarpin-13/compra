@@ -67,7 +67,7 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .app.kb-draft .dock{bottom:2px}
 /* Con el teclado abierto para otra cosa (buscar, hojas), la barra de «Añadir» no sube */
 .app.kb:not(.kb-draft) .dock,.app.kb:not(.kb-draft) .band{display:none}
-.scr{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--ground);padding-top:var(--sat);padding-bottom:var(--sab);padding-left:var(--sal);padding-right:var(--sar)}
+.scr{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;background:var(--ground);padding-top:var(--sat);padding-bottom:var(--sab);padding-left:var(--sal);padding-right:var(--sar)}
 .scr > *{position:relative;z-index:1}
 .splash{position:absolute;inset:0;display:grid;place-items:center}
 .splash svg{border-radius:22px}
