@@ -602,6 +602,8 @@ function vMenu() {
 }
 
 /* --- Despensa --- */
+/** La X para borrar la búsqueda: sale sola en cuanto hay algo escrito. */
+const borrarBusqueda = (id, q) => (q ? `<button type="button" class="sclear" data-act="qClear" data-k="${id}" aria-label="Borrar la búsqueda">${ic("x", 14)}</button>` : "");
 function vPantryRow(p) {
   const on = !!pendingFor(p), due = isDue(p), st = statsFor(p);
   return `<div class="prow tap" data-flip data-key="pr-${esc(p.id)}" data-act="ptoggle" data-k="${esc(p.id)}" role="checkbox" aria-checked="${on}" tabindex="0">
@@ -624,7 +626,7 @@ function vPantry() {
   const list = all.filter((p) => !q || singAll(p.nameKey).includes(q) || (q.length >= 4 && matchProduct(q, [p])));
   const due = q ? [] : dueList();
   return `<div class="pane folder" data-key="pane-pantry" aria-hidden="${curTab() !== "pantry"}">
-   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
+   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off">${borrarBusqueda("pq", S.pantryQ)}</label></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-flip data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
@@ -651,7 +653,7 @@ function vHistory() {
   const sel = S.histSel.size;
   return `<div class="scr" data-key="history">
    <div class="hb back"><button class="ib sm" data-act="back" aria-label="Volver">${ic("arrow-left", 20)}</button><div class="hb-t"><h1 class="hb-name">Historial</h1></div></div>
-   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="hq" type="search" value="${esc(S.histQ)}" placeholder="Buscar en lo que habéis comprado" aria-label="Buscar en el historial" autocomplete="off"></label></div>
+   <div class="srow2"><label class="srch">${ic("search", 18)}<input id="hq" type="search" value="${esc(S.histQ)}" placeholder="Buscar en lo que habéis comprado" aria-label="Buscar en el historial" autocomplete="off">${borrarBusqueda("hq", S.histQ)}</label></div>
    <div class="pad">
     ${!S.historyLoaded && !days.length ? `<p class="histempty">Cargando…</p>` : ""}
     ${S.historyLoaded && !days.length ? `<p class="histempty">${S.histQ ? "No aparece en el historial." : "Aquí irá lo que tachéis, agrupado por día."}</p>` : ""}
@@ -1489,6 +1491,14 @@ function act(a, el, e) {
     }
     case "pedit": e.stopPropagation(); return openPEdit(k);
     case "pnew": return openPEdit(null);
+    case "qClear": {
+      const inp = root.querySelector("#" + k), activo = document.activeElement === inp;
+      if (k === "pq") S.pantryQ = ""; else S.histQ = "";
+      if (inp) inp.value = "";
+      render();
+      if (activo) root.querySelector("#" + k)?.focus({ preventScroll: true });
+      return;
+    }
     case "pnewq": { const n = cap(S.pantryQ.trim()); return openPEdit(null, n); }
     case "pdStore": sh.draft.name = root.querySelector("#pn").value; sh.draft.storeId = k || null; return render();
     case "pdCat": sh.draft.name = root.querySelector("#pn").value; sh.draft.category = k; return render();
@@ -2020,7 +2030,7 @@ document.addEventListener("focusout", (e) => {
   setTimeout(() => { if (S.capture === "typing" && document.activeElement?.id !== "draft") closeTyping(); }, 180);
 });
 // La flecha y el micro no le quitan el foco al campo al tocarlos (así no se cierra el teclado al añadir).
-root.addEventListener("mousedown", (e) => { if (e.target.closest(".dk-send")) e.preventDefault(); });
+root.addEventListener("mousedown", (e) => { if (e.target.closest(".dk-send, .sclear")) e.preventDefault(); });
 root.addEventListener("touchstart", (e) => { if (e.target.closest(".dk-send")) e.preventDefault(); }, { passive: false });
 if (vv) { vv.addEventListener("resize", fitViewport); vv.addEventListener("scroll", fitViewport); }
 

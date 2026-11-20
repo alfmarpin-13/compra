@@ -83,7 +83,7 @@ Mismo diseño que el prototipo. Resumen:
    - **Barra inferior fija:** «Añadir» (sin «+»: el texto escrito empieza justo donde pone «Añadir»; al escribir la pastilla no cambia de color, decisiones de Alfonso) y, a la derecha, el botón redondo del micrófono (solo el icono), que se queda siempre. Al tocar «Añadir», esa misma pastilla se convierte en el campo de escribir (no se cambia por otra barra) y sube con el teclado, pegada a él (2 px; encima del teclado el iPhone pone su barra de flechas ⌃ ⌄ ✓, que una web no puede quitar); dentro solo hay una flecha para añadir. Se cierra tocando fuera o bajando el teclado. El micro, al tocarlo, se ensancha con fluidez hasta ocupar la barra («Escuchando… toca para terminar») y a la izquierda queda solo un botón redondo para cancelar; la barra no cambia de tamaño ni de sitio.
 3. **Despensa** (pestaña junto a «Lista», misma cabecera).
    - **Buscador.** «+ Añadir» de la barra abre el mismo campo de escribir que la lista (y el micro igual): mismo intérprete y misma hoja «Esto es lo que he entendido», pero guarda solo en la despensa, sin apuntar en la lista, y marca lo que ya estaba. La ficha completa de un producto se abre manteniéndolo pulsado.
-   - **Buscador** en forma de pastilla: «Buscar entre N productos».
+   - **Buscador** en forma de pastilla: «Buscar entre N productos». Con texto escrito sale sola una X para borrarlo (también en el buscador del Historial).
    - **«Os toca reponer»**, con «Repasar» a la derecha.
    - **Todo el catálogo por categorías,** en casillas o lista según la vista elegida. Lo que ya está en la lista va resaltado con un check.
    - Si la búsqueda no encuentra nada: «No está en la despensa» y un botón «Añadir «X»», que abre la ficha con el nombre ya escrito.

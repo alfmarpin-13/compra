@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v69 · 20/11/2026
+- Los buscadores de la Despensa y del Historial muestran una X para borrar lo escrito en cuanto hay algo.
+
 ## v68 · 20/11/2026
 - «Pasta de dientes» ya no se toma por «Pasta de lentejas»: al corregir faltas, cada palabra tiene que parecerse a la suya (una falta cambia letras, no palabras).
 - Cuando se corrige una falta, la hoja lo dice y deja elegir: «Es «Plátanos»» o «Es otro producto» (que lo crea con lo escrito). También en la Despensa, donde antes solo decía «Ya está en la despensa».
