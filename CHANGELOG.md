@@ -2,6 +2,12 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v53 · 20/11/2026
+- Avisos de lo que añade la otra persona: con la app abierta, mini aviso al momento («Ilu ha añadido Leche a la lista»); al volver a la app, cartel «Mientras no estabas: Ilu ha añadido 7 cosas a la lista y 2 a la despensa».
+- Mariluz se llama «Ilu» en toda la app. Al entrar vale escribir «ilu» o «mariluz».
+- La despensa guarda quién creó cada producto (hay que pegar las reglas nuevas de Firestore para que se guarde).
+- Micro: si al arrancar daba unos instantes de silencio absoluto, después confundía el ruido de fondo con voz y se inventaba palabras. Arreglado.
+
 ## v52 · 20/11/2026
 - Sugerencias de la despensa al escribir: la fila solo se desplaza en horizontal (antes también se movía en vertical y las pastillas quedaban cortadas).
 

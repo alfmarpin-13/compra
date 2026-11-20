@@ -28,6 +28,7 @@ App web instalable (PWA) para la lista de la compra de casa, compartida en tiemp
 - Sesión persistente: «Recordarme en este iPhone» marcado por defecto, con `browserLocalPersistence`.
 - **Sin sesión no se muestra ningún dato**, aunque alguien tenga la URL.
 - Para saber quién soy: la parte del email antes de la `@`, con la primera letra en mayúscula.
+- **En pantalla, Mariluz se llama «Ilu»** (decisión de Alfonso). Por dentro todo sigue igual: la cuenta `mariluz@compra.app`, el valor «Mariluz» guardado en `addedBy`/`checkedBy`/`createdBy` y las reglas. Solo cambia lo que se ve, con `nombre()` de `js/data.js` (`MOSTRAR`), y al entrar vale escribir «ilu» o «mariluz» (`ALIAS_LOGIN`).
 
 ## 3. Modelo de datos (Firestore)
 
@@ -47,6 +48,7 @@ products/{productId}      // la DESPENSA: catálogo de lo que soléis comprar
   storeId: string | null  // tienda habitual; null = «Cualquier súper»
   icon: string | null     // clave de icono (sección 7); null = icono de su categoría
   createdAt, updatedAt
+  createdBy: "Alfonso" | "Mariluz" | null   // quién lo creó (para el aviso a la otra persona; los antiguos no lo tienen)
 
 items/{itemId}            // la LISTA: cada vez que se apunta algo
   productId: string
@@ -128,7 +130,7 @@ Mismo diseño que el prototipo. Resumen:
   - producto nuevo: «Es nuevo. Lo de fruta soléis comprarlo en Frutería», usando la tienda dominante de esa categoría si reúne al menos el 60 %.
   - Botones: Cancelar y «Añadir N».
 - **Aprendizaje:** si al añadir se elige una tienda distinta de la habitual, esa pasa a ser la tienda habitual del producto en la despensa.
-- Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte, **sin avisos emergentes**.
+- Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte y un mini aviso (5.10).
 
 ### 5.4 Toca y habla
 - **Como una nota de voz** (decisión de Alfonso: el reconocimiento de voz de Safari, `SpeechRecognition`, se quedaba sordo en la app instalada tras cancelar o tras la primera vez, y perdía palabras). **Tocar** el micro graba el audio y, al terminar, se transcribe **en el propio dispositivo** con Whisper (`js/voz.js` y `js/voz-worker.js`). No se usa `SpeechRecognition` ni «mantener pulsado» (el iPhone solo deja abrir el micro con un toque completo).
@@ -170,8 +172,14 @@ Mismo diseño que el prototipo. Resumen:
 - Cantidades: ni gramos, ni kilos, ni unidades.
 - «Empezar compra» / «Terminar compra», y el modo compra.
 - Varias listas.
-- Avisos de lo que hace la otra persona, como «Mariluz ha tachado…».
+- Avisos de lo que tacha o borra la otra persona. Solo se avisa de lo que **añade** (5.10).
 - Logos de marcas de supermercado. Cada tienda genérica lleva un hueco neutro (icono de tienda con borde discontinuo) donde más adelante podrá ir su logo monocromo.
+
+### 5.10 Avisos de lo que añade la otra persona
+Decisión de Alfonso (antes no había ninguno). Solo de lo que **añade la otra persona**, a la lista o a la despensa; nunca de lo que añades tú desde otro aparato, ni de lo que se tacha o se borra.
+- **Con la app abierta:** mini aviso en la pastilla de siempre, sin «Deshacer»: «Ilu ha añadido Leche a la lista», «Ilu ha añadido Levadura a la despensa», «Ilu ha añadido 3 cosas a la lista y 2 a la despensa». Lo que llega en poco más de 1 s se junta en un aviso. Un producto creado al apuntar un artículo cuenta solo en la lista. Si tienes delante un aviso tuyo con «Deshacer», se espera a que se vaya.
+- **Al volver a la app** (abrirla o traerla del segundo plano): cartel de dos líneas, «Mientras no estabas» y «Ilu ha añadido 7 cosas a la lista y 2 a la despensa», unos 9 s (se quita tocándolo). Cuenta lo añadido desde la última vez que la tuviste delante (`compra.visto.<usuario>` en `localStorage`, que se guarda al irse a segundo plano y cada 30 s). Mientras está en segundo plano no salen mini avisos, y al volver no se repite lo que ya cuenta el cartel.
+- La despensa sabe quién creó cada producto por `createdBy`. Si las reglas pegadas en Firebase aún no lo admiten, la escritura se repite sin ese campo (no se pierde nada; solo no avisa de ese producto).
 
 ## 6. Datos iniciales
 
@@ -255,7 +263,7 @@ Oscuro: ground #0E1511 · paper #18211B · ink #EDF3EA · muted #9AA79E
 
 Alfonso pidió hermeticidad total (v48). Lo que hay y por qué; no lo relajes sin decírselo:
 
-- **Reglas de Firestore** (`firestore.rules`, pegadas a mano en la consola con los dos UID; Alfonso las pega, el repo lleva `UID_ALFONSO`/`UID_MARILUZ`): solo los dos UID leen y escriben; solo `stores`, `products` e `items`; campos cerrados con tipo y tamaño máximo (nombres ≤ 80, ids `^[A-Za-z0-9_-]{1,70}$`, `addedBy`/`checkedBy` solo «Alfonso»/«Mariluz», etc.); en una modificación, los campos que no cambian no se recomprueban (un dato antiguo no bloquea tachar). Se prueban en el emulador de Firestore con todas las escrituras de la app y una batería de ataques antes de cambiarlas.
+- **Reglas de Firestore** (`firestore.rules`, pegadas a mano en la consola con los dos UID; Alfonso las pega, el repo lleva `UID_ALFONSO`/`UID_MARILUZ`): solo los dos UID leen y escriben; solo `stores`, `products` e `items`; campos cerrados con tipo y tamaño máximo (nombres ≤ 80, ids `^[A-Za-z0-9_-]{1,70}$`, `addedBy`/`checkedBy`/`createdBy` solo «Alfonso»/«Mariluz», etc.); en una modificación, los campos que no cambian no se recomprueban (un dato antiguo no bloquea tachar). Se prueban en el emulador de Firestore con todas las escrituras de la app y una batería de ataques antes de cambiarlas.
 - **Sin código de fuera:** Firebase y la librería de voz van en `vendor/`. El modelo de voz se descarga de Hugging Face, pero es solo datos que corren en el sandbox de WebAssembly del worker.
 - **CSP en `<meta>`** (`index.html`): `script-src 'self' 'wasm-unsafe-eval'`, sin scripts en línea (el tema va en `js/tema.js`), `connect-src` solo a Firestore, Identity Toolkit, Secure Token y Hugging Face, `img-src` admite `www.google.com` (Firestore lo usa para comprobar la conexión), `object-src`/`frame-src`/`base-uri` cerrados. `style-src` necesita `'unsafe-inline'` por los `style=""` de las plantillas. Si se añade un servicio nuevo, hay que añadirlo aquí.
 - **Sin marcos:** `js/tema.js` no deja abrir la app dentro de otra web (GitHub Pages no permite la cabecera `frame-ancestors`).
