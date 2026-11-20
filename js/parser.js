@@ -10,20 +10,43 @@ export function guessCategory(text) {
   return bestKeyword(text, KW_LIST) || "otros";
 }
 
-/** Visible en una tienda: genérica → lo suyo + «Cualquier súper»; única → solo lo suyo; null → todo. */
-export function inStore(item, store) {
+/** Tiendas de especialidad: una tienda única cuyo nombre dice qué se compra allí (frutería → fruta y verdura).
+ *  No son excluyentes: ven también lo de «Cualquier súper» de sus categorías, y los súper ven lo suyo. */
+const ESPECIALIDAD = [
+  ["fruter", ["fruta", "verdura"]], ["verdul", ["verdura", "fruta"]], ["carnic", ["carne", "charcuteria"]], ["polleri", ["carne"]],
+  ["pescader", ["pescado"]], ["marisquer", ["pescado"]], ["panader", ["pan", "bolleria"]], ["horno", ["pan", "bolleria"]],
+  ["pasteler", ["bolleria"]], ["charcut", ["charcuteria"]], ["queser", ["quesos"]],
+];
+export function especialidad(st) {
+  if (!st || st.kind !== "unique") return null;
+  const k = nameKey(st.name);
+  for (const [w, cats] of ESPECIALIDAD) if (k.includes(w)) return cats;
+  return null;
+}
+/** Visible en una tienda (null → todo):
+ *  - súper (genérica): lo suyo, lo de «Cualquier súper» y lo de las tiendas de especialidad (también se puede comprar allí);
+ *  - de especialidad: lo suyo y lo de «Cualquier súper» de sus categorías (la frutería, toda la fruta y verdura);
+ *  - única sin especialidad (farmacia): solo lo suyo. */
+export function inStore(item, store, stores = []) {
   if (!store) return true;
-  if (store.kind === "generic") return item.storeId === store.id || item.storeId == null;
-  return item.storeId === store.id;
+  if (item.storeId === store.id) return true;
+  if (store.kind === "generic") {
+    if (item.storeId == null) return true;
+    return !!especialidad(stores.find((s) => s.id === item.storeId));
+  }
+  const cats = especialidad(store);
+  return !!(cats && item.storeId == null && cats.includes(item.category));
 }
 
 /** Tienda dominante de una categoría en la despensa (al menos el 60 %). */
-export function categoryHabit(category, products) {
+export function categoryHabit(category, products, stores = []) {
   const xs = products.filter((p) => p.category === category);
   if (xs.length < 2) return null;
   const cnt = {};
   xs.forEach((p) => { const k = p.storeId || "_"; cnt[k] = (cnt[k] || 0) + 1; });
   const [k, v] = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+  // Las tiendas de especialidad no se sugieren: ya ven lo de su categoría aunque se apunte en «Cualquier súper».
+  if (especialidad(stores.find((s) => s.id === k))) return null;
   return k !== "_" && v / xs.length >= 0.6 ? k : null;
 }
 
@@ -156,7 +179,7 @@ export function parseOne(raw, ctx) {
     e.ask = !explicit && p.storeId ? { storeId: p.storeId, kind: "habit" } : null;
   } else {
     e.productId = null; e.name = cap(shown); e.category = lucia ? "lucia" : guessCategory(t); e.known = false; e.corrected = null;
-    const h = explicit ? null : categoryHabit(e.category, products);
+    const h = explicit ? null : categoryHabit(e.category, products, stores);
     e.storeId = explicit ? (generic ? null : storeId) : h;
     e.habitual = null;
     e.ask = h ? { storeId: h, kind: "new" } : null;
@@ -283,7 +306,7 @@ export function parseCommand(text, ctx) {
     for (let i = 0; i < w.length && !store; i++) { const f = fuzzyStoreAt(w, i, stores); if (f) store = f.store; }
   }
   const target = store || ctx.store || null;
-  const base = pending.filter((i) => inStore(i, target));
+  const base = pending.filter((i) => inStore(i, target, stores));
   const [main, exc] = (() => {
     const m = t.match(/ (menos|excepto|salvo|quitando|pero no) /);
     return m ? [t.slice(0, m.index) + " ", " " + t.slice(m.index + m[0].length)] : [t, ""];
