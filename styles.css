@@ -10,7 +10,7 @@
   --fb:Figtree,system-ui,-apple-system,sans-serif;
   --fh:"Bricolage Grotesque",Figtree,system-ui,sans-serif;
   --ground:#F3F4EE;--paper:#FFFFFF;--ink:#132019;--muted:#5D6A61;
-  --primary:#1C3A2D;--on-primary:#D9F56E;--accent:#D9F56E;--on-accent:#1C3A2D;
+  --primary:#1C3A2D;--on-primary:#D9F56E;--accent:#D9F56E;--on-accent:#1C3A2D;--topband:#1C3A2D;
   --tint:#E2EADD;--on-tint:#1C3A2D;--line:#E1E5DC;--outline:#A9B3AA;--pressed:#EBEEE5;
   --danger:#A72F48;--danger-c:#FFDDE5;
   --edge:0px;
@@ -22,7 +22,7 @@
 }
 :root[data-theme="dark"]{
   --ground:#0E1511;--paper:#18211B;--ink:#EDF3EA;--muted:#9AA79E;
-  --primary:#D9F56E;--on-primary:#0E1511;--accent:#D9F56E;--on-accent:#0E1511;
+  --primary:#D9F56E;--on-primary:#0E1511;--accent:#D9F56E;--on-accent:#0E1511;--topband:#0E1511;
   --tint:#233029;--on-tint:#EDF3EA;--line:#26312A;--outline:#4C5A51;--pressed:#1E2922;
   --danger:#FFB3C3;--danger-c:#5C2236;
   --toast-bg:#2B3A31;--toast-fg:#EDF3EA;--toast-act:#D9F56E;
@@ -56,7 +56,9 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
   @media (display-mode:standalone){ :root{--edge:6px} }
   :root.standalone{--edge:6px}
 }
-.topband{position:fixed;top:0;left:0;right:0;height:var(--sat);background:var(--ground);z-index:50;pointer-events:none;transition:background .2s}
+/* Fondo de la franja de la hora (app instalada, black-translucent). La hora y la batería las pinta el iPhone
+   siempre en blanco: en claro, el fondo es el verde bosque de la app para que se lean; en oscuro, el fondo de la app. */
+.topband{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--topband);z-index:50;pointer-events:none}
 
 /* ---------- Contenedor ---------- */
 .app{position:fixed;top:0;left:0;right:0;width:100%;max-width:560px;height:100vh;height:100dvh;margin:0 auto;overflow:hidden;background:var(--ground);isolation:isolate}

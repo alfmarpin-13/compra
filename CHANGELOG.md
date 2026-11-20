@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v67 · 20/11/2026
+- La franja de la hora la pinta ahora la propia app, así que cambia al instante con el modo, sin recargar: en oscuro, del fondo oscuro; en claro, verde bosque (la hora y la batería salen en blanco). Se quita la recarga al cambiar de modo de la v66.
+
 ## v66 · 20/11/2026
 - La franja de la hora por fin sigue al modo: el iPhone solo la pinta al abrir la app, así que al cambiar entre claro y oscuro (o si cambia el iPhone con «Como el iPhone») la app se vuelve a abrir sola al instante, en Opciones, y la franja sale del color bueno. En Safari normal no hace falta.
 

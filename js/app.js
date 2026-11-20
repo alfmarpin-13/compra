@@ -355,40 +355,16 @@ function renderPartial() {
   p.querySelector(".ltext").textContent = listenText();
 }
 
-// Color de la barra de estado del iPhone (theme-color), el del fondo de la app.
+// Color de theme-color (Safari normal y Android). En la app instalada la franja de la hora es transparente
+// (black-translucent) y la pinta la propia app con .topband, así que cambia al instante con el modo.
 const BAR = { light: "#F3F4EE", dark: "#0E1511" };
 function applyTheme() {
   const dark = S.theme === "dark" || (S.theme === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
   const t = dark ? "dark" : "light";
   if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t;
-  const color = BAR[t];
   const m = document.querySelector('meta[name="theme-color"]');
-  if (!m || m.content !== color) ponerColorBarra(color);
-  reabrirSiCambiaTema(t);
+  if (m && m.content !== BAR[t]) m.content = BAR[t];
 }
-/* En la app instalada, el iPhone fija el color de la franja de la hora al abrirla y luego no lo cambia
-   (arranca en oscuro → la franja se queda oscura aunque se pase a claro). Así que, si el modo que se ve ya no es
-   el del arranque, la app se vuelve a abrir sola, al momento, en la misma pantalla. En Safari no hace falta. */
-const INSTALADA = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
-let temaArranque = null;
-function reabrirSiCambiaTema(t) {
-  if (temaArranque === null) { temaArranque = t; return; }
-  if (!INSTALADA || t === temaArranque || document.visibilityState !== "visible" || reabrirSiCambiaTema.yendo) return;
-  reabrirSiCambiaTema.yendo = true;
-  try { sessionStorage.setItem("compra.volver", S.view === "options" || S.view === "history" ? S.view : ""); } catch (e) {}
-  guardarSnapYa();
-  // Un fotograma para que se vea ya el modo nuevo y luego se recarga (la copia local pinta al instante).
-  requestAnimationFrame(() => setTimeout(() => location.reload(), 30));
-}
-// Se cambia el elemento entero (no solo su valor): así el iPhone repinta también la franja de la hora.
-function ponerColorBarra(color) {
-  const m = document.querySelector('meta[name="theme-color"]');
-  const n = document.createElement("meta");
-  n.name = "theme-color"; n.content = color;
-  if (m) m.replaceWith(n); else document.head.appendChild(n);
-}
-// Si el iPhone cambia de claro a oscuro con la app en segundo plano («Como el iPhone»), al volver se reabre.
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") applyTheme(); });
 /** Cambiar de tema de una vez, toda la pantalla en el mismo fotograma (antes cada cosa cambiaba a su ritmo y
  *  daba saltos). Sin fundido: mientras dura, el iPhone ve aún los colores de antes y la franja de la hora
  *  se quedaba con ellos. */
@@ -2047,11 +2023,6 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
    de datos). Al abrir se enseña al momento y, cuando Firebase está listo, se sustituye por los datos al día. */
 const SNAP_KEY = "compra.snap";
 let snapT = null;
-function guardarSnapYa() {
-  if (!S.live || !S.me) return;
-  clearTimeout(snapT);
-  try { localStorage.setItem(SNAP_KEY, JSON.stringify({ me: S.me, stores: S.stores, products: S.products, pending: S.pending, today: S.today, t: Date.now() })); } catch (e) {}
-}
 function saveSnap() {
   if (!S.live || !S.me) return;
   clearTimeout(snapT);
@@ -2079,11 +2050,7 @@ const mark = (k) => { if (!(k in bootT)) bootT[k] = Math.round(performance.now()
 try { localStorage.removeItem("compra.boot"); } catch (e) {} // ya no se enseñan los tiempos del arranque
 async function boot() {
   applyTheme();
-  if (isConfigured() && loadSnap()) {
-    // Vuelta tras reabrir por el cambio de modo: a la misma pantalla, sin animación.
-    let v = ""; try { v = sessionStorage.getItem("compra.volver") || ""; sessionStorage.removeItem("compra.volver"); } catch (e) {}
-    if (v === "options" || v === "history") S.view = "options";
-  }
+  if (isConfigured()) loadSnap();
   render();
   if (!isConfigured()) { S.phase = "setup"; return render(); }
   // Si a los 8 s Firebase aún no está listo, se dice en qué paso va y se ofrece reparar.
