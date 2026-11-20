@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v49 · 20/11/2026
+- Iconos de productos propios: los 126 dibujos de OpenMoji se sustituyen por dibujos hechos para Compra, de línea y monocromos, con el mismo trazo que el resto de iconos. Ya no hace falta citar a nadie en Opciones.
+
 ## v48 · 20/11/2026
 - Seguridad: Firebase va dentro de la app (ya no se carga de servidores de Google al abrir) y una política de seguridad (CSP) impide ejecutar código de fuera o conectar con sitios que no sean Firebase y el modelo de voz.
 - La app no se deja abrir dentro de otra página web.
