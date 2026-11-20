@@ -146,6 +146,7 @@ El tipo se elige a mano al crear o editar la tienda (decisión de Alfonso, v61; 
   - producto nuevo: «Es nuevo. Lo de fruta soléis comprarlo en Frutería», usando la tienda dominante de esa categoría si reúne al menos el 60 %;
   - nombre contenido en otro producto («vino blanco» y ya está «Vino blanco cocinar»): **no se da por el mismo**; «Ya tenéis «Vino blanco cocinar». ¿Es lo mismo o es otro producto?» con [Es «…»] [Es otro] (por defecto, otro);
   - **categoría sugerida con «Cambiar»** (decisión de Alfonso): abre todas las categorías y lo elegido se guarda también en el producto de la despensa.
+  - La tienda y la categoría de cada artículo van en bloques con su rótulo, «Tienda» y «Categoría» (decisión de Alfonso: si no, no se ve que son dos cosas distintas).
   - Botones: Cancelar y «Añadir N».
 - **Aprendizaje:** si al añadir se elige una tienda o una categoría distinta de la habitual, pasa a ser la del producto en la despensa.
 - Los artículos recién añadidos se resaltan brevemente. Lo que añade la otra persona aparece en tiempo real con el mismo resalte y un mini aviso (5.10).

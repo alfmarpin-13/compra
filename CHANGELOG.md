@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v64 · 20/11/2026
+- Hoja «Esto es lo que he entendido» / «¿Dónde lo apunto?»: cada artículo lleva los rótulos «Tienda» y «Categoría» encima de sus botones, para que se vea que son dos cosas distintas. «Cambiar tienda» muestra la tienda elegida.
+
 ## v63 · 20/11/2026
 - La franja de la hora se quedaba con el color del modo anterior (oscura en claro, clara en oscuro) y solo se corregía al rato. Ahora el cambio de modo es de golpe, sin fundido, y se le repite al iPhone el color nuevo durante el primer segundo y al volver a la app.
 
