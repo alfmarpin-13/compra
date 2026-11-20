@@ -89,7 +89,8 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .pager{flex:1;min-height:0;overflow:hidden;position:relative}
 .track{display:flex;height:100%;transition:transform .5s var(--spring);will-change:transform}
 .track.at-1{transform:translateX(-100%)}
-.pane{flex:0 0 100%;width:100%;min-width:0;height:100%}
+/* Aislamiento: un cambio en una página o en una casilla no obliga a recolocar ni repintar las demás */
+.pane{flex:0 0 100%;width:100%;min-width:0;height:100%;contain:layout paint style}
 .htabs{position:relative;display:inline-flex;align-items:center;gap:4px;padding:4px;border-radius:999px;background:var(--paper)}
 .htab{position:relative;z-index:1;display:inline-flex;align-items:center;height:42px;padding:0 8px;border-radius:999px;color:var(--muted);font:700 15px/1 var(--fb);white-space:nowrap;transition:color .35s ease,padding .5s var(--spring),transform .3s var(--spring)}
 .hti{display:grid;place-items:center;width:30px;height:30px;flex:none}
@@ -188,7 +189,7 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 
 /* ---------- Casillas ---------- */
 .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 20px}
-.tile{position:relative;aspect-ratio:1/.88;background:var(--paper);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform .12s;min-height:88px}
+.tile{contain:layout style;position:relative;aspect-ratio:1/.88;background:var(--paper);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform .12s;min-height:88px}
 .tile.fresh,.tile.unfresh{transition:background .6s ease,transform .12s}
 .tile:active{transform:scale(.96)}
 .tile.fresh{background:color-mix(in srgb,var(--primary) 12%,var(--paper))}
@@ -426,19 +427,25 @@ button.mini-ck::after{content:"";position:absolute;inset:-12px}
 .credits a{color:inherit}
 
 /* ---------- Transiciones entre pantallas y pestañas (tipo iOS) ---------- */
-/* Navegación entre pantallas (Lista → Opciones → Historial) */
+/* Navegación entre pantallas (Lista → Opciones → Historial). La de debajo sigue montada (.behind), oculta. */
 html.ready .scr.nav-push{z-index:2;animation:pushIn .5s var(--spring);box-shadow:-10px 0 30px rgba(0,0,0,.12)}
 html.ready .scr.nav-pop{z-index:1;animation:popIn .45s var(--spring)}
+/* Debajo, ya pintada y quieta (tapada por la de arriba, que es opaca): al empezar el gesto no hay que pintarla */
+.scr.behind{z-index:1;pointer-events:none;transform:translate3d(-28%,0,0)}
+html.ready .scr.behind{animation:pushAway .5s var(--spring)}
 .scr.leaving.push-away{z-index:1;animation:pushAway .5s var(--spring) forwards}
 .scr.leaving.pop-out{z-index:3;animation:popOut .45s var(--spring) forwards;box-shadow:-10px 0 30px rgba(0,0,0,.12)}
-/* Gesto de volver: la pantalla sigue al dedo por encima de una copia de la anterior */
-.scr.dragging{z-index:2;box-shadow:-10px 0 30px rgba(0,0,0,.12);animation:none!important}
-.scr.under{z-index:1;pointer-events:none;transform:translateX(-28%);filter:brightness(.92)}
+/* Gesto de volver: se mueven capas ya pintadas (transform y opacidad), sin filtros ni desenfoques mientras dura */
+.scr.dragging{z-index:2;box-shadow:-10px 0 30px rgba(0,0,0,.12);animation:none!important;will-change:transform}
+.scr.under{z-index:1;visibility:visible!important;animation:none!important;transform:translate3d(-28%,0,0);will-change:transform}
+.scr.behind .dock{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--paper)}
+.scr-dim{position:absolute;inset:0;background:#000;opacity:.1;pointer-events:none;z-index:99;will-change:opacity}
 .scr.leaving[data-leave="login"]{animation:fadeout .3s ease-in forwards}
 @keyframes pushIn{from{transform:translateX(100%)}}
-@keyframes pushAway{to{transform:translateX(-28%);filter:brightness(.92)}}
+@keyframes pushAway{to{transform:translateX(-28%)}}
+@keyframes pushAwayHide{0%{visibility:visible}to{transform:translateX(-28%);visibility:hidden}}
 @keyframes popOut{to{transform:translateX(100%)}}
-@keyframes popIn{from{transform:translateX(-28%);filter:brightness(.92)}}
+@keyframes popIn{from{transform:translateX(-28%)}}
 @keyframes slideR{from{opacity:0;transform:translateX(32px)}}
 @keyframes swipeR{from{transform:translateX(100%)}}
 @keyframes swipeL{from{transform:translateX(-100%)}}
