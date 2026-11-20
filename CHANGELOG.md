@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v59 · 20/11/2026
+- Logo de Niño Manuel en una tinta, como los de Mercadona, Hipercor, Lidl y Domi Vélez. Sale solo en la tienda que se llame «Niño Manuel» y se puede elegir en el lápiz de cualquier tienda.
+
 ## v58 · 20/11/2026
 - La fruta ya no se apunta «en la Frutería», ni la carne «en la Carnicería»: se guarda en «Cualquier súper» y esas tiendas salen solas en la barra cuando hay algo suyo apuntado. Para esas cosas, la Frutería (o la Carnicería…) ya no sale entre las tiendas a elegir. Lo que estaba guardado así se arregla solo al abrir la app.
 - Categorías nuevas: Medicamentos (solo salen en la Farmacia, no en los súper) y Parafarmacia (tiritas, termómetro, vitaminas…, en la Farmacia y en los súper). Lo de Higiene que es de farmacia se mueve solo.
