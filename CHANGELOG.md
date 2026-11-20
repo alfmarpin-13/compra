@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v54 · 20/11/2026
+- Gesto de volver fluido: la pantalla de debajo ya está montada (antes se construía al empezar a arrastrar y daba un tirón), se mueve una vez por fotograma y el oscurecido es una capa en vez de un filtro.
+- Las hojas (Tiendas, editar, «Esto es lo que he entendido»…) se cierran deslizándolas hacia abajo, como en el iPhone.
+- Más fluidez en general: al tachar, cambiar de pestaña o abrir el micro solo se repinta lo que cambia; lo que llega de la base de datos se pinta una vez por fotograma; al tachar, la casilla ya no desaparece un instante (la rejilla daba un salto).
+
 ## v53 · 20/11/2026
 - Avisos de lo que añade la otra persona: con la app abierta, mini aviso al momento («Ilu ha añadido Leche a la lista»); al volver a la app, cartel «Mientras no estabas: Ilu ha añadido 7 cosas a la lista y 2 a la despensa».
 - Mariluz se llama «Ilu» en toda la app. Al entrar vale escribir «ilu» o «mariluz».

@@ -21,7 +21,8 @@ function ic(name, size = 24, cls = "") {
 const LOGO = (px, label) => `<svg width="${px}" height="${px}" ${label ? `role="img" aria-label="${label}"` : 'aria-hidden="true"'} viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#D9F56E"/><path d="M27 50C27 21 73 21 73 50" fill="none" stroke="#1C3A2D" stroke-width="7" stroke-linecap="round"/><path d="M21 57H79L72.5 82.5Q71.4 87 66.8 87H33.2Q28.6 87 27.5 82.5Z" fill="#1C3A2D"/><g stroke="#D9F56E" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M24 66.5H76M26.3 76.5H73.7"/><path d="M33 59.5 34.6 84.5M44.3 59.5 45 84.5M55.7 59.5 55 84.5M67 59.5 65.4 84.5"/></g><rect x="15" y="46" width="70" height="11" rx="5.5" fill="#1C3A2D"/></svg>`;
 // Iconos de producto: dibujos propios (js/productos.js), de línea en el color de la categoría.
 const PICS = PRODUCTOS;
-export const iconKeyFor = (name) => bestKeyword(name, ICON_LIST);
+const iconMemo = new Map();
+export const iconKeyFor = (name) => { if (!iconMemo.has(name)) iconMemo.set(name, bestKeyword(name, ICON_LIST)); return iconMemo.get(name); };
 function pic(name, category, iconKey) {
   // Manda el diccionario de palabras clave (así los iconos mejorados llegan también a productos ya guardados).
   const auto = iconKeyFor(name);
@@ -51,6 +52,7 @@ const S = {
 };
 let sub = null;
 
+const curTab = () => (S.view === "options" || S.view === "history" ? S.tab || "list" : S.view);
 const otherName = () => nombre(S.meKey === "alfonso" ? "Mariluz" : "Alfonso");
 const meName = () => nombre(S.me);
 const storeById = (id) => (id ? S.stores.find((s) => s.id === id) || null : null);
@@ -106,8 +108,26 @@ function dueList() {
    el desplazamiento ni repetir animaciones.
    =================================================================== */
 const root = document.getElementById("root");
+/* Partes de la pantalla que no han cambiado desde el último pintado: en vez de volver a generarlas y compararlas
+   nodo a nodo, se deja un marcador y se conserva el nodo tal cual (así tachar o abrir el micro no repasa
+   toda la Lista y toda la Despensa). */
+const keepMemo = new Map();
+let keepMiss = false;
+function keep(key, html) {
+  if (keepMemo.get(key) === html) return `<i data-keep="${key}"></i>`;
+  keepMemo.set(key, html);
+  return html;
+}
+/** Como keep, pero el aria-hidden del elemento raíz puede cambiar sin repasar el resto (cambio de pestaña). */
+function keepPane(key, html) {
+  const ah = (html.match(/aria-hidden="(true|false)"/) || [])[1];
+  const base = html.replace(/aria-hidden="(true|false)"/, 'aria-hidden="?"');
+  if (keepMemo.get(key) === base) return `<i data-keep="${key}" data-ahv="${ah}"></i>`;
+  keepMemo.set(key, base);
+  return html;
+}
 function morphNode(x, y) {
-  if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName || (x.nodeType === 1 && (x.dataset.key || "") !== (y.dataset.key || ""))) { x.replaceWith(y); return; }
+  if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName || (x.nodeType === 1 && (x.dataset.key || "") !== (y.dataset.key || ""))) { if (y.nodeType === 1 && y.querySelector("[data-keep]")) keepMiss = true; x.replaceWith(y); return; }
   if (x.nodeType !== 1) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; return; }
   for (const a of y.attributes) if (x.getAttribute(a.name) !== a.value) x.setAttribute(a.name, a.value);
   for (const a of [...x.attributes]) if (!y.hasAttribute(a.name)) x.removeAttribute(a.name);
@@ -123,11 +143,21 @@ function morphChildren(from, to) {
   for (const c of from.children) if (c.dataset.key) keyed.set(c.dataset.key, c);
   let cur = from.firstChild;
   for (const y of [...to.childNodes]) {
+    if (y.nodeType === 1 && y.dataset.keep) {
+      const x = keyed.get(y.dataset.keep);
+      if (!x) { keepMiss = true; continue; } // no está: se repinta entero (ver renderInner)
+      keyed.delete(y.dataset.keep);
+      if (y.dataset.cls !== undefined && x.className !== y.dataset.cls) x.className = y.dataset.cls;
+      if (y.dataset.ah !== undefined) { if (y.dataset.ah) x.setAttribute("aria-hidden", "true"); else x.removeAttribute("aria-hidden"); }
+      if (y.dataset.ahv !== undefined && x.getAttribute("aria-hidden") !== y.dataset.ahv) x.setAttribute("aria-hidden", y.dataset.ahv);
+      if (x === cur) cur = cur.nextSibling; else from.insertBefore(x, cur);
+      continue;
+    }
     const k = y.nodeType === 1 ? y.dataset.key : undefined;
     let x = null;
     if (k) { x = keyed.get(k) || null; if (x) keyed.delete(k); }
     else { while (cur && cur.nodeType === 1 && cur.dataset.key) cur = cur.nextSibling; x = cur; }
-    if (!x) { from.insertBefore(y, cur); continue; }
+    if (!x) { if (y.nodeType === 1 && y.querySelector("[data-keep]")) keepMiss = true; from.insertBefore(y, cur); continue; }
     if (x === cur) cur = cur.nextSibling; else from.insertBefore(x, cur);
     morphNode(x, y);
   }
@@ -152,16 +182,23 @@ function leave(n) {
   setTimeout(() => n.remove(), 450);
 }
 /** Posiciones antes de redibujar, para que lo que se mueve se deslice (FLIP). */
+/** Lo que se ve: la pantalla de arriba y, si tiene pestañas, solo la página visible. */
+function flipScope() {
+  const top = [...root.querySelectorAll(":scope > .scr:not(.behind):not(.leaving)")].pop();
+  if (!top) return [];
+  const pane = top.querySelector('.pane[aria-hidden="false"]');
+  return (pane || top).querySelectorAll("[data-flip]");
+}
 function flipSnapshot() {
   const m = new Map();
   if (REDUCE.matches) return m;
-  for (const el of root.querySelectorAll("[data-flip]")) if (!m.has(el.dataset.key)) m.set(el.dataset.key, { r: el.getBoundingClientRect(), el });
+  for (const el of flipScope()) if (!m.has(el.dataset.key)) m.set(el.dataset.key, { r: el.getBoundingClientRect(), el });
   return m;
 }
 function flipPlay(before, sameView) {
   if (REDUCE.matches || !before.size) return;
   const seen = new Set(), fresh = [];
-  for (const el of root.querySelectorAll("[data-flip]")) {
+  for (const el of flipScope()) {
     const k = el.dataset.key;
     if (seen.has(k)) continue;
     seen.add(k);
@@ -188,7 +225,11 @@ function flipPlay(before, sameView) {
 }
 const tpl = document.createElement("template");
 let renderFailed = false;
+/** Lo que llega de la base de datos se pinta una sola vez por fotograma, aunque lleguen varios avisos seguidos. */
+let renderRaf = 0;
+function renderSoon() { if (!renderRaf) renderRaf = requestAnimationFrame(() => { renderRaf = 0; render(); }); }
 function render() {
+  if (renderRaf) { cancelAnimationFrame(renderRaf); renderRaf = 0; }
   // Mientras se arrastra para volver, no se redibuja (se haría al soltar).
   if (render.hold) { render.pending = true; return; }
   try { renderInner(); renderFailed = false; }
@@ -205,30 +246,47 @@ window.addEventListener("unhandledrejection", (e) => showFatal("Promesa: " + (e.
 function renderInner() {
   statsCache = null;
   applyTheme();
+  // Dirección de la navegación: más adentro entra por la derecha; al volver, la de arriba sale por la derecha
+  // y la de debajo se recoloca. Con el gesto de volver ya se ha visto la animación: sin repetirla.
+  const depth = S.phase !== "app" ? 0 : S.view === "history" ? 2 : S.view === "options" ? 1 : 0;
+  if (render.depth !== undefined && depth !== render.depth && !render.instant) {
+    render.navDir = depth > render.depth ? "push" : "pop";
+    render.navTo = S.view === "history" ? "history" : S.view === "options" ? "options" : "main";
+  } else if (render.instant) render.navTo = null;
+  render.leaveBack = render.depth !== undefined && depth < render.depth;
+  render.depth = depth;
   let h = "";
   // Al arrancar se pinta ya la cabecera en su sitio, para que el logo no salte al cargar.
   if (S.phase === "boot") h = `<div class="scr" data-key="boot">${vHeader()}<div class="folder">${S.bootStuck ? `<div class="diag" data-key="diag"><b>La app no termina de arrancar</b><span>Se ha quedado ${esc(bootStep)}.</span><span>Pulsa «Reparar la app»: borra lo guardado en este iPhone y vuelve a cargar. Tus datos están en Firebase; solo tendrás que volver a entrar.</span><button class="btn fill" data-act="repair">Reparar la app</button></div>` : ""}</div>${vDock()}</div>`;
   else if (S.phase === "setup") h = vSetup();
   else if (S.phase === "login") h = vLogin();
-  else if (S.view === "history") h = vHistory();
-  else if (S.view === "options") h = vOptions();
-  else h = vMain();
+  else {
+    // La Lista (y Opciones bajo el Historial) siguen montadas debajo, ocultas: al volver, con el botón o con el
+    // gesto, la de debajo ya está hecha y solo se mueve (antes se construía de nuevo y daba tirones).
+    const stack = ["main"];
+    if (S.view === "options" || (S.view === "history" && S.backTo === "options")) stack.push("options");
+    if (S.view === "history") stack.push("history");
+    const top = stack[stack.length - 1];
+    h = stack.map((v) => {
+      const x = v === "main" ? vMain() : v === "options" ? vOptions() : vHistory();
+      const cls = v !== top ? "scr behind" : render.navTo === v ? `scr nav-${render.navDir}` : "scr";
+      // Si solo cambia si está debajo o arriba, se conserva la pantalla y se cambia solo su clase.
+      if (keepMemo.get("scr-" + v) === x) return `<i data-keep="scr-${v}" data-cls="${cls}" data-ah="${v !== top ? 1 : ""}"></i>`;
+      keepMemo.set("scr-" + v, x);
+      return x.replace('<div class="scr"', `<div ${v !== top ? 'aria-hidden="true" ' : ""}class="${cls}"`);
+    }).join("");
+  }
   if (S.phase === "app") {
     if (S.menu) h += vMenu();
     if (S.sheet) h += vSheet();
   }
-  // Dirección de la navegación: más adentro entra por la derecha; al volver, la de arriba sale por la derecha.
-  const depth = S.phase !== "app" ? 0 : S.view === "history" ? 2 : S.view === "options" ? 1 : 0;
-  if (render.depth !== undefined && depth !== render.depth) render.dir = depth > render.depth ? "push" : "pop";
-  render.leaveBack = render.depth !== undefined && depth < render.depth;
-  render.depth = depth;
-  if (render.instant) render.dir = null; // el gesto de volver ya ha hecho la animación con el dedo
-  if (render.dir) h = h.replace('<div class="scr', `<div class="scr nav-${render.dir}`);
   tpl.innerHTML = h;
   const viewKey = S.phase + ":" + S.view + ":" + S.layout + ":" + (S.store || "");
   const sameView = viewKey === render.view;
   const before = sameView ? flipSnapshot() : new Map();
+  keepMiss = false;
   morphChildren(root, tpl.content);
+  if (keepMiss) { keepMemo.clear(); tpl.innerHTML = ""; return renderInner(); }
   flipPlay(before, sameView);
   if (!sameView) render.prevView = render.view;
   render.view = viewKey;
@@ -246,16 +304,23 @@ function lensStyle(list) {
   return `transform:translateX(${list ? 0 : coll + LENS.GAP}px);width:${w}px`;
 }
 /** Mide una vez el ancho real de los nombres y corrige la pastilla si hacía falta. */
+// Los anchos de «Lista» y «Despensa» se miden una vez (y otra cuando cargan las tipografías): medirlos en cada
+// pintado obligaba al navegador a recolocar toda la página en el acto y daba tirones al empezar las animaciones.
+let lensMedido = false;
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { lensMedido = false; placeLens(); });
 function placeLens() {
+  if (lensMedido) return;
   const box = root.querySelector(".htabs");
   if (!box) return;
+  lensMedido = true;
   let changed = false;
   for (const t of box.querySelectorAll(".htab")) {
     const sp = t.querySelector(".htl span"), k = t.dataset.act;
     const w = sp.scrollWidth - (parseFloat(getComputedStyle(sp).paddingLeft) || 0);
     if (w && labelW[k] !== w) { labelW[k] = w; changed = true; }
   }
-  if (changed) box.querySelector(".hlens").setAttribute("style", lensStyle(S.view !== "pantry"));
+  if (changed) box.querySelector(".hlens").setAttribute("style", lensStyle(curTab() !== "pantry"));
+  else if (!Object.keys(labelW).length) lensMedido = false; // aún sin maquetar: se reintenta en el siguiente
 }
 function listenText() {
   if (S.capture === "thinking") return S.vozDl != null ? `Preparando el dictado (solo la primera vez)… ${S.vozDl} %` : "Entendiendo lo que has dicho…";
@@ -317,7 +382,7 @@ function vLogin() {
 // Estilo de las pestañas (opciones A, B y C para elegir).
 let TAB_STYLE = "tabs-a"; // elegida por Alfonso: la activa se abre y enseña su nombre
 function vHeader() {
-  const list = S.view !== "pantry";
+  const list = curTab() !== "pantry";
   // Pestañas con icono: la cesta (logo) es la Lista y la estantería, la Despensa. La activa se abre y muestra su nombre.
   return `<div class="hb"><div class="hb-t"><span class="htabs ${TAB_STYLE} ${render.view ? "lens-ready" : ""}" role="tablist" data-on="${list ? "list" : "pantry"}">
       <span class="hlens" aria-hidden="true" style="${lensStyle(list)}"></span>
@@ -390,8 +455,11 @@ const block = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key
 
 function vList() {
   // Lo recién tachado sigue en su sitio unos segundos (con «Deshacer»).
-  const justTicked = S.today.filter((i) => ticking.has(i.id));
-  const pend = visible([...S.pending.filter((i) => !ticking.has(i.id)), ...justTicked]).sort(sortAdded);
+  // Lo que se está tachando sigue en su sitio, venga aún como pendiente o ya como tachado (si no, desaparecía un
+  // instante entre un aviso de la base de datos y el siguiente, y toda la rejilla daba un salto).
+  const pendIds = new Set(S.pending.map((i) => i.id));
+  const justTicked = S.today.filter((i) => ticking.has(i.id) && !pendIds.has(i.id));
+  const pend = visible([...S.pending, ...justTicked]).sort(sortAdded);
   const done = visible(S.today.filter((i) => !ticking.has(i.id))).sort((a, b) => b.checkedAt - a.checkedAt);
   let body = "";
   const stale = S.bootStuck && !S.live ? `<div class="diag" data-key="diag"><b>Sin conexión con Firebase todavía</b><span>Lo que ves es lo último guardado en este iPhone; lo que hagas se guardará al conectar. Se ha quedado ${esc(bootStep)}.</span><button class="btn out" data-act="repair">Reparar la app</button></div>` : "";
@@ -408,17 +476,17 @@ function vList() {
       if (S.checkedOpen) body += `${block(done, "done")}<p class="donehint" data-key="donehint">Toca uno para devolverlo a la lista. Mañana pasa solo al historial.</p>`;
     }
   }
-  return `<div class="pane folder" data-key="pane-list" aria-hidden="${S.view === "pantry"}">
+  return `<div class="pane folder" data-key="pane-list" aria-hidden="${curTab() === "pantry"}">
       ${vChips()}
       <div class="list">${stale}${body}</div>
     </div>`;
 }
 /** Pantalla principal: Lista y Despensa una al lado de la otra, como páginas (al arrastrar se ve llegar la otra). */
 function vMain() {
-  const idx = S.view === "pantry" ? 1 : 0;
+  const idx = curTab() === "pantry" ? 1 : 0;
   return `<div class="scr" data-key="main">
     ${vHeader()}
-    <div class="pager"><div class="track at-${idx}" data-key="track">${vList()}${vPantry()}</div></div>
+    <div class="pager"><div class="track at-${idx}" data-key="track">${keepPane("pane-list", vList())}${keepPane("pane-pantry", vPantry())}</div></div>
     ${voiceOn() ? `<div class="catcher" data-act="cancelVoice" aria-label="Cancelar"></div>` : ""}
     ${voiceOn() ? vListening() : ""}
     ${S.band ? vBand() : ""}
@@ -441,7 +509,7 @@ function sugChoices() {
   return ok.map((x) => x[1]).slice(0, 8);
 }
 function vSug() {
-  if (S.view === "pantry") return "";
+  if (curTab() === "pantry") return "";
   const xs = sugChoices();
   if (!xs.length) return "";
   const allDue = xs.every(isDue);
@@ -451,7 +519,7 @@ function vSug() {
  *  y el micro, que se queda siempre a la derecha. Escribiendo, dentro del campo solo hay una flecha para añadir. */
 function vDock() {
   const typing = S.capture === "typing", on = voiceOn();
-  const pantry = S.view === "pantry";
+  const pantry = curTab() === "pantry";
   const ph = pantry ? "Productos para la despensa" : "Escribe qué necesitas";
   const field = on
     ? `<button class="dk-cancel" data-act="cancelVoice" aria-label="Cancelar">${ic("x", 22)}</button>`
@@ -528,7 +596,7 @@ function vPantry() {
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
   const list = all.filter((p) => !q || singAll(p.nameKey).includes(q) || (q.length >= 4 && matchProduct(q, [p])));
   const due = q ? [] : dueList();
-  return `<div class="pane folder" data-key="pane-pantry" aria-hidden="${S.view !== "pantry"}">
+  return `<div class="pane folder" data-key="pane-pantry" aria-hidden="${curTab() !== "pantry"}">
    <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off"></label></div>
    <div class="pad">
     ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
@@ -1388,7 +1456,7 @@ let t0 = null;
 const SCROLLERS = ".list, .pad, .sbody, .chips, .sug, .login, .setup";
 document.addEventListener("touchstart", (e) => { const t = e.touches[0]; t0 = t ? { x: t.clientX, y: t.clientY } : null; }, { passive: true });
 document.addEventListener("touchmove", (e) => {
-  if (!t0 || e.touches.length !== 1) return;
+  if (!t0 || e.touches.length !== 1 || !e.cancelable) return; // si ya hay un desplazamiento en marcha, no se puede frenar
   const t = e.touches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
   const sc = e.target.closest && e.target.closest(SCROLLERS);
   const horizontal = Math.abs(dx) > Math.abs(dy);
@@ -1442,22 +1510,30 @@ root.addEventListener("touchend", () => {
 // En Opciones e Historial, deslizar hacia la derecha (desde el borde o desde cualquier sitio, como en iOS)
 // vuelve atrás: la pantalla sigue al dedo y debajo asoma la anterior, un poco desplazada y oscurecida.
 // Al soltar pasado ~1/3 (o con un golpe rápido) se va; si no, vuelve a su sitio con muelle.
+// Para que vaya fluido: la pantalla de debajo ya está montada (no se construye al empezar), solo se mueven
+// capas con transform (una vez por fotograma) y el oscurecido es una capa con opacidad, no un filtro.
 function backView() { return S.view === "history" && S.backTo === "options" ? "options" : (S.tab || "list"); }
 function goBack() { S.view = backView(); S.backTo = null; S.band = null; S.histSel = new Set(); }
-function underHTML(view) {
-  const keep = S.view;
-  S.view = view;
-  try { return view === "options" ? vOptions() : vMain(); } finally { S.view = keep; }
-}
 let eb = null;
+function ebFrame() {
+  const g = eb;
+  if (!g) return;
+  g.raf = 0;
+  const p = g.dx / g.w;
+  g.scr.style.transform = `translate3d(${g.dx}px,0,0)`;
+  g.under.style.transform = `translate3d(${(-28 * (1 - p)).toFixed(2)}%,0,0)`;
+  g.dim.style.opacity = (0.1 * (1 - p)).toFixed(3);
+}
 root.addEventListener("touchstart", (e) => {
   eb = null;
   if (S.phase !== "app" || (S.view !== "options" && S.view !== "history") || S.sheet || S.menu || e.touches.length !== 1) return;
   if (e.target.closest("input, .chips")) return;
-  const scr = root.querySelector(`.scr[data-key="${S.view}"]`);
-  if (!scr) return;
+  const screens = [...root.querySelectorAll(":scope > .scr:not(.leaving)")];
+  const scr = screens.find((x) => x.dataset.key === S.view);
+  const under = screens[screens.indexOf(scr) - 1];
+  if (!scr || !under) return;
   const t = e.touches[0];
-  eb = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, scr, under: null, w: scr.getBoundingClientRect().width };
+  eb = { x: t.clientX, y: t.clientY, t: Date.now(), drag: false, lock: false, dx: 0, scr, under, dim: null, raf: 0, w: scr.getBoundingClientRect().width };
 }, { passive: true });
 root.addEventListener("touchmove", (e) => {
   if (!eb || eb.lock) return;
@@ -1466,65 +1542,115 @@ root.addEventListener("touchmove", (e) => {
     if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { eb.lock = true; return; }
     if (dx < 10 || dx < Math.abs(dy) * 1.3) { if (dx < -10) eb.lock = true; return; }
     eb.drag = true; clearTimeout(lp);
-    // La pantalla de debajo: una copia quieta de la anterior (no se puede tocar).
-    tpl.innerHTML = underHTML(backView());
-    const u = tpl.content.firstElementChild;
-    u.removeAttribute("data-key"); u.classList.add("under"); u.setAttribute("aria-hidden", "true");
-    root.insertBefore(u, eb.scr);
-    eb.under = u;
-    eb.scr.classList.add("dragging");
     render.hold = true;
+    const dim = document.createElement("div");
+    dim.className = "scr-dim";
+    eb.under.appendChild(dim);
+    eb.dim = dim;
+    eb.under.classList.add("under");
+    eb.scr.classList.add("dragging");
   }
   eb.dx = Math.max(0, Math.min(eb.w, dx));
   // Velocidad de los últimos ~120 ms (un golpe rápido vuelve aunque se haya arrastrado poco).
   const now = Date.now();
   eb.hist = (eb.hist || []).filter((h) => now - h[0] < 120).concat([[now, eb.dx]]);
-  const p = eb.dx / eb.w;
-  eb.scr.style.transform = `translateX(${eb.dx}px)`;
-  eb.under.style.transform = `translateX(${-28 * (1 - p)}%)`;
-  eb.under.style.filter = `brightness(${0.92 + 0.08 * p})`;
+  if (!eb.raf) eb.raf = requestAnimationFrame(ebFrame);
 }, { passive: true });
+function ebLimpia(g) {
+  g.dim && g.dim.remove();
+  for (const el of [g.scr, g.under]) { el.style.transition = el.style.transform = ""; }
+  g.under.classList.remove("under");
+  g.scr.classList.remove("dragging");
+}
 root.addEventListener("touchend", () => {
   if (!eb) return;
   const g = eb; eb = null;
   if (!g.drag) return;
+  if (g.raf) { cancelAnimationFrame(g.raf); g.raf = 0; }
   lpFired = true; setTimeout(() => (lpFired = false), 50); // que el gesto no toque nada al soltar
   const h0 = (g.hist || [])[0] || [g.t, 0];
   const v = (g.dx - h0[1]) / Math.max(16, Date.now() - h0[0]);
   const commit = g.dx > g.w * 0.33 || (g.dx > 30 && v > 0.35);
-  const ms = REDUCE.matches ? 0 : commit ? 300 : 350;
-  const ease = `transform ${ms}ms ${SPRING}, filter ${ms}ms ${SPRING}`;
-  g.scr.style.transition = g.under.style.transition = ease;
+  // Lo que falta se recorre a la velocidad que llevaba el dedo (entre 0,2 y 0,4 s), con el muelle de siempre.
+  const rest = commit ? g.w - g.dx : g.dx;
+  const ms = REDUCE.matches ? 0 : Math.round(Math.max(200, Math.min(400, v > 0.3 ? rest / v * 1.6 : 380)));
+  const ease = `transform ${ms}ms ${SPRING}, opacity ${ms}ms ${SPRING}`;
+  g.scr.style.transition = g.under.style.transition = g.dim.style.transition = ease;
   requestAnimationFrame(() => {
-    g.scr.style.transform = commit ? `translateX(${g.w}px)` : "translateX(0)";
-    g.under.style.transform = commit ? "translateX(0)" : "translateX(-28%)";
-    g.under.style.filter = commit ? "brightness(1)" : "brightness(.92)";
+    g.scr.style.transform = commit ? `translate3d(${g.w}px,0,0)` : "translate3d(0,0,0)";
+    g.under.style.transform = commit ? "translate3d(0,0,0)" : "translate3d(-28%,0,0)";
+    g.dim.style.opacity = commit ? "0" : "0.1";
   });
   setTimeout(() => {
     render.hold = false;
     if (commit) {
       // Ya se ha visto ir: se cambia de pantalla sin otra animación.
-      g.under.remove();
       goBack();
+      ebLimpia(g);
       render.instant = true; render.pending = false;
       render();
     } else {
-      g.under.remove();
-      g.scr.classList.remove("dragging");
-      g.scr.style.transition = g.scr.style.transform = "";
+      ebLimpia(g);
       if (render.pending) { render.pending = false; render(); }
     }
-  }, ms + 20);
+  }, ms + 30);
 });
 root.addEventListener("touchcancel", () => {
   if (!eb) return;
   const g = eb; eb = null;
-  if (g.under) g.under.remove();
-  g.scr.classList.remove("dragging");
-  g.scr.style.transition = g.scr.style.transform = "";
+  if (g.raf) cancelAnimationFrame(g.raf);
+  if (g.drag) ebLimpia(g);
   render.hold = false;
   if (render.pending) { render.pending = false; render(); }
 });
+/* ---------- Cerrar una hoja deslizándola hacia abajo (como en el iPhone) ----------
+   Desde el asa o la cabecera, o desde el contenido si ya está arriba del todo. La hoja sigue al dedo; al soltar
+   pasado ~1/4 de su altura (o con un golpe rápido) se cierra; si no, vuelve a su sitio con muelle. */
+let sd = null;
+root.addEventListener("touchstart", (e) => {
+  sd = null;
+  if (!S.sheet || e.touches.length !== 1) return;
+  const sh = e.target.closest(".sheet");
+  if (!sh || e.target.closest("input, textarea, .chips, .wrap.scrollx")) return;
+  const body = e.target.closest(".sbody");
+  const t = e.touches[0];
+  sd = { y: t.clientY, x: t.clientX, t: Date.now(), sh, body, drag: false, lock: false, dy: 0, raf: 0, h: sh.getBoundingClientRect().height, hist: [] };
+}, { passive: true });
+root.addEventListener("touchmove", (e) => {
+  if (!sd || sd.lock) return;
+  const t = e.touches[0], dy = t.clientY - sd.y, dx = t.clientX - sd.x;
+  if (!sd.drag) {
+    if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { sd.lock = true; return; }
+    if (dy < 8) { if (dy < -8) sd.lock = true; return; }
+    if (sd.body && sd.body.scrollTop > 0) { sd.lock = true; return; } // primero se desplaza el contenido
+    sd.drag = true; clearTimeout(lp);
+    sd.sh.style.animation = "none"; sd.sh.style.willChange = "transform";
+  }
+  sd.dy = Math.max(0, dy);
+  const now = Date.now();
+  sd.hist = sd.hist.filter((h) => now - h[0] < 120).concat([[now, sd.dy]]);
+  if (!sd.raf) sd.raf = requestAnimationFrame(() => { if (!sd) return; sd.raf = 0; sd.sh.style.transform = `translate3d(0,${sd.dy}px,0)`; });
+}, { passive: true });
+root.addEventListener("touchend", () => {
+  if (!sd) return;
+  const g = sd; sd = null;
+  if (!g.drag) return;
+  if (g.raf) cancelAnimationFrame(g.raf);
+  lpFired = true; setTimeout(() => (lpFired = false), 50);
+  const h0 = g.hist[0] || [g.t, 0];
+  const v = (g.dy - h0[1]) / Math.max(16, Date.now() - h0[0]);
+  const close = g.dy > g.h * 0.25 || (g.dy > 30 && v > 0.35);
+  const ms = REDUCE.matches ? 0 : close ? Math.round(Math.max(180, Math.min(320, (g.h - g.dy) / Math.max(v, 0.8)))) : 380;
+  g.sh.style.transition = `transform ${ms}ms ${close ? "cubic-bezier(.2,.6,.4,1)" : SPRING}`;
+  requestAnimationFrame(() => { g.sh.style.transform = close ? "translate3d(0,100%,0)" : "translate3d(0,0,0)"; });
+  setTimeout(() => {
+    if (close) {
+      g.sh.style.visibility = "hidden"; // ya ha salido: que no repita la animación de cerrar
+      S.sheet = null; render();
+    } else { g.sh.style.transition = g.sh.style.transform = g.sh.style.willChange = ""; }
+  }, ms + 20);
+});
+root.addEventListener("touchcancel", () => { if (sd && sd.drag) { sd.sh.style.transition = sd.sh.style.transform = ""; } sd = null; });
 // Es una app: sin zoom con dos dedos ni con doble toque.
 ["gesturestart", "gesturechange"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 
@@ -1644,12 +1770,12 @@ function startData() {
   if (!S.ready.pending) S.ready = { stores: false, products: false, pending: false };
   setTimeout(() => { if (!S.ready.pending) { S.slowLoad = true; render(); } }, 8000);
   sub = DB.subscribe({
-    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; saveSnap(); if (S.store && !storeById(S.store)) S.store = null; render(); },
+    stores(list) { S.stores = fixSpaces("stores", list); S.ready.stores = true; saveSnap(); if (S.store && !storeById(S.store)) S.store = null; renderSoon(); },
     products(list, added = [], fromCache) {
       const nuevos = !initialProducts && productsSynced ? added.filter((a) => !a.local).map((a) => a.id) : [];
       if (fromCache === false) productsSynced = true;
       initialProducts = false;
-      S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); render();
+      S.products = fixSpaces("products", list); S.ready.products = true; saveSnap(); renderSoon();
       if (nuevos.length) notaOtro("prods", nuevos);
     },
     pending(list, added, fromCache) {
@@ -1660,13 +1786,13 @@ function startData() {
       const primeraVezServidor = fromCache === false && !serverSynced;
       if (fromCache === false) serverSynced = true;
       initialPending = false;
-      S.pending = fixSpaces("items", list); S.ready.pending = true; mark("datos"); if (fromCache === false) mark("servidor"); saveSnap(); render();
+      S.pending = fixSpaces("items", list); S.ready.pending = true; mark("datos"); if (fromCache === false) mark("servidor"); saveSnap(); renderSoon();
       if (nuevos.length) notaOtro("items", nuevos);
       // Al abrir la app: cartel con lo que añadió la otra persona desde la última vez.
       if (primeraVezServidor) { volviendoHasta = Date.now() + 1500; setTimeout(resumenOtro, 1500); }
     },
-    today(list) { S.today = list; saveSnap(); render(); },
-    error(e) { console.warn("Firestore", e); S.dataError = (e && (e.code || e.message)) || "desconocido"; render(); },
+    today(list) { S.today = list; saveSnap(); renderSoon(); },
+    error(e) { console.warn("Firestore", e); S.dataError = (e && (e.code || e.message)) || "desconocido"; renderSoon(); },
   });
   refreshHistory();
 }
