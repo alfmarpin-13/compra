@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v60 · 20/11/2026
+- Arreglado: al volver del Historial a Opciones con el gesto, se veía la Lista mezclada por debajo de Opciones (su cabecera, el texto y la barra de abajo asomando).
+
 ## v59 · 20/11/2026
 - Logo de Niño Manuel en una tinta, como los de Mercadona, Hipercor, Lidl y Domi Vélez. Sale solo en la tienda que se llame «Niño Manuel» y se puede elegir en el lápiz de cualquier tienda.
 
