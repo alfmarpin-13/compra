@@ -258,7 +258,9 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .dk-sug{display:flex;flex-direction:column;gap:6px;animation:fadein .25s ease}
 .dk-sug:empty{display:none}
 .dk-sug .from{font:600 11px/16px var(--fb);letter-spacing:.3px;color:var(--muted);margin:0 4px}
-.dk-sug .sug{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+/* Sugerencias: solo se desplazan en horizontal. El relleno de 6 px deja sitio a la zona táctil invisible de las pastillas (.chip::after), que si no sobresale y hace la fila desplazable en vertical */
+.dk-sug .sug{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;overscroll-behavior:contain;scrollbar-width:none;padding:6px 3px;margin:-4px -1px}
+.dk-sug .sug>*{flex:none}
 .dk-sug .sug::-webkit-scrollbar{display:none}
 .dk-voice{flex:none;width:52px;height:52px;border-radius:26px;display:flex;align-items:center;gap:10px;padding:0 15px;background:var(--primary);color:var(--on-primary);font:700 14px/18px var(--fb);text-align:left;overflow:hidden;white-space:nowrap;transition:width .5s var(--spring),border-radius .5s var(--spring)}
 .dk-voice .mic{flex:none}
@@ -275,7 +277,7 @@ input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit
 .dk-side{width:48px;height:48px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
 .draft{flex:1;min-width:0;padding-left:10px}
 .draft .from{font:600 11px/16px var(--fb);letter-spacing:.3px;color:var(--muted);margin:0 0 6px}
-.draft .sug{display:flex;gap:8px;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;padding:4px 0}
+.draft .sug{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;margin-bottom:8px;scrollbar-width:none;padding:4px 0}
 .draft .sug::-webkit-scrollbar{display:none}
 .draft .line{display:flex;align-items:center;min-height:44px}
 .draft input{flex:1;min-width:0;border:0;outline:none;background:none;font:500 16px/24px var(--fb);color:var(--ink)}
