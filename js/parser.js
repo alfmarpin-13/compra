@@ -142,8 +142,11 @@ export function parseOne(raw, ctx) {
     if (nw.slice(k, k + tt.length).join(" ") === t) { shown = ow.slice(k, k + tt.length).join(" "); break; }
   }
 
-  const hit = matchProduct(t, products);
+  let hit = matchProduct(t, products);
   const e = { raw: String(raw).replace(/\s+/g, " ").trim(), q: t, include: true, showAll: false, explicit, lucia };
+  // Que el nombre esté dentro de otro producto («vino blanco» en «Vino blanco cocinar») no quiere decir que sea
+  // el mismo: se trata como nuevo y la hoja pregunta si es ese o es otro.
+  if (hit && hit.partial) { e.maybe = { id: hit.product.id, name: hit.product.name }; hit = null; }
   if (hit) {
     const p = hit.product;
     e.productId = p.id; e.name = p.name; e.category = lucia ? "lucia" : p.category; e.known = true;
@@ -262,7 +265,8 @@ export function parseUtterance(text, ctx, opts = {}) {
 
 /** ¿Se puede añadir sin preguntar? (5.3) */
 export function isClear(entries) {
-  return entries.length > 0 && entries.every((e) => (e.known || e.explicit) && !e.corrected && !e.dup);
+  // Solo productos que ya están en la despensa: lo nuevo siempre pasa por la hoja para revisar categoría y tienda.
+  return entries.length > 0 && entries.every((e) => e.known && !e.corrected && !e.dup && !e.maybe);
 }
 
 const CMD_RE = / (he|hemos|ya|e) (comprado|cogido|pillado|tengo|tenemos|compre|compramos)| (ya esta|ya estan|ya lo tengo) |^ (tacha|marca) | (comprado|cogido) (todo|toda|todos|todas) /;

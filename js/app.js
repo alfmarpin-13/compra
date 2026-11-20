@@ -60,7 +60,7 @@ const storeName = (id) => storeById(id)?.name || GENERIC;
 const productById = (id) => (id ? S.products.find((p) => p.id === id) || null : null);
 const productByKey = (k) => S.products.find((p) => p.nameKey === k) || null;
 const productOf = (i) => productById(i.productId) || productByKey(nameKey(i.name));
-const pendingFor = (p) => S.pending.find((i) => i.productId === p.id || nameKey(i.name) === p.nameKey);
+const pendingFor = (p) => pendVista().find((i) => i.productId === p.id || nameKey(i.name) === p.nameKey);
 const currentStore = () => storeById(S.store);
 const visible = (rows) => rows.filter((i) => inStore(i, currentStore()));
 const sortAdded = (a, b) => (a.addedAt || 0) - (b.addedAt || 0) || a.name.localeCompare(b.name, "es");
@@ -145,7 +145,7 @@ function morphChildren(from, to) {
   for (const y of [...to.childNodes]) {
     if (y.nodeType === 1 && y.dataset.keep) {
       const x = keyed.get(y.dataset.keep);
-      if (!x) { keepMiss = true; continue; } // no está: se repinta entero (ver renderInner)
+      if (!x) { keepMiss = true; continue; } // no está: se repinta entero (ver renderInner), sin quitar nada aquí
       keyed.delete(y.dataset.keep);
       if (y.dataset.cls !== undefined && x.className !== y.dataset.cls) x.className = y.dataset.cls;
       if (y.dataset.ah !== undefined) { if (y.dataset.ah) x.setAttribute("aria-hidden", "true"); else x.removeAttribute("aria-hidden"); }
@@ -161,6 +161,7 @@ function morphChildren(from, to) {
     if (x === cur) cur = cur.nextSibling; else from.insertBefore(x, cur);
     morphNode(x, y);
   }
+  if (keepMiss) return; // se va a repintar entero: no se quita nada a medias
   while (cur) { const n = cur.nextSibling; if (!(cur.nodeType === 1 && cur.dataset.key)) cur.remove(); cur = n; }
   for (const n of keyed.values()) leave(n);
 }
@@ -246,6 +247,14 @@ window.addEventListener("unhandledrejection", (e) => showFatal("Promesa: " + (e.
 function renderInner() {
   statsCache = null;
   applyTheme();
+  // Si la tienda abierta se queda sin artículos suyos (porque se tachan, se borran o se quitan desde la despensa),
+  // su filtro desaparece y se vuelve a «Todas» sola. Si se abrió ya vacía (desde Tiendas), se respeta.
+  if (S.phase === "app" && S.store) {
+    const st = currentStore();
+    const n = st ? pendVista().filter((i) => i.storeId === st.id).length : 0;
+    if (!st || (renderInner.tienda === S.store && renderInner.n > 0 && n === 0)) { S.store = null; renderInner.tienda = null; }
+    else { renderInner.tienda = S.store; renderInner.n = n; }
+  } else renderInner.tienda = null;
   // Dirección de la navegación: más adentro entra por la derecha; al volver, la de arriba sale por la derecha
   // y la de debajo se recoloca. Con el gesto de volver ya se ha visto la animación: sin repetirla.
   const depth = S.phase !== "app" ? 0 : S.view === "history" ? 2 : S.view === "options" ? 1 : 0;
@@ -271,7 +280,7 @@ function renderInner() {
       const x = v === "main" ? vMain() : v === "options" ? vOptions() : vHistory();
       const cls = v !== top ? "scr behind" : render.navTo === v ? `scr nav-${render.navDir}` : "scr";
       // Si solo cambia si está debajo o arriba, se conserva la pantalla y se cambia solo su clase.
-      if (keepMemo.get("scr-" + v) === x) return `<i data-keep="scr-${v}" data-cls="${cls}" data-ah="${v !== top ? 1 : ""}"></i>`;
+      if (keepMemo.get("scr-" + v) === x) return `<i data-keep="${v}" data-cls="${cls}" data-ah="${v !== top ? 1 : ""}"></i>`;
       keepMemo.set("scr-" + v, x);
       return x.replace('<div class="scr"', `<div ${v !== top ? 'aria-hidden="true" ' : ""}class="${cls}"`);
     }).join("");
@@ -417,8 +426,9 @@ function slot(id, big) {
   return `<span class="slot${big ? " lg" : ""}" aria-hidden="true">${ic(g, big ? 26 : 17)}</span>`;
 }
 function vChips() {
-  const count = (st) => S.pending.filter((i) => inStore(i, st)).length;
-  const shown = S.stores.filter((s) => s.id === S.store || S.pending.some((i) => i.storeId === s.id));
+  const pv = pendVista();
+  const count = (st) => pv.filter((i) => inStore(i, st)).length;
+  const shown = S.stores.filter((s) => s.id === S.store || pv.some((i) => i.storeId === s.id));
   return `<div class="chips" role="tablist" aria-label="Tiendas">
     <button class="chip ${!S.store ? "on" : ""}" role="tab" aria-selected="${!S.store}" data-act="store" data-k="">Todas<span class="n">${count(null)}</span></button>
     ${shown.map((s) => `<button class="chip ${S.store === s.id ? "on" : ""}" role="tab" aria-selected="${S.store === s.id}" data-act="store" data-k="${esc(s.id)}" data-key="chip-${esc(s.id)}">${slot(s.id)}${esc(s.name)}<span class="n">${count(s)}</span></button>`).join("")}
@@ -457,10 +467,8 @@ function vList() {
   // Lo recién tachado sigue en su sitio unos segundos (con «Deshacer»).
   // Lo que se está tachando sigue en su sitio, venga aún como pendiente o ya como tachado (si no, desaparecía un
   // instante entre un aviso de la base de datos y el siguiente, y toda la rejilla daba un salto).
-  const pendIds = new Set(S.pending.map((i) => i.id));
-  const justTicked = S.today.filter((i) => ticking.has(i.id) && !pendIds.has(i.id));
-  const pend = visible([...S.pending, ...justTicked]).sort(sortAdded);
-  const done = visible(S.today.filter((i) => !ticking.has(i.id))).sort((a, b) => b.checkedAt - a.checkedAt);
+  const pend = visible(pendVista()).sort(sortAdded);
+  const done = visible(doneVista()).sort((a, b) => b.checkedAt - a.checkedAt);
   let body = "";
   const stale = S.bootStuck && !S.live ? `<div class="diag" data-key="diag"><b>Sin conexión con Firebase todavía</b><span>Lo que ves es lo último guardado en este iPhone; lo que hagas se guardará al conectar. Se ha quedado ${esc(bootStep)}.</span><button class="btn out" data-act="repair">Reparar la app</button></div>` : "";
   if (S.dataError && !S.ready.pending) body = `<div class="diag" data-key="diag"><b>No se pueden cargar los datos</b><span>Firebase responde: ${esc(S.dataError)}</span><span>Mándale a Claude una captura de esto.</span><button class="btn out" data-act="repair">Reparar la app</button></div>`;
@@ -630,7 +638,7 @@ function vHistory() {
     ${S.historyLoaded && !days.length ? `<p class="histempty">${S.histQ ? "No aparece en el historial." : "Aquí irá lo que tachéis, agrupado por día."}</p>` : ""}
     ${days.map((d) => `<div class="trip" data-flip data-key="d-${d.k}"><h3>${esc(dayLabel(d.k))}</h3><p class="tsub2">${plural(d.items.length, "artículo tachado", "artículos tachados")}</p>
       <button class="tbtn" style="margin:8px 0 4px -12px" data-act="selDay" data-k="${d.k}">Seleccionar todo el día</button>
-      ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<button class="titem" data-flip data-key="${esc(i.id)}" data-act="selItem" data-k="${esc(i.id)}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button>`; }).join("")}
+      ${d.shown.map((i) => { const on = S.histSel.has(i.id); return `<div class="tswipe" data-flip data-key="${esc(i.id)}"><span class="tdel" aria-hidden="true">${ic("trash-2", 20)}Borrar</span><button class="titem" data-act="selItem" data-k="${esc(i.id)}" role="checkbox" aria-checked="${on}"><span class="mini-ck ${on ? "on" : ""}" style="margin:0">${on ? ic("check", 14) : ""}</span>${esc(i.name)}</button></div>`; }).join("")}
     </div>`).join("")}
    </div>
    ${sel ? `<div class="bottombtn" data-key="rebuy"><button class="btn out delbtn" data-act="histDel" aria-label="Borrar del historial (${sel})">${ic("trash-2", 20)}</button><button class="btn fill" data-act="rebuy">Volver a añadir (${sel})</button></div>` : ""}
@@ -652,10 +660,19 @@ function entryChips(e, ix) {
   const keys = e.showAll ? [null, ...all] : [...new Set([e.ask ? e.ask.storeId : e.storeId, null])];
   return keys.map((k) => storeChip(k, e.storeId, "eStore", `data-i="${ix}"`)).join("") + (e.showAll ? "" : `<button class="chip sm" data-act="eMore" data-i="${ix}">Otra…</button>`);
 }
+/** Categoría sugerida, con la opción de cambiarla (y lo elegido se recuerda en la despensa). */
+function entryCat(e) {
+  if (!e.showCats) return `<div class="opts"><button class="chip sm" data-act="eCats" data-i="${e._ix}">${cico(e.category, 14, "width:18px;height:18px;border-radius:5px;margin-left:-4px")}${esc(CAT[e.category].l)} · Cambiar</button></div>`;
+  return `<p class="labelsm" style="margin:10px 0 6px">Categoría</p><div class="opts">${CATS_AZ.map((c) => `<button class="chip sm ${e.category === c.k ? "on" : ""}" data-act="eCat" data-i="${e._ix}" data-k="${c.k}">${esc(c.l)}</button>`).join("")}</div>`;
+}
 function entryNote(e) {
   if (e.inPantry) return `<p class="note">Ya está en la despensa.</p>`;
   if (e.dup) return `<p class="note">Ya está en la lista. No lo duplico.</p>`;
+  return entryNoteStore(e) + entryCat(e);
+}
+function entryNoteStore(e) {
   let h = "";
+  if (e.maybe) h += `<p class="note">Ya tenéis «${esc(e.maybe.name)}». ¿Es lo mismo o es otro producto?</p><div class="opts"><button class="chip sm" data-act="eSame" data-i="${e._ix}">Es «${esc(e.maybe.name)}»</button><button class="chip sm on" data-act="eOtro" data-i="${e._ix}">Es otro</button></div>`;
   if (e.corrected) h += `<p class="note">Entiendo «${esc(e.name)}» (escribiste «${esc(e.corrected)}»).</p>`;
   if (e.explicit) {
     const p = e.productId ? productById(e.productId) : null;
@@ -711,7 +728,8 @@ function shEdit(s) {
    <div class="sfoot"><button class="btn out" data-act="closeSheet">Cancelar</button><button class="btn fill" data-act="edSave">Guardar</button></div>`;
 }
 function shStores() {
-  const rows = S.stores.map((st) => { const all = S.pending.filter((i) => inStore(i, st)); const own = all.filter((i) => i.storeId === st.id).length; return { st, all: all.length, own }; });
+  const pv = pendVista();
+  const rows = S.stores.map((st) => { const all = pv.filter((i) => inStore(i, st)); const own = all.filter((i) => i.storeId === st.id).length; return { st, all: all.length, own }; });
   const meta = ({ st, all, own }) => {
     if (!all) return "nada pendiente";
     if (st.kind === "generic") return [own ? `${own} solo de aquí` : "", all - own ? `${all - own} de cualquier súper` : ""].filter(Boolean).join(" + ");
@@ -855,9 +873,12 @@ function addEntries(entries) {
       p = { id, name: e.name, nameKey: k, category: e.category, storeId, icon: iconKeyFor(e.name) };
       ops.push({ op: "set", col: "products", id, data: DB.productData(p, true) });
       S.products.push(p); // para que la siguiente entrada lo vea; el snapshot lo confirmará
-    } else if ((p.storeId ?? null) !== storeId) {
-      ops.push({ op: "update", col: "products", id: p.id, data: { storeId, ...DB.touch() } }); // aprende la tienda elegida
-      p.storeId = storeId;
+    } else {
+      // Aprende la tienda y la categoría elegidas.
+      const upd = {};
+      if ((p.storeId ?? null) !== storeId) { upd.storeId = storeId; p.storeId = storeId; }
+      if (e.catChanged && e.category && e.category !== p.category) { upd.category = e.category; p.category = e.category; }
+      if (Object.keys(upd).length) ops.push({ op: "update", col: "products", id: p.id, data: { ...upd, ...DB.touch() } });
     }
     const id = DB.newId();
     const item = { productId: p.id, name: p.name, category: e.category || p.category, storeId, addedBy: S.me, checked: false };
@@ -901,6 +922,21 @@ function addedToast(added) {
 // se recoge hacia «Comprado hoy». Se guarda al momento, así que no se pierde aunque se cierre la app.
 const TICK_MS = 4500;
 const ticking = new Map();
+// Lo recién devuelto a la lista se ve como pendiente hasta que la base de datos lo confirma (si no, durante un
+// instante salía «Comprado hoy» y la casilla se iba y volvía).
+const unticking = new Map();
+function marcarDevuelto(id) {
+  clearTimeout(unticking.get(id));
+  unticking.set(id, setTimeout(() => { unticking.delete(id); renderSoon(); }, 4000));
+}
+/** Lo que se ve como pendiente: lo pendiente, lo que se está tachando (aún con «Deshacer») y lo recién devuelto. */
+function pendVista() {
+  const ids = new Set(S.pending.map((i) => i.id));
+  const extra = S.today.filter((i) => (ticking.has(i.id) || unticking.has(i.id)) && !ids.has(i.id))
+    .map((i) => (unticking.has(i.id) ? { ...i, checked: false, checkedAt: null, checkedBy: null } : i));
+  return [...S.pending, ...extra];
+}
+const doneVista = () => S.today.filter((i) => !ticking.has(i.id) && !unticking.has(i.id));
 function tick(i) {
   DB.batch([{ op: "update", col: "items", id: i.id, data: DB.checkData(S.me) }]);
   clearTimeout(ticking.get(i.id));
@@ -911,10 +947,12 @@ function tick(i) {
 function undoTick(id) {
   clearTimeout(ticking.get(id));
   ticking.delete(id);
+  marcarDevuelto(id);
   DB.batch([{ op: "update", col: "items", id, data: DB.uncheckData() }]);
   render();
 }
 function untick(i) {
+  marcarDevuelto(i.id);
   DB.batch([{ op: "update", col: "items", id: i.id, data: DB.uncheckData() }]);
 }
 function addProductToList(p, fresh = true) {
@@ -1252,14 +1290,14 @@ function rebuy() {
 }
 
 /** Borra del historial lo seleccionado, con Deshacer. */
-function deleteHistory() {
+function deleteHistory(only) {
   const all = new Map([...S.today, ...S.history].map((i) => [i.id, i]));
-  const gone = [...S.histSel].map((id) => all.get(id)).filter(Boolean);
+  const gone = [...(only || S.histSel)].map((id) => all.get(id)).filter(Boolean);
   if (!gone.length) return;
   DB.batch(gone.map((i) => ({ op: "delete", col: "items", id: i.id })));
   const ids = new Set(gone.map((i) => i.id));
   S.history = S.history.filter((i) => !ids.has(i.id));
-  S.histSel = new Set();
+  S.histSel = new Set([...S.histSel].filter((id) => !ids.has(id)));
   toast(gone.length === 1 ? `Borrado del historial: ${gone[0].name}` : `Borrados ${gone.length} artículos del historial`, () => {
     DB.batch(gone.map((i) => ({ op: "set", col: "items", id: i.id, data: DB.itemData(i) })));
     // Lo de hoy vuelve solo por el listener; lo de días anteriores se repone en memoria.
@@ -1391,6 +1429,21 @@ function act(a, el, e) {
     case "eInc": { const en = sh.entries[+el.dataset.i]; en.include = !en.include; return render(); }
     case "eStore": { const en = sh.entries[+el.dataset.i]; en.storeId = k || null; return render(); }
     case "eMore": sh.entries[+el.dataset.i].showAll = true; return render();
+    case "eCats": { const en = sh.entries[+el.dataset.i]; en.showCats = !en.showCats; return render(); }
+    case "eCat": { const en = sh.entries[+el.dataset.i]; en.category = k; en.catChanged = true; en.showCats = false; return render(); }
+    case "eOtro": { const en = sh.entries[+el.dataset.i]; en.maybe = null; return render(); }
+    case "eSame": {
+      // Era el producto que ya teníais: se usa ese (con su nombre, categoría y tienda habitual).
+      const en = sh.entries[+el.dataset.i], p = en.maybe && productById(en.maybe.id);
+      en.maybe = null;
+      if (p) {
+        Object.assign(en, { productId: p.id, name: p.name, category: en.lucia ? "lucia" : p.category, known: true, corrected: null, habitual: p.storeId ?? null });
+        if (!en.explicit) { en.storeId = p.storeId ?? null; en.ask = p.storeId ? { storeId: p.storeId, kind: "habit" } : null; }
+        if (sh.target === "pantry") { en.inPantry = true; en.dup = true; en.include = false; }
+        else { en.dup = !!pendingFor(p); if (en.dup) en.include = false; }
+      }
+      return render();
+    }
     case "eAdd": {
       if (sh.target === "pantry") { const made = addProducts(sh.entries); S.sheet = null; return pantryAddedToast(made); }
       const added = addEntries(sh.entries); S.sheet = null; return addedToast(added);
@@ -1651,6 +1704,54 @@ root.addEventListener("touchend", () => {
   }, ms + 20);
 });
 root.addEventListener("touchcancel", () => { if (sd && sd.drag) { sd.sh.style.transition = sd.sh.style.transform = ""; } sd = null; });
+/* ---------- Historial: deslizar un artículo hacia la izquierda para borrarlo (como en el iPhone) ----------
+   El artículo sigue al dedo y deja ver «Borrar» en rojo; al soltar pasado ~40 % (o con un golpe rápido) se va y
+   se borra (con «Deshacer»); si no, vuelve a su sitio. */
+let hs = null;
+root.addEventListener("touchstart", (e) => {
+  hs = null;
+  if (S.phase !== "app" || S.view !== "history" || S.sheet || e.touches.length !== 1) return;
+  const it = e.target.closest(".tswipe .titem");
+  if (!it) return;
+  const t = e.touches[0];
+  hs = { x: t.clientX, y: t.clientY, t: Date.now(), it, wrap: it.parentElement, drag: false, lock: false, dx: 0, raf: 0, hist: [], w: it.getBoundingClientRect().width };
+}, { passive: true });
+root.addEventListener("touchmove", (e) => {
+  if (!hs || hs.lock) return;
+  const t = e.touches[0], dx = t.clientX - hs.x, dy = t.clientY - hs.y;
+  if (!hs.drag) {
+    if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { hs.lock = true; return; }
+    if (dx > -10 || -dx < Math.abs(dy) * 1.3) { if (dx > 10) hs.lock = true; return; }
+    hs.drag = true; clearTimeout(lp);
+    hs.wrap.classList.add("swiping");
+  }
+  hs.dx = Math.min(0, Math.max(-hs.w, dx));
+  const now = Date.now();
+  hs.hist = hs.hist.filter((h) => now - h[0] < 120).concat([[now, hs.dx]]);
+  if (!hs.raf) hs.raf = requestAnimationFrame(() => { if (!hs) return; hs.raf = 0; hs.it.style.transform = `translate3d(${hs.dx}px,0,0)`; });
+}, { passive: true });
+root.addEventListener("touchend", () => {
+  if (!hs) return;
+  const g = hs; hs = null;
+  if (!g.drag) return;
+  if (g.raf) cancelAnimationFrame(g.raf);
+  lpFired = true; setTimeout(() => (lpFired = false), 50);
+  const h0 = g.hist[0] || [g.t, 0];
+  const v = (h0[1] - g.dx) / Math.max(16, Date.now() - h0[0]);
+  const borrar = -g.dx > g.w * 0.4 || (-g.dx > 30 && v > 0.35);
+  const ms = REDUCE.matches ? 0 : borrar ? 220 : 320;
+  g.it.style.transition = `transform ${ms}ms ${borrar ? "cubic-bezier(.2,.6,.4,1)" : SPRING}`;
+  requestAnimationFrame(() => { g.it.style.transform = borrar ? `translate3d(${-g.w - 20}px,0,0)` : "translate3d(0,0,0)"; });
+  setTimeout(() => {
+    if (!borrar) { g.it.style.transition = g.it.style.transform = ""; g.wrap.classList.remove("swiping"); return; }
+    // Se recoge la fila y se borra.
+    const h = g.wrap.getBoundingClientRect().height;
+    const a = REDUCE.matches ? null : g.wrap.animate([{ height: h + "px", opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 220, easing: "ease-in", fill: "forwards" });
+    const fin = () => deleteHistory([g.it.dataset.k]);
+    if (a) a.onfinish = fin; else fin();
+  }, ms + 10);
+});
+root.addEventListener("touchcancel", () => { if (hs && hs.drag) { hs.it.style.transform = ""; hs.wrap.classList.remove("swiping"); } hs = null; });
 // Es una app: sin zoom con dos dedos ni con doble toque.
 ["gesturestart", "gesturechange"].forEach((t) => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
 

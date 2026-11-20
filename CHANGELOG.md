@@ -2,6 +2,16 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v55 · 20/11/2026
+- Al añadir, la categoría sugerida se puede cambiar en la misma hoja (como la tienda) y se recuerda en la despensa. Lo nuevo siempre pasa por la hoja para poder revisarlo.
+- «Vino blanco» ya no se da por «Vino blanco cocinar»: si el nombre está dentro de otro producto, la hoja pregunta si es ese o es otro (por defecto, otro).
+- Historial: un artículo se borra deslizándolo hacia la izquierda (con Deshacer).
+- Si la tienda abierta se queda sin artículos suyos (por ejemplo, al quitarlos desde la despensa), su filtro desaparece y se vuelve a «Todas».
+- Tachar y deshacer, limpios: el filtro de la tienda y los contadores no cambian mientras está el «Deshacer», y al deshacer ya no asoma «Comprado hoy» ni la casilla se va y vuelve.
+- Iconos nuevos: granos de café (café en grano) y macarrones. Multiusos con el bote de spray; oxicolor, oxiblanco y jabón Marsella con el de detergente; guacamole con el aguacate.
+- Categorías: guacamole, hummus y caldos en Conservas y salsas; lo «congelado» en Congelados.
+- Arreglado un fallo de la v54 por el que, en algunos casos, las pantallas se rehacían enteras en vez de conservarse (quedaban copias saliendo).
+
 ## v54 · 20/11/2026
 - Gesto de volver fluido: la pantalla de debajo ya está montada (antes se construía al empezar a arrastrar y daba un tirón), se mueve una vez por fotograma y el oscurecido es una capa en vez de un filtro.
 - Las hojas (Tiendas, editar, «Esto es lo que he entendido»…) se cierran deslizándolas hacia abajo, como en el iPhone.
