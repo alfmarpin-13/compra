@@ -2,6 +2,10 @@
 <html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
+<!-- Seguridad: solo se ejecuta código de la propia app y solo se habla con Firebase (Firestore y Auth)
+     y con Hugging Face (descarga del modelo de voz). Ver la sección de seguridad de CLAUDE.md. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google.com; font-src 'self'; manifest-src 'self'; worker-src 'self'; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://huggingface.co https://*.huggingface.co https://*.hf.co; media-src 'self'; object-src 'none'; frame-src 'none'; child-src 'self'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Compra</title>
 <meta name="description" content="La lista de la compra de casa, compartida en tiempo real.">
@@ -15,26 +19,14 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preload" href="fonts/figtree-500.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/figtree-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
-<script>
-  // Tema antes de pintar, para que no parpadee.
-  (function () {
-    try {
-      var t = localStorage.getItem("compra.theme") || "system";
-      var dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-      document.documentElement.dataset.theme = dark ? "dark" : "light";
-      if (dark) document.querySelector('meta[name="theme-color"]').content = "#0E1511";
-      if (navigator.standalone) document.documentElement.classList.add("standalone");
-    } catch (e) {}
-  })();
-</script>
+<script src="js/tema.js"></script>
 <link rel="modulepreload" href="js/app.js">
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js" crossorigin>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js" crossorigin>
-<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js" crossorigin>
+<link rel="modulepreload" href="vendor/firebase/firebase-app.js">
+<link rel="modulepreload" href="vendor/firebase/firebase-auth.js">
+<link rel="modulepreload" href="vendor/firebase/firebase-firestore.js">
 </head>
 <body>
 <div class="topband" aria-hidden="true"></div>

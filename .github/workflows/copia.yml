@@ -1,4 +1,6 @@
-# Copia de seguridad nocturna de la despensa y las tiendas (sin la lista ni el historial).
+# Copia de seguridad nocturna de la despensa y las tiendas (sin la lista ni el historial), CIFRADA:
+# el repositorio es público. Necesita los secretos FIREBASE_CUENTA_SERVICIO y COPIA_CLAVE.
+# Las acciones van fijadas por su commit (no por etiqueta) para que nadie pueda cambiarlas por detrás.
 name: Copia de seguridad
 on:
   schedule:
@@ -11,16 +13,19 @@ jobs:
   copia:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
       - name: Leer Firestore
         env:
           FIREBASE_CUENTA_SERVICIO: ${{ secrets.FIREBASE_CUENTA_SERVICIO }}
+          COPIA_CLAVE: ${{ secrets.COPIA_CLAVE }}
         run: node scripts/copia.mjs
       - name: Guardar en el repositorio si ha cambiado
         run: |
+          # Nunca en claro: si apareciera un .json sin cifrar, se para sin guardar nada.
+          if ls copia/*.json >/dev/null 2>&1; then echo "Hay copias sin cifrar"; exit 1; fi
           git add copia
           if git diff --cached --quiet; then echo "Sin cambios"; exit 0; fi
           git -c user.name="copia-automatica" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Copia de seguridad $(date -u +%Y-%m-%d)"

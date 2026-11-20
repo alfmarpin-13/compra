@@ -5,8 +5,9 @@ import { EMAIL_DOMAIN, STORES_SEED } from "./data.js";
 import { startOfDay, nameKey } from "./util.js";
 
 export const FIREBASE_VERSION = "10.14.1";
-const BASE = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
-export const FIREBASE_URLS = [`${BASE}/firebase-app.js`, `${BASE}/firebase-auth.js`, `${BASE}/firebase-firestore.js`];
+// El SDK va dentro de la app (vendor/firebase, copiado del paquete npm oficial): no se ejecuta código de fuera.
+const BASE = new URL("../vendor/firebase/", import.meta.url).href;
+export const FIREBASE_URLS = [`${BASE}firebase-app.js`, `${BASE}firebase-auth.js`, `${BASE}firebase-firestore.js`];
 
 let A, F, auth, db;
 
@@ -41,7 +42,12 @@ export async function login(user, pass, remember) {
   await A.setPersistence(auth, remember ? A.browserLocalPersistence : A.browserSessionPersistence);
   return A.signInWithEmailAndPassword(auth, emailFor(user), pass);
 }
-export function logout() { return A.signOut(auth); }
+/** Cierra la sesión y borra del dispositivo la copia local de Firestore (lista, despensa, historial),
+ *  para que no quede nada legible en el iPhone. Después hay que recargar la app. */
+export async function logout() {
+  try { await A.signOut(auth); } catch (e) {}
+  try { await F.terminate(db); await F.clearIndexedDbPersistence(db); } catch (e) { console.warn("No se pudo borrar la caché local", e); }
+}
 
 /* ---------------- Lectura en tiempo real ---------------- */
 const ts = (v) => (v && typeof v.toMillis === "function" ? v.toMillis() : typeof v === "number" ? v : null);

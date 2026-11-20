@@ -1,0 +1,7 @@
+Firebase JS SDK 10.14.1 (paquete npm «firebase», archivos firebase-app.js, firebase-auth.js y
+firebase-firestore.js: las mismas compilaciones que sirve www.gstatic.com/firebasejs/10.14.1/).
+Licencia Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0), Copyright Google LLC.
+
+Únicos cambios respecto al paquete: en firebase-auth.js y firebase-firestore.js la importación de
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js" apunta a "./firebase-app.js", y se ha
+quitado la línea final «sourceMappingURL». Así la app no carga código de servidores externos.
