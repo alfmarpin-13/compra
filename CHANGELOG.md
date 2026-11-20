@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v50 · 20/11/2026
+- Icono propio para el «papel culo» (papel higiénico húmedo): un rollo con una gota de agua. Se reconoce solo al escribir «papel culo», «papel húmedo» o «papel higiénico húmedo».
+
 ## v49 · 20/11/2026
 - Iconos de productos propios: los 126 dibujos de OpenMoji se sustituyen por dibujos hechos para Compra, de línea y monocromos, con el mismo trazo que el resto de iconos. Ya no hace falta citar a nadie en Opciones.
 
