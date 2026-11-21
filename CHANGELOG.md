@@ -2,6 +2,11 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v71 · 21/11/2026
+- Iconos nuevos: aceite de oliva (aceitera catalana), altramuces, nueces, almendras, vino de cocinar (brick), pechuguitas y fiambre en bandeja, ketchup (botella de cristal), champú, suavizante de pelo, queso rallado (mozzarella), feta, cottage, queso fresco de Burgos, garbanzos, lentejas, fregona, pastillas de lavavajillas y pimientos para asar (tipo Padrón).
+- Kiwi redibujado (entero y medio); macarrones centrados; la pasta de lentejas usa el icono de pasta.
+- Categorías al apuntarlos nuevos: altramuces en Aperitivos, suavizante de pelo en Higiene, pasta de lentejas en Pasta y arroz.
+
 ## v70 · 20/11/2026
 - Cada casilla y cada fila de la lista (también en la Despensa) tiene de fondo el color de su categoría, más claro: la fruta en naranja suave, la carne en rosa, la higiene en malva…
 
