@@ -73,6 +73,9 @@ export const KW = {
 export const ICON_KW = {
   // v71: repaso de Alfonso
   "aceite de oliva": "ACEITERA", "aceite oliva": "ACEITERA", aove: "ACEITERA", "virgen extra": "ACEITERA",
+  // El de oliva para cocinar es la botella normal, como el de girasol (decisión de Alfonso); la aceitera es solo el de servir.
+  "aceite de oliva para cocinar": "E0CB", "aceite de oliva de cocinar": "E0CB", "aceite de oliva cocinar": "E0CB", "aceite de oliva cocina": "E0CB", "aceite de oliva para freir": "E0CB", "aceite de oliva freir": "E0CB",
+  "aceite oliva para cocinar": "E0CB", "aceite oliva cocinar": "E0CB", "aceite oliva cocina": "E0CB", "aceite para cocinar": "E0CB", "aceite de cocinar": "E0CB", "aceite cocina": "E0CB", "aceite de girasol": "E0CB", "aceite girasol": "E0CB", girasol: "E0CB",
   altramuz: "ALTRAMUZ", altramuce: "ALTRAMUZ", nuez: "NUEZ", nuece: "NUEZ", almendra: "ALMENDRA",
   "vino blanco cocinar": "BRICK", "vino de cocinar": "BRICK", "vino para cocinar": "BRICK", "vino cocinar": "BRICK", brick: "BRICK",
   pechuguita: "BANDEJA", "pechuga de pavo": "BANDEJA", "pavo en loncha": "BANDEJA", fiambre: "BANDEJA", loncha: "BANDEJA",

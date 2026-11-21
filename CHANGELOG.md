@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v72 · 21/11/2026
+- El aceite de oliva para cocinar (o para freír) vuelve a la botella normal, como el de girasol; la aceitera catalana es solo para el de oliva de servir.
+
 ## v71 · 21/11/2026
 - Iconos nuevos: aceite de oliva (aceitera catalana), altramuces, nueces, almendras, vino de cocinar (brick), pechuguitas y fiambre en bandeja, ketchup (botella de cristal), champú, suavizante de pelo, queso rallado (mozzarella), feta, cottage, queso fresco de Burgos, garbanzos, lentejas, fregona, pastillas de lavavajillas y pimientos para asar (tipo Padrón).
 - Kiwi redibujado (entero y medio); macarrones centrados; la pasta de lentejas usa el icono de pasta.

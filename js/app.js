@@ -22,7 +22,16 @@ const LOGO = (px, label) => `<svg width="${px}" height="${px}" ${label ? `role="
 // Iconos de producto: dibujos propios (js/productos.js), de línea en el color de la categoría.
 const PICS = PRODUCTOS;
 const iconMemo = new Map();
-export const iconKeyFor = (name) => { if (!iconMemo.has(name)) iconMemo.set(name, bestKeyword(name, ICON_LIST)); return iconMemo.get(name); };
+// La aceitera es solo el aceite de servir: si el nombre dice que es para cocinar o freír, la botella normal.
+const PARA_COCINAR = /\b(cocin|frei)/;
+export const iconKeyFor = (name) => {
+  if (!iconMemo.has(name)) {
+    let k = bestKeyword(name, ICON_LIST);
+    if (k === "ACEITERA" && PARA_COCINAR.test(norm(name))) k = "E0CB";
+    iconMemo.set(name, k);
+  }
+  return iconMemo.get(name);
+};
 function pic(name, category, iconKey) {
   // Manda el diccionario de palabras clave (así los iconos mejorados llegan también a productos ya guardados).
   const auto = iconKeyFor(name);
