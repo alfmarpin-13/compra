@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v74 · 26/11/2026
+- Casillas o lista, por separado en la Lista y en la Despensa: cambiar una no cambia la otra, y cada una se recuerda.
+
 ## v73 · 21/11/2026
 - El hummus lleva el icono del tarro, como una salsa (también «hummus de garbanzos», que además va a Conservas y salsas).
 
