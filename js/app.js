@@ -52,7 +52,7 @@ const LS = {
 
 const S = {
   phase: "boot", me: "", meKey: "", loginErr: false, loginBusy: false, remember: true,
-  view: "list", store: null, layout: LS.get("layout", "grid"), theme: LS.get("theme", "system"), checkedOpen: false,
+  view: "list", store: null, layouts: { list: LS.get("layout.list", LS.get("layout", "grid")), pantry: LS.get("layout.pantry", LS.get("layout", "grid")) }, theme: LS.get("theme", "system"), checkedOpen: false,
   stores: [], products: [], pending: [], today: [], history: [], historyLoaded: false,
   ready: { stores: false, products: false, pending: false },
   capture: "idle", draft: "", partial: "",
@@ -61,6 +61,8 @@ const S = {
 };
 let sub = null;
 
+/** Casillas o lista, por separado en la Lista y en la Despensa (decisión de Alfonso), recordado en el dispositivo. */
+const vistaDe = (tab) => S.layouts[tab === "pantry" ? "pantry" : "list"];
 const curTab = () => (S.view === "options" || S.view === "history" ? S.tab || "list" : S.view);
 const otherName = () => nombre(S.meKey === "alfonso" ? "Mariluz" : "Alfonso");
 const meName = () => nombre(S.me);
@@ -304,7 +306,7 @@ function renderInner() {
     if (S.sheet) h += vSheet();
   }
   tpl.innerHTML = h;
-  const viewKey = S.phase + ":" + S.view + ":" + S.layout + ":" + (S.store || "");
+  const viewKey = S.phase + ":" + S.view + ":" + S.layouts.list + S.layouts.pantry + ":" + (S.store || "");
   const sameView = viewKey === render.view;
   const before = sameView ? flipSnapshot() : new Map();
   keepMiss = false;
@@ -423,7 +425,7 @@ function vHeader() {
       <button class="htab ${!list ? "on" : ""}" role="tab" aria-selected="${!list}" aria-label="Despensa" data-act="pantry"><span class="hti">${ic("shelving-unit", 22)}</span><span class="htl"><span>Despensa</span></span></button>
     </span></div>
     <div class="hb-r">
-      <button class="ib sm" data-act="layout" aria-label="${S.layout === "grid" ? "Ver como lista" : "Ver como casillas"}">${ic(S.layout === "grid" ? "list" : "layout-grid", 20)}</button>
+      <button class="ib sm" data-act="layout" aria-label="${vistaDe(curTab()) === "grid" ? "Ver como lista" : "Ver como casillas"}">${ic(vistaDe(curTab()) === "grid" ? "list" : "layout-grid", 20)}</button>
       <button class="ib sm" data-act="menu" aria-label="Opciones" aria-expanded="${S.menu}">${ic("settings", 20)}</button>
     </div></div>`;
 }
@@ -489,7 +491,7 @@ function vTile(i) {
     <span class="tic">${pic(i.name, i.category, p?.icon)}</span>
     <span class="tnm">${esc(i.name)}</span>${tk ? `<span class="tchk" aria-hidden="true">${ic("check", 22)}</span><button class="tundo" data-act="untick" data-id="${esc(i.id)}">Deshacer</button>` : ""}</div>`;
 }
-const block = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vTile).join("")}</div>` : `<div class="group" data-key="${key}">${rows.map(vRow).join("")}</div>`);
+const block = (rows, key) => (S.layouts.list === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vTile).join("")}</div>` : `<div class="group" data-key="${key}">${rows.map(vRow).join("")}</div>`);
 
 function vList() {
   // Lo recién tachado sigue en su sitio unos segundos (con «Deshacer»).
@@ -628,7 +630,7 @@ function vPTile(p) {
     <span class="tic">${pic(p.name, p.category, p.icon)}</span>
     <span class="tnm">${esc(p.name)}</span></div>`;
 }
-const pblock = (rows, key) => (S.layout === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vPTile).join("")}</div>` : `<div class="card pcard" data-key="${key}">${rows.map(vPantryRow).join("")}</div>`);
+const pblock = (rows, key) => (S.layouts.pantry === "grid" ? `<div class="tgrid" data-key="${key}">${rows.map(vPTile).join("")}</div>` : `<div class="card pcard" data-key="${key}">${rows.map(vPantryRow).join("")}</div>`);
 function vPantry() {
   const q = singAll(norm(S.pantryQ));
   const all = [...S.products].sort((a, b) => a.name.localeCompare(b.name, "es"));
@@ -637,7 +639,7 @@ function vPantry() {
   return `<div class="pane folder" data-key="pane-pantry" aria-hidden="${curTab() !== "pantry"}">
    <div class="srow2"><label class="srch">${ic("search", 18)}<input id="pq" type="search" value="${esc(S.pantryQ)}" placeholder="Buscar entre ${plural(S.products.length, "producto", "productos")}" aria-label="Buscar en la despensa" autocomplete="off">${borrarBusqueda("pq", S.pantryQ)}</label></div>
    <div class="pad">
-    ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layout === "grid" ? 6 : 5), "due")}` : ""}
+    ${due.length ? `<div class="cath sec2" data-key="due-h"><span class="cico" style="--cl:var(--ink);--cd:var(--ink)">${ic("rotate-ccw", 16)}</span><span class="catl">Os toca reponer</span><button class="tbtn" data-act="review1">Repasar</button></div>${pblock(due.slice(0, S.layouts.pantry === "grid" ? 6 : 5), "due")}` : ""}
     ${groupRows(list).map(([c, rows]) => `<div class="cath sec2" data-flip data-key="ph-${c.k}">${cico(c.k)}<span class="catl">${esc(c.l)}</span><span class="cnt">${rows.length}</span></div>${pblock(rows, "pg-" + c.k)}`).join("")}
     ${!list.length && S.pantryQ.trim() ? `<div class="noq" data-key="noq"><p>No está en la despensa.</p><button class="btn fill" data-act="pnewq">Añadir «${esc(cap(S.pantryQ.trim()))}»</button></div>` : ""}
     ${!S.products.length && !S.pantryQ.trim() ? `<div class="noq" data-key="noq0"><p>La despensa se llena sola con lo que apuntáis. También puedes añadir productos con el +.</p></div>` : ""}
@@ -1467,7 +1469,7 @@ function act(a, el, e) {
   switch (a) {
     case "menu": if (S.capture === "typing") closeTyping(); S.band = null; S.view = "options"; return render();
     case "closeMenu": S.menu = false; return render();
-    case "layout": S.layout = S.layout === "grid" ? "list" : "grid"; LS.set("layout", S.layout); return render();
+    case "layout": { const t = curTab() === "pantry" ? "pantry" : "list"; S.layouts[t] = S.layouts[t] === "grid" ? "list" : "grid"; LS.set("layout." + t, S.layouts[t]); return render(); }
     case "history": return openHistory();
     case "pantry": S.menu = false; S.band = null; S.view = S.tab = "pantry"; return render();
     case "tabList": S.band = null; S.view = S.tab = "list"; return render();
