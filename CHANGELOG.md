@@ -2,6 +2,9 @@
 
 La versión de la app se ve en Preferencias, debajo de «Cerrar sesión». Cada versión llega a `main` mediante un PR con el número en el título.
 
+## v75 · 27/11/2026
+- Al tocar un producto sugerido mientras escribes, se apunta y se borra lo que habías escrito; el campo sigue abierto para lo siguiente.
+
 ## v74 · 26/11/2026
 - Casillas o lista, por separado en la Lista y en la Despensa: cambiar una no cambia la otra, y cada una se recuerda.
 

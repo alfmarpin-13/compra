@@ -128,7 +128,7 @@ El tipo se elige a mano al crear o editar la tienda (decisión de Alfonso, v61; 
 
 ### 5.3 Añadir escribiendo
 - «+ Añadir» abre un campo sobre la barra inferior: «Escribe qué necesitas».
-- Mientras escribes, sugiere productos de la despensa: primero lo que «Os toca reponer» y luego lo que coincide.
+- Mientras escribes, sugiere productos de la despensa: primero lo que «Os toca reponer» y luego lo que coincide. Al tocar una sugerencia se apunta, se borra lo escrito y el campo sigue abierto para lo siguiente.
 - Se pueden escribir varios a la vez: «leche, pan de la panadería y pañales para la niña».
 - **Separadores:** comas, « y », « e », «también». Se ignoran muletillas como «me hace falta», «necesito», «apunta» o «hay que comprar».
 - **Interpretación de cada trozo:**
