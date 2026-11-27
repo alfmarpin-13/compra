@@ -1531,7 +1531,14 @@ function act(a, el, e) {
       const p = productById(k); if (!p) return;
       const added = addProductToList(p);
       addedToast(added);
-      if (S.capture === "typing") { const s = root.querySelector("#sug"); if (s) s.innerHTML = vSug(); focusDraft(); }
+      // Elegida la sugerencia, lo escrito ya no hace falta: se borra y el campo queda listo para lo siguiente.
+      if (S.capture === "typing") {
+        S.draft = "";
+        const inp = root.querySelector("#draft"); if (inp) inp.value = "";
+        const b = root.querySelector("#draftSubmit"); if (b) b.disabled = true;
+        const s = root.querySelector("#sug"); if (s) s.innerHTML = vSug();
+        focusDraft();
+      }
       return;
     }
     case "closeSheet": S.sheet = null; return render();
